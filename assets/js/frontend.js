@@ -399,12 +399,18 @@
 					enableFormButtons($form);
 					$button.text(origText);
 					const $warn = $field.find('.iftp-cf7-runtime-warning');
-					const msg = data.message || 'Unable to create payment. Please try again.';
+					const msg =
+						data.message ||
+						'Unable to create payment. Please try again.';
 					$warn
 						.empty()
-						.removeClass('iftp-warn-pending iftp-warn-cancel iftp-warn-error')
+						.removeClass(
+							'iftp-warn-pending iftp-warn-cancel iftp-warn-error'
+						)
 						.addClass('iftp-warn-error')
-						.append($('<p class="iftp-msg iftp-msg-error">').text(msg))
+						.append(
+							$('<p class="iftp-msg iftp-msg-error">').text(msg)
+						)
 						.show();
 					return;
 				}
