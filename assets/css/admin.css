@@ -1,0 +1,335 @@
+/* ifthenpay | Payments for Contact Form 7 — Admin Styles */
+
+/* ============================================================
+   Entries list
+   ============================================================ */
+
+.iftp-cf7-entries-wrap {
+	max-width: 1200px;
+}
+
+.iftp-cf7-entries-wrap h1 {
+	margin-bottom: 6px;
+}
+
+/* Unread count bubble in heading */
+.iftp-cf7-unread-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	margin-left: 6px;
+	background: #0e6bab;
+	color: #fff;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+/* Filter tabs spacing */
+.iftp-cf7-entries-wrap .subsubsub {
+	margin: 8px 0 16px;
+}
+
+/* Table column widths */
+.iftp-cf7-entries-table .column-cb     { width: 32px; }
+.iftp-cf7-entries-table .column-id     { width: 60px; }
+.iftp-cf7-entries-table .column-form   { width: 160px; }
+.iftp-cf7-entries-table .column-amount { width: 90px; }
+.iftp-cf7-entries-table .column-method { width: 80px; }
+.iftp-cf7-entries-table .column-status { width: 110px; }
+.iftp-cf7-entries-table .column-date   { width: 150px; }
+
+/* Unread row styling — matches GravityForms entry list */
+.iftp-cf7-entries-table tr.iftp-cf7-unread td {
+	font-weight: 600;
+}
+
+/* Unread dot indicator */
+.iftp-cf7-unread-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	background: #0e6bab;
+	border-radius: 50%;
+	margin-right: 6px;
+}
+
+/* PBL link in status column */
+.iftp-cf7-pbl-link {
+	font-size: 13px;
+	text-decoration: none;
+	opacity: 0.7;
+}
+
+.iftp-cf7-pbl-link:hover {
+	opacity: 1;
+}
+
+/* Status badges */
+.iftp-cf7-status-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.iftp-cf7-status-completed { background: #edf7ed; color: #0f6b2f; }  /* green  */
+.iftp-cf7-status-pending   { background: #eff6ff; color: #1e40af; }  /* blue   */
+.iftp-cf7-status-cancelled { background: #fffbeb; color: #92400e; }  /* amber  */
+.iftp-cf7-status-failed    { background: #fff5f4; color: #7f1d1d; }  /* red    */
+
+/* Empty state */
+.iftp-cf7-empty-state {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	padding: 40px 24px;
+	text-align: center;
+	color: #50575e;
+	max-width: 600px;
+	margin-top: 20px;
+}
+
+/* ============================================================
+   Entries two-column layout
+   ============================================================ */
+
+.iftp-cf7-entries-layout {
+	gap: 20px;
+	align-items: flex-start;
+	margin-top: 12px;
+}
+
+.iftp-cf7-entries-sidebar {
+	width: 220px;
+	flex-shrink: 0;
+}
+
+/* ── Sidebar cards ── */
+.iftp-sidebar-card {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 14px 16px;
+	margin-bottom: 14px;
+}
+
+.iftp-sidebar-card h3 {
+	margin: 0 0 12px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1e1e1e;
+}
+
+.iftp-sidebar-card p {
+	margin: 0 0 8px;
+}
+
+.iftp-sidebar-card label {
+	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	margin-bottom: 3px;
+}
+
+.iftp-sidebar-card input.small-text {
+	width: 100%;
+	max-width: 100%;
+}
+
+/* Range warning */
+.iftp-range-warning {
+	font-size: 11px;
+	color: #b42318;
+	background: #fdecea;
+	border: 1px solid #f0b8b4;
+	border-radius: 3px;
+	padding: 6px 8px;
+	margin-bottom: 8px !important;
+}
+
+/* Delete button */
+.iftp-delete-range-btn {
+	background: #b42318 !important;
+	color: #fff !important;
+	border-color: #b42318 !important;
+	width: 100%;
+	text-align: center;
+}
+
+.iftp-delete-range-btn:hover {
+	background: #921c13 !important;
+	border-color: #921c13 !important;
+}
+
+/* Help toggle */
+.iftp-help-card {
+	font-size: 12px;
+}
+
+.iftp-help-toggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0 0 6px;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	color: #1e1e1e;
+	width: 100%;
+	text-align: left;
+}
+
+.iftp-help-toggle:hover {
+	color: #0073aa;
+}
+
+.iftp-help-arrow {
+	font-size: 10px;
+	line-height: 1;
+}
+
+.iftp-help-body p {
+	font-size: 12px;
+	color: #50575e;
+	line-height: 1.5;
+	margin: 0 0 8px;
+}
+
+/* ============================================================
+   Single entry detail
+   ============================================================ */
+
+.iftp-cf7-entry-detail {
+	max-width: 820px;
+}
+
+.iftp-cf7-detail-card {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	padding: 20px 24px;
+	margin-bottom: 16px;
+}
+
+.iftp-cf7-detail-card h2 {
+	margin-top: 0;
+	margin-bottom: 14px;
+	font-size: 15px;
+	font-weight: 600;
+	color: #1e1e1e;
+	border-bottom: 1px solid #f0f0f1;
+	padding-bottom: 10px;
+}
+
+/* ============================================================
+   Form editor panel
+   ============================================================ */
+
+.iftp-cf7-form-panel {
+	padding: 8px 0;
+}
+
+.iftp-cf7-row--hidden {
+	display: none !important;
+}
+
+/* ============================================================
+   Service setup page (on CF7 Integration page)
+   ============================================================ */
+
+/* ============================================================
+   Setup page — payment method items
+   ============================================================ */
+
+.iftp-method-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 7px 12px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fafafa;
+	margin-bottom: 5px;
+	flex-wrap: wrap;
+	max-width: 560px;
+	min-height: 42px;
+}
+
+/* Active method row */
+.iftp-method-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	min-width: 150px;
+	cursor: pointer;
+}
+
+/* Logo — capped so wide brand logos (VISA/MC) don't dominate */
+.iftp-method-logo {
+	height: 18px;
+	max-width: 60px;
+	width: auto;
+	object-fit: contain;
+	vertical-align: middle;
+	flex-shrink: 0;
+}
+
+.iftp-method-right {
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.iftp-account {
+	font-size: 11px;
+	color: #50575e;
+}
+
+/* ── Inactive method row (no account) ── */
+
+.iftp-method-item--inactive {
+	position: relative;
+	border-color: #e0e0e0;
+	background: #f9f9f9;
+}
+
+/* Dimmed layer that shows the logo and name */
+.iftp-method-disabled-layer {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	opacity: 0.35;
+	pointer-events: none;
+	min-width: 150px;
+}
+
+/* Semi-transparent overlay on top */
+.iftp-method-activate-overlay {
+	display: flex;
+	align-items: center;
+	margin-left: auto;
+}
+
+/* Activate button style */
+.iftp-method-item--inactive .button.ifthenpay-activate {
+	font-size: 11px;
+	padding: 2px 8px;
+	height: auto;
+	line-height: 1.6;
+}
+
+/* Status badges also used on integration page card */
+.iftp-cf7-status-connected    { background: #edf7ed; color: #0f6b2f; }
+.iftp-cf7-status-disconnected { background: #fff4e5; color: #8a4b00; }

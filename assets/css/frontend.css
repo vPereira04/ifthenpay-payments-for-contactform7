@@ -1,0 +1,199 @@
+/* ifthenpay | Payments for Contact Form 7 — Frontend Styles */
+
+/* Payment field container */
+.iftp-cf7-payment-field {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 4px 0;
+}
+
+/* Method logos row */
+.iftp-cf7-payment-methods {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.iftp-cf7-method-logo {
+	height: 28px;
+	width: auto;
+	object-fit: contain;
+	vertical-align: middle;
+}
+
+/* Pay button */
+.iftp-cf7-pay-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 11px 24px;
+	background: #0e6bab;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.4;
+	cursor: pointer;
+	text-align: center;
+	transition: background 0.15s, opacity 0.15s;
+}
+
+.iftp-cf7-pay-button:hover:not(:disabled) {
+	background: #0a5a94;
+}
+
+.iftp-cf7-pay-button:focus-visible {
+	outline: 3px solid #0e6bab;
+	outline-offset: 2px;
+}
+
+.iftp-cf7-pay-button:disabled,
+.iftp-cf7-pay-button--disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+	background: #6b7280;
+}
+
+/* Config warning (always red) */
+.iftp-cf7-config-warning {
+	background: #fff5f4;
+	border: 1px solid #f0b8b4;
+	border-radius: 6px;
+	padding: 12px 16px;
+}
+
+.iftp-cf7-config-warning p {
+	margin: 0;
+	font-size: 14px;
+	color: #7f1d1d;
+}
+
+.iftp-cf7-error-msg {
+	margin: 0;
+	font-size: 14px;
+	color: #7f1d1d;
+}
+
+/*
+ * Runtime warning container.
+ * Base has NO padding/border so an empty div is zero-height — the browser can
+ * still scroll to its anchor position without showing any blank space.
+ * Padding + border are added only when a status modifier class is present.
+ */
+.iftp-cf7-runtime-warning {
+	border-radius: 6px;
+}
+
+/* Shared padding + border for all active states */
+.iftp-cf7-runtime-warning.iftp-warn-pending,
+.iftp-cf7-runtime-warning.iftp-warn-cancel,
+.iftp-cf7-runtime-warning.iftp-warn-error {
+	padding: 12px 16px;
+	border: 1px solid transparent;
+}
+
+/* Pending — blue */
+.iftp-cf7-runtime-warning.iftp-warn-pending {
+	background: #eff6ff;
+	border-color: #bfdbfe;
+}
+
+.iftp-cf7-runtime-warning.iftp-warn-pending p {
+	margin: 0;
+	font-size: 14px;
+	color: #1e40af;
+}
+
+/* Cancelled — amber */
+.iftp-cf7-runtime-warning.iftp-warn-cancel {
+	background: #fffbeb;
+	border-color: #fde68a;
+}
+
+.iftp-cf7-runtime-warning.iftp-warn-cancel p {
+	margin: 0;
+	font-size: 14px;
+	color: #92400e;
+}
+
+/* Error / failed — red */
+.iftp-cf7-runtime-warning.iftp-warn-error {
+	background: #fff5f4;
+	border-color: #f0b8b4;
+}
+
+.iftp-cf7-runtime-warning.iftp-warn-error p {
+	margin: 0;
+	font-size: 14px;
+	color: #7f1d1d;
+}
+
+/* Icons on status message paragraphs */
+.iftp-msg-pending::before,
+.iftp-msg-cancel::before,
+.iftp-msg-error::before {
+	display: inline-block;
+	margin-right: 6px;
+	font-style: normal;
+	font-weight: 700;
+}
+
+.iftp-msg-pending::before { content: 'ℹ'; }
+.iftp-msg-cancel::before  { content: '⚠'; }
+.iftp-msg-error::before   { content: '✕'; }
+
+/* Spinner overlay (injected by JS) */
+.iftp-cf7-spinner-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgb(255 255 255 / 75%);
+	z-index: 999998;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Payment modal overlay (injected by JS) */
+.iftp-cf7-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgb(15 23 42 / 55%);
+	display: flex;
+	z-index: 2147483647;
+}
+
+.iftp-cf7-modal {
+	position: relative;
+	width: 100vw;
+	height: 100vh;
+	background: #fff;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.iftp-cf7-modal-header {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 16px 24px;
+	background: #fef3c7;
+	border-bottom: 1px solid #fcd34d;
+	flex-shrink: 0;
+}
+
+.iftp-cf7-iframe {
+	flex: 1;
+	border: none;
+	width: 100%;
+}
+
+/* Misconfigured state */
+.iftp-cf7-is-misconfigured .iftp-cf7-pay-button {
+	display: none;
+}
+
