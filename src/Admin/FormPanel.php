@@ -18,10 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class FormPanel {
 
 	public function add_panel( array $panels ): array {
-		$panels['ifthenpay-panel'] = [
+		$panels['ifthenpay-panel'] = array(
 			'title'   => __( 'ifthenpay Payment Gateway', 'ifthenpay-payments-for-contactform7' ),
 			'content' => $this->render_panel_content(),
-		];
+		);
 		return $panels;
 	}
 
@@ -38,8 +38,8 @@ final class FormPanel {
 
 		$enabled       = ! empty( $config['enabled'] );
 		$amount_source = isset( $config['amount_source'] ) ? (string) $config['amount_source'] : 'fixed';
-		$amount_fixed  = isset( $config['amount_fixed'] )  ? (string) $config['amount_fixed']  : '';
-		$amount_field  = isset( $config['amount_field'] )  ? (string) $config['amount_field']  : '';
+		$amount_fixed  = isset( $config['amount_fixed'] ) ? (string) $config['amount_fixed'] : '';
+		$amount_field  = isset( $config['amount_field'] ) ? (string) $config['amount_field'] : '';
 
 		ob_start();
 		?>
@@ -150,17 +150,17 @@ final class FormPanel {
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified above.
 		$enabled       = ! empty( $_POST['iftp_cf7_enabled'] );
-		$amount_source = isset( $_POST['iftp_cf7_amount_source'] ) ? sanitize_key( wp_unslash( (string) $_POST['iftp_cf7_amount_source'] ) )   : 'fixed';
-		$amount_fixed  = isset( $_POST['iftp_cf7_amount_fixed'] )  ? sanitize_text_field( wp_unslash( (string) $_POST['iftp_cf7_amount_fixed'] ) ) : '';
-		$amount_field  = isset( $_POST['iftp_cf7_amount_field'] )  ? sanitize_text_field( wp_unslash( (string) $_POST['iftp_cf7_amount_field'] ) ) : '';
+		$amount_source = isset( $_POST['iftp_cf7_amount_source'] ) ? sanitize_key( wp_unslash( (string) $_POST['iftp_cf7_amount_source'] ) ) : 'fixed';
+		$amount_fixed  = isset( $_POST['iftp_cf7_amount_fixed'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['iftp_cf7_amount_fixed'] ) ) : '';
+		$amount_field  = isset( $_POST['iftp_cf7_amount_field'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['iftp_cf7_amount_field'] ) ) : '';
 		// phpcs:enable
 
-		$config = [
+		$config = array(
 			'enabled'       => $enabled,
-			'amount_source' => in_array( $amount_source, [ 'fixed', 'field' ], true ) ? $amount_source : 'fixed',
+			'amount_source' => in_array( $amount_source, array( 'fixed', 'field' ), true ) ? $amount_source : 'fixed',
 			'amount_fixed'  => is_numeric( $amount_fixed ) ? number_format( (float) $amount_fixed, 2, '.', '' ) : '',
 			'amount_field'  => $amount_field,
-		];
+		);
 
 		update_option( 'iftp_cf7_form_config_' . $form_id, $config, false );
 	}
@@ -168,9 +168,9 @@ final class FormPanel {
 	public function ajax_save_form_config(): void {
 		check_ajax_referer( 'iftp_cf7_form_config', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'ifthenpay-payments-for-contactform7' ) ], 403 );
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'ifthenpay-payments-for-contactform7' ) ), 403 );
 		}
 
-		wp_send_json_success( [ 'message' => __( 'Use the form Save button.', 'ifthenpay-payments-for-contactform7' ) ] );
+		wp_send_json_success( array( 'message' => __( 'Use the form Save button.', 'ifthenpay-payments-for-contactform7' ) ) );
 	}
 }

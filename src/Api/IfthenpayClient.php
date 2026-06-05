@@ -26,7 +26,7 @@ final class IfthenpayClient {
 			return false;
 		}
 
-		$url = add_query_arg( [ 'boKey' => $backoffice_key ], self::API_BASE . '/gateway/get' );
+		$url = add_query_arg( array( 'boKey' => $backoffice_key ), self::API_BASE . '/gateway/get' );
 
 		try {
 			$data = self::request( 'GET', $url );
@@ -41,18 +41,18 @@ final class IfthenpayClient {
 	}
 
 	public static function build_method_catalog_from_raw( array $raw_methods ): array {
-		$catalog = [];
+		$catalog = array();
 		foreach ( $raw_methods as $method ) {
 			if ( ! is_array( $method ) || empty( $method['Entity'] ) || empty( $method['IsVisible'] ) ) {
 				continue;
 			}
-			$catalog[] = [
+			$catalog[] = array(
 				'entity'    => strtoupper( (string) $method['Entity'] ),
 				'label'     => isset( $method['Method'] ) ? (string) $method['Method'] : (string) $method['Entity'],
-				'logo'      => isset( $method['SmallImageUrl'] )     ? (string) $method['SmallImageUrl']     : '',
+				'logo'      => isset( $method['SmallImageUrl'] ) ? (string) $method['SmallImageUrl'] : '',
 				'logo_dark' => isset( $method['SmallImageUrlDark'] ) ? (string) $method['SmallImageUrlDark'] : '',
 				'position'  => (int) ( $method['Position'] ?? 0 ),
-			];
+			);
 		}
 		return $catalog;
 	}
@@ -61,12 +61,12 @@ final class IfthenpayClient {
 		try {
 			return self::build_method_catalog_from_raw( self::get_available_methods() );
 		} catch ( \Throwable ) {
-			return [];
+			return array();
 		}
 	}
 
 	public function get_gateway_keys( string $type = '' ): array {
-		$args = [ 'boKey' => $this->backoffice_key ];
+		$args = array( 'boKey' => $this->backoffice_key );
 		$type = sanitize_text_field( $type );
 		if ( $type !== '' ) {
 			$args['Type'] = $type;
@@ -74,31 +74,31 @@ final class IfthenpayClient {
 		return self::request( 'GET', add_query_arg( $args, self::API_BASE . '/gateway/get' ) );
 	}
 
-	public static function fetch_gateway_catalog( string $backoffice_key, array $raw_methods = [] ): array {
+	public static function fetch_gateway_catalog( string $backoffice_key, array $raw_methods = array() ): array {
 		$backoffice_key = trim( sanitize_text_field( $backoffice_key ) );
 		if ( $backoffice_key === '' ) {
-			return [];
+			return array();
 		}
 		try {
 			$catalog = ( new self( $backoffice_key ) )->get_gateway_catalog( $raw_methods );
 		} catch ( \Throwable ) {
-			return [];
+			return array();
 		}
-		return is_array( $catalog ) ? $catalog : [];
+		return is_array( $catalog ) ? $catalog : array();
 	}
 
-	public function get_gateway_catalog( array $raw_methods = [] ): array {
+	public function get_gateway_catalog( array $raw_methods = array() ): array {
 		$rows = $this->get_gateway_keys( IFTP_CF7_GATEWAY_TYPE );
 
 		if ( empty( $raw_methods ) ) {
 			try {
 				$raw_methods = self::get_available_methods();
 			} catch ( RuntimeException ) {
-				$raw_methods = [];
+				$raw_methods = array();
 			}
 		}
 
-		$catalog = [];
+		$catalog = array();
 		foreach ( $rows as $row ) {
 			if ( empty( $row['GatewayKey'] ) ) {
 				continue;
@@ -107,20 +107,20 @@ final class IfthenpayClient {
 			if ( $key === '' ) {
 				continue;
 			}
-			$alias         = sanitize_text_field( $row['Alias'] ?? '' );
-			$catalog[$key] = [
+			$alias           = sanitize_text_field( $row['Alias'] ?? '' );
+			$catalog[ $key ] = array(
 				'gateway_key' => $key,
 				'alias'       => $alias,
 				'label'       => $alias !== '' ? $alias : $key,
 				'methods'     => self::build_gateway_method_accounts( $row, $raw_methods ),
-			];
+			);
 		}
 		return $catalog;
 	}
 
 	public static function get_payment_status( string $transaction_id ): array {
 		$url = add_query_arg(
-			[ 'transactionId' => $transaction_id ],
+			array( 'transactionId' => $transaction_id ),
 			self::API_BASE . '/gateway/transaction/status/get'
 		);
 		return self::request( 'GET', $url );
@@ -131,15 +131,15 @@ final class IfthenpayClient {
 		return self::request(
 			'POST',
 			$url,
-			[
-				'headers' => [ 'Content-Type' => 'application/json' ],
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
 				'body'    => wp_json_encode( $payload ),
-			]
+			)
 		);
 	}
 
 	private static function build_gateway_method_accounts( array $row, array $available_methods ): array {
-		$methods = [];
+		$methods = array();
 		foreach ( $available_methods as $method ) {
 			if ( empty( $method['IsVisible'] ) || empty( $method['Method'] ) ) {
 				continue;
@@ -152,12 +152,12 @@ final class IfthenpayClient {
 			if ( $value === '' ) {
 				continue;
 			}
-			$methods[$key] = [
+			$methods[ $key ] = array(
 				'method'     => $method['Method'],
 				'entity'     => $key,
 				'account'    => $value,
 				'is_visible' => (bool) $method['IsVisible'],
-			];
+			);
 		}
 		return $methods;
 	}
@@ -166,17 +166,24 @@ final class IfthenpayClient {
 		$entity = strtoupper( (string) ( $method['Entity'] ?? '' ) );
 		$label  = strtoupper( (string) ( $method['Method'] ?? '' ) );
 
-		$candidates = array_values( array_unique( array_filter(
-			array_map( 'strval', [
-				$method['Entity'] ?? '',
-				$method['Method'] ?? '',
-				$entity,
-				$label,
-				strtolower( (string) ( $method['Entity'] ?? '' ) ),
-				strtolower( (string) ( $method['Method'] ?? '' ) ),
-			] ),
-			static fn( string $k ): bool => trim( $k ) !== ''
-		) ) );
+		$candidates = array_values(
+			array_unique(
+				array_filter(
+					array_map(
+						'strval',
+						array(
+							$method['Entity'] ?? '',
+							$method['Method'] ?? '',
+							$entity,
+							$label,
+							strtolower( (string) ( $method['Entity'] ?? '' ) ),
+							strtolower( (string) ( $method['Method'] ?? '' ) ),
+						)
+					),
+					static fn( string $k ): bool => trim( $k ) !== ''
+				)
+			)
+		);
 
 		if ( $entity === 'MB' || $label === 'MULTIBANCO' ) {
 			$candidates[] = 'Multibanco';
@@ -188,7 +195,7 @@ final class IfthenpayClient {
 			if ( ! array_key_exists( $candidate, $row ) ) {
 				continue;
 			}
-			$value = sanitize_text_field( (string) $row[$candidate] );
+			$value = sanitize_text_field( (string) $row[ $candidate ] );
 			if ( trim( $value ) !== '' ) {
 				return $value;
 			}
@@ -199,8 +206,14 @@ final class IfthenpayClient {
 	/**
 	 * @throws RuntimeException
 	 */
-	private static function request( string $method, string $url, array $args = [], int $timeout = 20 ): array {
-		$args = wp_parse_args( $args, [ 'timeout' => $timeout, 'sslverify' => true ] );
+	private static function request( string $method, string $url, array $args = array(), int $timeout = 20 ): array {
+		$args = wp_parse_args(
+			$args,
+			array(
+				'timeout'   => $timeout,
+				'sslverify' => true,
+			)
+		);
 
 		$response = strtoupper( $method ) === 'POST'
 			? wp_remote_post( $url, $args )
@@ -237,6 +250,6 @@ final class IfthenpayClient {
 			$data = is_string( $data['d'] ) ? json_decode( $data['d'], true ) : $data['d'];
 		}
 
-		return is_array( $data ) ? $data : [ 'data' => $data ];
+		return is_array( $data ) ? $data : array( 'data' => $data );
 	}
 }

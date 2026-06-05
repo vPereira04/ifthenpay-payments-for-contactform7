@@ -1,6 +1,6 @@
 === ifthenpay | Payments for Contact Form 7 ===
 Contributors: ifthenpay
-Tags: contact-form-7, ifthenpay, payment, multibanco, mbway, payshop
+Tags: contact-form-7, ifthenpay, payment, mbway, payshop
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.2

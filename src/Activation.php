@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Activation {
 
-	private const DB_VERSION     = '1.3';
+	private const DB_VERSION     = '1.4';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
 	public static function activate(): void {
@@ -32,8 +32,8 @@ final class Activation {
 	private static function create_table(): void {
 		global $wpdb;
 
-		$table      = $wpdb->prefix . IFTP_CF7_TABLE;
-		$charset    = $wpdb->get_charset_collate();
+		$table   = $wpdb->prefix . IFTP_CF7_TABLE;
+		$charset = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE {$table} (
 			id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -48,16 +48,13 @@ final class Activation {
 			payment_url  VARCHAR(500)    NOT NULL DEFAULT '',
 			return_url   VARCHAR(500)    NOT NULL DEFAULT '',
 			form_data    LONGTEXT        NOT NULL,
-			modal_token  VARCHAR(64)     NOT NULL DEFAULT '',
 			request_id   VARCHAR(100)    DEFAULT NULL,
-			is_read      TINYINT(1)      NOT NULL DEFAULT 0,
 			created_at   DATETIME        NOT NULL,
 			updated_at   DATETIME        NOT NULL,
 			PRIMARY KEY  (id),
 			KEY          idx_form_id       (form_id),
 			KEY          idx_transaction_id (transaction_id(20)),
-			KEY          idx_payment_status (payment_status),
-			KEY          idx_modal_token   (modal_token(32))
+			KEY          idx_payment_status (payment_status)
 		) {$charset};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

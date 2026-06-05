@@ -39,9 +39,9 @@ final class GatewayEndpoint {
 
 
 	public static function register(): void {
-		add_action( 'init',                [ self::class, 'add_rewrite_rule' ] );
-		add_filter( 'query_vars',          [ self::class, 'add_query_vars' ] );
-		add_action( 'template_redirect',   [ self::class, 'handle' ], 1 );
+		add_action( 'init', array( self::class, 'add_rewrite_rule' ) );
+		add_filter( 'query_vars', array( self::class, 'add_query_vars' ) );
+		add_action( 'template_redirect', array( self::class, 'handle' ), 1 );
 	}
 
 	public static function add_rewrite_rule(): void {
@@ -65,34 +65,33 @@ final class GatewayEndpoint {
 		if ( ! get_query_var( self::QUERY_VAR ) ) {
 			return;
 		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- gateway callbacks are not user-initiated; validated via apk.
-		if ( sanitize_key( $_REQUEST['callback'] ?? '' ) !== self::CALLBACK_ID ) {
+		// placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended -- gateway callbacks are not user-initiated; validated via apk.
+		if ( sanitize_key( wp_unslash( $_REQUEST['callback'] ?? '' ) ) !== self::CALLBACK_ID ) {
 			return;
 		}
 
-		$method     = strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) );
+		$request_method   = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : 'GET';
+		$method           = strtoupper( (string) $request_method );
 
-		$entry_id   = absint( $_REQUEST['ref'] ?? $_REQUEST['id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$apk        = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['apk'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$entry_id = absint( wp_unslash( $_REQUEST['ref'] ?? $_REQUEST['id'] ?? 0 ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$apk      = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['apk'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
-		$val        = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['val'] ?? $_REQUEST['amount'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$status     = sanitize_key( $_REQUEST['status'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$ret        = esc_url_raw( wp_unslash( (string) ( $_REQUEST['ret'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$mtd        = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['mtd'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$val    = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['val'] ?? $_REQUEST['amount'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$status = sanitize_key( wp_unslash( $_REQUEST['status'] ?? '' ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$ret    = esc_url_raw( wp_unslash( (string) ( $_REQUEST['ret'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$mtd    = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['mtd'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
-		$req        = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['req'] ?? $_REQUEST['requestId'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$req    = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['req'] ?? $_REQUEST['requestId'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$txn_id = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['TransactionID'] ?? $_REQUEST['transactionId'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
-		$error_msg  = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['error'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$error_msg = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['error'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 		if ( $status === '' && $error_msg !== '' ) {
 			$status = 'error';
 		}
 
-
 		if ( $ret !== '' && strpos( $ret, home_url() ) !== 0 ) {
 			$ret = '';
 		}
-
 
 		$entry  = null;
 		$anchor = '';
@@ -115,32 +114,40 @@ final class GatewayEndpoint {
 		if ( $method === 'POST' ) {
 
 			self::handle_webhook( $entry_id, $apk, $mtd, $req );
-			echo 'OK'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo 'OK'; // placeholderphpcs:ignore(try fixing) WordPress.Security.EscapeOutput.OutputNotEscaped
 			exit;
 		}
 
-
 		if ( $apk !== '' && $val !== '' && $status === '' ) {
 
-			self::process_success( $entry_id, $apk, $mtd, $req );
-			wp_safe_redirect( add_query_arg( [
-				'iftp_cf7_pay'   => 'success',
-				'iftp_cf7_entry' => $entry_id,
-			], $ret ) . $anchor );
+			self::process_success( $entry_id, $apk, $mtd, $req, $txn_id );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'iftp_cf7_pay'   => 'success',
+						'iftp_cf7_entry' => $entry_id,
+					),
+					$ret
+				) . $anchor
+			);
 			exit;
 		}
 
 		if ( $status !== '' ) {
 
 			$new_status = $status === 'cancel' ? 'cancelled' : 'failed';
-			self::process_other( $entry_id, $new_status );
-			wp_safe_redirect( add_query_arg( [
-				'iftp_cf7_pay'   => $status,
-				'iftp_cf7_entry' => $entry_id,
-			], $ret ) . $anchor );
+			self::process_other( $entry_id, $new_status, $txn_id, $mtd, $req );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'iftp_cf7_pay'   => $status,
+						'iftp_cf7_entry' => $entry_id,
+					),
+					$ret
+				) . $anchor
+			);
 			exit;
 		}
-
 
 		wp_safe_redirect( home_url( '/' ) );
 		exit;
@@ -148,7 +155,7 @@ final class GatewayEndpoint {
 
 
 
-	private static function process_success( int $entry_id, string $apk, string $method = '', string $request_id = '' ): void {
+	private static function process_success( int $entry_id, string $apk, string $method = '', string $request_id = '', string $txn_id = '' ): void {
 		if ( $entry_id <= 0 ) {
 			return;
 		}
@@ -159,21 +166,38 @@ final class GatewayEndpoint {
 		}
 
 		$repo = new EntryRepository();
+		if ( $txn_id === '' ) {
+
+			$existing_entry = $repo->get_by_id( $entry_id );
+			if ( $existing_entry !== null && $existing_entry->transaction_id !== '' ) {
+				$txn_id = $existing_entry->transaction_id;
+			}
+		}
 		$repo->update_transaction(
 			$entry_id,
-			'',
+			$txn_id,
 			$method,
 			'completed',
 			$request_id !== '' ? $request_id : null
 		);
 	}
 
-	private static function process_other( int $entry_id, string $status ): void {
+	private static function process_other( int $entry_id, string $status, string $txn_id = '', string $method = '', string $request_id = '' ): void {
 		if ( $entry_id <= 0 ) {
 			return;
 		}
 		$repo = new EntryRepository();
-		$repo->update_status( $entry_id, $status );
+		if ( $txn_id !== '' || $method !== '' || $request_id !== '' ) {
+			$repo->update_transaction(
+				$entry_id,
+				$txn_id,
+				$method,
+				$status,
+				$request_id !== '' ? $request_id : null
+			);
+		} else {
+			$repo->update_status( $entry_id, $status );
+		}
 	}
 
 	private static function handle_webhook( int $entry_id, string $apk, string $method_get = '', string $req_get = '' ): void {
@@ -192,10 +216,9 @@ final class GatewayEndpoint {
 			return;
 		}
 
-
-		$method     = sanitize_text_field( wp_unslash( (string) ( $_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$txn_id     = sanitize_text_field( wp_unslash( (string) ( $_POST['TransactionID'] ?? $_POST['transactionId'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$request_id = sanitize_text_field( wp_unslash( (string) ( $_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$method     = sanitize_text_field( wp_unslash( (string) ( $_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
+		$txn_id     = sanitize_text_field( wp_unslash( (string) ( $_POST['TransactionID'] ?? $_POST['transactionId'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
+		$request_id = sanitize_text_field( wp_unslash( (string) ( $_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
 
 		$repo->update_transaction(
 			$entry->id,
@@ -227,13 +250,13 @@ final class GatewayEndpoint {
 	 */
 	public static function build_success_url( int $entry_id, float $amount, string $gateway_key, string $return_url ): string {
 		$url = add_query_arg(
-			[
+			array(
 				'callback' => self::CALLBACK_ID,
 				'ref'      => $entry_id,
-				'apk'      => base64_encode( $gateway_key ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+				'apk'      => base64_encode( $gateway_key ), // placeholderphpcs:ignore(try fixing) WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 				'val'      => number_format( $amount, 2, '.', '' ),
 				'ret'      => $return_url,
-			],
+			),
 			home_url( '/' . self::SLUG )
 		);
 
@@ -242,12 +265,12 @@ final class GatewayEndpoint {
 
 	public static function build_status_url( int $entry_id, string $status, string $return_url ): string {
 		return add_query_arg(
-			[
+			array(
 				'callback' => self::CALLBACK_ID,
 				'ref'      => $entry_id,
 				'status'   => $status,
 				'ret'      => $return_url,
-			],
+			),
 			home_url( '/' . self::SLUG )
 		);
 	}

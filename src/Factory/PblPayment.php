@@ -22,7 +22,7 @@ use Ifthenpay\CF7\Repository\DTO\EntryDto;
  *  1. Reserve an entry in the DB (pending state).
  *  2. Build the gateway URLs with the reserved entry ID.
  *  3. Call IfthenpayApiFacade::create_payment() (the Facade handles the HTTP call).
- *  4. Persist the payment URL and modal token to the entry.
+ *  4. Persist the payment URL to the entry.
  *  5. Return an immutable PaymentResult.
  */
 final class PblPayment implements Payment {
@@ -34,8 +34,7 @@ final class PblPayment implements Payment {
 	}
 
 	public function process(): PaymentResult {
-		$token    = wp_generate_password( 48, false, false );
-		$entry_id = $this->reserve_entry( $token );
+		$entry_id = $this->reserve_entry();
 
 		if ( $entry_id <= 0 ) {
 			return PaymentResult::failure( 'Could not reserve a payment slot.' );
@@ -48,19 +47,21 @@ final class PblPayment implements Payment {
 			$this->data->gateway_key
 		);
 
-		$payload = IfthenpayPayload::build_pay_by_link_payload( [
-			'id'              => (string) $entry_id,
-			'amount'          => $this->data->amount,
-			'description'     => $this->data->description !== '' ? $this->data->description : 'Payment',
-			'accounts'        => $this->data->accounts_string,
-			'success_url'     => $gateway_urls['success_url'],
-			'error_url'       => $gateway_urls['error_url'],
-			'cancel_url'      => $gateway_urls['cancel_url'],
-			'locale'          => $this->data->locale,
-			'selected_method' => $this->data->selected_method_code,
-			'email'           => $this->data->customer_email,
-			'name'            => $this->data->customer_name,
-		] );
+		$payload = IfthenpayPayload::build_pay_by_link_payload(
+			array(
+				'id'              => (string) $entry_id,
+				'amount'          => $this->data->amount,
+				'description'     => $this->data->description !== '' ? $this->data->description : 'Payment',
+				'accounts'        => $this->data->accounts_string,
+				'success_url'     => $gateway_urls['success_url'],
+				'error_url'       => $gateway_urls['error_url'],
+				'cancel_url'      => $gateway_urls['cancel_url'],
+				'locale'          => $this->data->locale,
+				'selected_method' => $this->data->selected_method_code,
+				'email'           => $this->data->customer_email,
+				'name'            => $this->data->customer_name,
+			)
+		);
 
 		$response = IfthenpayApiFacade::create_payment( $this->data->gateway_key, $payload );
 
@@ -71,31 +72,31 @@ final class PblPayment implements Payment {
 
 		$payment_url = esc_url_raw( (string) $response['RedirectUrl'] );
 
-		$this->repo->update_payment_url( $entry_id, $payment_url, $token );
+		$this->repo->update_payment_url( $entry_id, $payment_url );
 
-		return PaymentResult::success( $entry_id, $payment_url, $token );
+		return PaymentResult::success( $entry_id, $payment_url );
 	}
 
-	private function reserve_entry( string $token ): int {
+	private function reserve_entry(): int {
 		return $this->repo->create(
-			EntryDto::from( [
-				'id'             => 0,
-				'form_id'        => $this->data->form_id,
-				'form_title'     => $this->data->form_title,
-				'customer_name'  => $this->data->customer_name,
-				'customer_email' => $this->data->customer_email,
-				'amount'         => $this->data->amount,
-				'payment_method' => '',
-				'transaction_id' => '',
-				'payment_status' => 'pending',
-				'payment_url'    => '',
-				'return_url'     => $this->data->base_url,
-				'form_data'      => $this->data->form_data_json,
-				'modal_token'    => $token,
-				'is_read'        => 0,
-				'created_at'     => '',
-				'updated_at'     => '',
-			] )
+			EntryDto::from(
+				array(
+					'id'             => 0,
+					'form_id'        => $this->data->form_id,
+					'form_title'     => $this->data->form_title,
+					'customer_name'  => $this->data->customer_name,
+					'customer_email' => $this->data->customer_email,
+					'amount'         => $this->data->amount,
+					'payment_method' => '',
+					'transaction_id' => '',
+					'payment_status' => 'pending',
+					'payment_url'    => '',
+					'return_url'     => $this->data->base_url,
+					'form_data'      => $this->data->form_data_json,
+					'created_at'     => '',
+					'updated_at'     => '',
+				)
+			)
 		);
 	}
 }

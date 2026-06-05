@@ -37,45 +37,55 @@ final class IfthenpayApiFacade {
 	public static function connect( string $backoffice_key ): array {
 		$backoffice_key = trim( sanitize_text_field( $backoffice_key ) );
 		if ( $backoffice_key === '' ) {
-			return [ 'ok' => false, 'gateways' => [], 'methods' => [], 'error' => 'empty_key' ];
+			return array(
+				'ok'       => false,
+				'gateways' => array(),
+				'methods'  => array(),
+				'error'    => 'empty_key',
+			);
 		}
 
 		try {
-			$raw_methods = IfthenpayClient::get_available_methods();
+			$raw_methods     = IfthenpayClient::get_available_methods();
 			$gateway_catalog = IfthenpayClient::fetch_gateway_catalog( $backoffice_key, $raw_methods );
 			$method_catalog  = IfthenpayClient::build_method_catalog_from_raw( $raw_methods );
 
 			update_option( self::OPTION_GATEWAY_CATALOG, $gateway_catalog, false );
 			update_option( self::OPTION_METHOD_CATALOG, $method_catalog, false );
 
-			return [
+			return array(
 				'ok'       => true,
 				'gateways' => $gateway_catalog,
 				'methods'  => $method_catalog,
 				'error'    => '',
-			];
+			);
 		} catch ( \Throwable $e ) {
-			return [ 'ok' => false, 'gateways' => [], 'methods' => [], 'error' => $e->getMessage() ];
+			return array(
+				'ok'       => false,
+				'gateways' => array(),
+				'methods'  => array(),
+				'error'    => $e->getMessage(),
+			);
 		}
 	}
 
 
 
 	public static function get_gateway_catalog(): array {
-		$catalog = get_option( self::OPTION_GATEWAY_CATALOG, [] );
-		return is_array( $catalog ) ? $catalog : [];
+		$catalog = get_option( self::OPTION_GATEWAY_CATALOG, array() );
+		return is_array( $catalog ) ? $catalog : array();
 	}
 
 	public static function get_method_catalog(): array {
-		$catalog = get_option( self::OPTION_METHOD_CATALOG, [] );
-		return is_array( $catalog ) ? $catalog : [];
+		$catalog = get_option( self::OPTION_METHOD_CATALOG, array() );
+		return is_array( $catalog ) ? $catalog : array();
 	}
 
 	public static function get_methods_for_gateway( string $gateway_key ): array {
 		$catalog = self::get_gateway_catalog();
-		return isset( $catalog[$gateway_key]['methods'] ) && is_array( $catalog[$gateway_key]['methods'] )
-			? $catalog[$gateway_key]['methods']
-			: [];
+		return isset( $catalog[ $gateway_key ]['methods'] ) && is_array( $catalog[ $gateway_key ]['methods'] )
+			? $catalog[ $gateway_key ]['methods']
+			: array();
 	}
 
 

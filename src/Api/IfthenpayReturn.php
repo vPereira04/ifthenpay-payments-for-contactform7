@@ -11,9 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class IfthenpayReturn {
 
 	public static function extract_payment_method_from_result( array $result ): string {
-		foreach ( [ 'PaymentMethod', 'Method', 'Entity', 'paymentMethod', 'method', 'entity' ] as $key ) {
-			if ( ! empty( $result[$key] ) ) {
-				return strtoupper( sanitize_text_field( (string) $result[$key] ) );
+		foreach ( array( 'PaymentMethod', 'Method', 'Entity', 'paymentMethod', 'method', 'entity' ) as $key ) {
+			if ( ! empty( $result[ $key ] ) ) {
+				return strtoupper( sanitize_text_field( (string) $result[ $key ] ) );
 			}
 		}
 		return '';
@@ -21,22 +21,22 @@ final class IfthenpayReturn {
 
 	public static function is_successful_callback( array $payload ): bool {
 		$status = strtoupper( sanitize_text_field( (string) ( $payload['status'] ?? $payload['s'] ?? '' ) ) );
-		return in_array( $status, [ '1', 'OK', 'SUCCESS', 'PAID' ], true );
+		return in_array( $status, array( '1', 'OK', 'SUCCESS', 'PAID' ), true );
 	}
 
 	public static function get_callback_transaction_id( array $payload ): string {
-		foreach ( [ 'transactionId', 'transaction_id', 'TransactionId', 'id', 'requestId', 'request_id' ] as $key ) {
-			if ( ! empty( $payload[$key] ) ) {
-				return sanitize_text_field( (string) $payload[$key] );
+		foreach ( array( 'transactionId', 'transaction_id', 'TransactionId', 'id', 'requestId', 'request_id' ) as $key ) {
+			if ( ! empty( $payload[ $key ] ) ) {
+				return sanitize_text_field( (string) $payload[ $key ] );
 			}
 		}
 		return '';
 	}
 
 	public static function get_callback_entry_id( array $payload ): int {
-		foreach ( [ 'iftp_cf7_entry', 'entry_id', 'order_id', 'id' ] as $key ) {
-			if ( ! empty( $payload[$key] ) ) {
-				return absint( $payload[$key] );
+		foreach ( array( 'iftp_cf7_entry', 'entry_id', 'order_id', 'id' ) as $key ) {
+			if ( ! empty( $payload[ $key ] ) ) {
+				return absint( $payload[ $key ] );
 			}
 		}
 		return 0;

@@ -19,13 +19,13 @@ final class TagGenerator {
 		$generator->add(
 			'ifthenpay_payment',
 			__( 'ifthenpay Payment', 'ifthenpay-payments-for-contactform7' ),
-			[ $this, 'render' ],
-			[ 'version' => '2' ]
+			array( $this, 'render' ),
+			array( 'version' => '2' )
 		);
 	}
 
-	public function render( \WPCF7_ContactForm $_contact_form, array $args = [] ): void {
-		$args         = wp_parse_args( $args, [] );
+	public function render( \WPCF7_ContactForm $_contact_form, array $args = array() ): void {
+		$args         = wp_parse_args( $args, array() );
 		$content      = isset( $args['content'] ) ? (string) $args['content'] : '';
 		$default_text = __( 'Pay with ifthenpay', 'ifthenpay-payments-for-contactform7' );
 		?>

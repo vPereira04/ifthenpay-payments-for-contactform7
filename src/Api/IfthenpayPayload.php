@@ -14,23 +14,23 @@ final class IfthenpayPayload {
 		$id          = (string) ( $args['id'] ?? '' );
 		$description = sanitize_text_field( $args['description'] ?? '' );
 
-		$payload = [
+		$payload = array(
 			'id'          => $id,
 			'amount'      => self::format_amount( $args['amount'] ?? 0 ),
 			'description' => self::build_description( $id, $description ),
 			'accounts'    => (string) ( $args['accounts'] ?? '' ),
 			'success_url' => $args['success_url'] ?? '',
-			'error_url'   => $args['error_url']   ?? '',
-			'cancel_url'  => $args['cancel_url']  ?? '',
+			'error_url'   => $args['error_url'] ?? '',
+			'cancel_url'  => $args['cancel_url'] ?? '',
 			'otp'         => 'true',
 			'lang'        => self::map_locale_to_lang( (string) ( $args['locale'] ?? get_locale() ) ),
-		];
+		);
 
-		foreach ( [ 'selected_method', 'email', 'name', 'fields' ] as $field ) {
-			if ( empty( $args[$field] ) ) {
+		foreach ( array( 'selected_method', 'email', 'name', 'fields' ) as $field ) {
+			if ( empty( $args[ $field ] ) ) {
 				continue;
 			}
-			$payload[$field] = $args[$field];
+			$payload[ $field ] = $args[ $field ];
 		}
 
 		return $payload;
@@ -52,23 +52,40 @@ final class IfthenpayPayload {
 		$endpoint_class = 'Ifthenpay\\CF7\\Payment\\GatewayEndpoint';
 
 		if ( class_exists( $endpoint_class ) ) {
-			return [
+			return array(
 				'success_url' => $endpoint_class::build_success_url( $entry_id, $amount, $gateway_key, $return_url ),
 				'cancel_url'  => $endpoint_class::build_status_url( $entry_id, 'cancel', $return_url ),
-				'error_url'   => $endpoint_class::build_status_url( $entry_id, 'error',  $return_url ),
-			];
+				'error_url'   => $endpoint_class::build_status_url( $entry_id, 'error', $return_url ),
+			);
 		}
 
-
-		return [
-			'success_url' => add_query_arg( [ 'iftp_cf7_pay' => 'success', 'iftp_cf7_entry' => $entry_id ], $return_url ),
-			'cancel_url'  => add_query_arg( [ 'iftp_cf7_pay' => 'cancel',  'iftp_cf7_entry' => $entry_id ], $return_url ),
-			'error_url'   => add_query_arg( [ 'iftp_cf7_pay' => 'error',   'iftp_cf7_entry' => $entry_id ], $return_url ),
-		];
+		return array(
+			'success_url' => add_query_arg(
+				array(
+					'iftp_cf7_pay'   => 'success',
+					'iftp_cf7_entry' => $entry_id,
+				),
+				$return_url
+			),
+			'cancel_url'  => add_query_arg(
+				array(
+					'iftp_cf7_pay'   => 'cancel',
+					'iftp_cf7_entry' => $entry_id,
+				),
+				$return_url
+			),
+			'error_url'   => add_query_arg(
+				array(
+					'iftp_cf7_pay'   => 'error',
+					'iftp_cf7_entry' => $entry_id,
+				),
+				$return_url
+			),
+		);
 	}
 
 	public static function build_accounts_string( array $methods_config ): string {
-		$parts = [];
+		$parts = array();
 		foreach ( $methods_config as $method ) {
 			if ( empty( $method['enabled'] ) ) {
 				continue;
@@ -85,16 +102,16 @@ final class IfthenpayPayload {
 	public static function get_gateway_methods_config( array $config, string $gateway_key ): array {
 		if (
 			$gateway_key !== '' &&
-			! empty( $config['gateway_methods'][$gateway_key]['methods'] ) &&
-			is_array( $config['gateway_methods'][$gateway_key]['methods'] )
+			! empty( $config['gateway_methods'][ $gateway_key ]['methods'] ) &&
+			is_array( $config['gateway_methods'][ $gateway_key ]['methods'] )
 		) {
-			return $config['gateway_methods'][$gateway_key]['methods'];
+			return $config['gateway_methods'][ $gateway_key ]['methods'];
 		}
-		return isset( $config['methods'] ) && is_array( $config['methods'] ) ? $config['methods'] : [];
+		return isset( $config['methods'] ) && is_array( $config['methods'] ) ? $config['methods'] : array();
 	}
 
 	public static function get_selected_method_code( array $config, array $methods_config ): string {
-		$map = [];
+		$map = array();
 		foreach ( self::get_available_methods_from_database() as $method ) {
 			if ( empty( $method['Entity'] ) || ! isset( $method['Position'] ) ) {
 				continue;
@@ -112,16 +129,16 @@ final class IfthenpayPayload {
 		}
 		if ( ! empty( $config['gateway_key'] ) ) {
 			$gk = (string) $config['gateway_key'];
-			if ( ! empty( $config['gateway_methods'][$gk]['default_method'] ) ) {
-				$entity = strtoupper( (string) $config['gateway_methods'][$gk]['default_method'] );
+			if ( ! empty( $config['gateway_methods'][ $gk ]['default_method'] ) ) {
+				$entity = strtoupper( (string) $config['gateway_methods'][ $gk ]['default_method'] );
 			}
 		}
 
-		if ( $entity !== '' && isset( $methods_config[$entity] ) && ! empty( $methods_config[$entity]['enabled'] ) ) {
-			return $map[$entity] ?? (string) reset( $map );
+		if ( $entity !== '' && isset( $methods_config[ $entity ] ) && ! empty( $methods_config[ $entity ]['enabled'] ) ) {
+			return $map[ $entity ] ?? (string) reset( $map );
 		}
 
-		$enabled = [];
+		$enabled = array();
 		foreach ( $methods_config as $ent => $data ) {
 			if ( ! empty( $data['enabled'] ) ) {
 				$enabled[] = strtoupper( (string) $ent );
@@ -135,8 +152,8 @@ final class IfthenpayPayload {
 		$best     = null;
 		$best_pos = PHP_INT_MAX;
 		foreach ( $enabled as $ent ) {
-			if ( isset( $map[$ent] ) ) {
-				$pos = (int) $map[$ent];
+			if ( isset( $map[ $ent ] ) ) {
+				$pos = (int) $map[ $ent ];
 				if ( $pos < $best_pos ) {
 					$best_pos = $pos;
 					$best     = $ent;
@@ -144,7 +161,7 @@ final class IfthenpayPayload {
 			}
 		}
 
-		return $best !== null ? $map[$best] : (string) reset( $map );
+		return $best !== null ? $map[ $best ] : (string) reset( $map );
 	}
 
 	public static function format_amount( float|int|string $amount, int $decimals = 2 ): string {
@@ -171,19 +188,19 @@ final class IfthenpayPayload {
 	}
 
 	private static function get_available_methods_from_database(): array {
-		$catalog = get_option( 'iftp_cf7_method_catalog', [] );
+		$catalog = get_option( 'iftp_cf7_method_catalog', array() );
 		if ( ! is_array( $catalog ) ) {
-			return [];
+			return array();
 		}
-		$methods = [];
+		$methods = array();
 		foreach ( $catalog as $method ) {
 			if ( ! is_array( $method ) || empty( $method['entity'] ) ) {
 				continue;
 			}
-			$methods[] = [
+			$methods[] = array(
 				'Entity'   => strtoupper( (string) $method['entity'] ),
 				'Position' => (string) ( $method['position'] ?? 0 ),
-			];
+			);
 		}
 		return $methods;
 	}

@@ -46,7 +46,7 @@ final class IfthenpayService extends \WPCF7_Service {
 	}
 
 	public function get_categories(): array {
-		return [ 'payments' ];
+		return array( 'payments' );
 	}
 
 	public function is_active(): bool {
@@ -67,7 +67,7 @@ final class IfthenpayService extends \WPCF7_Service {
 			return;
 		}
 
-		$method     = strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) );
+		$method     = strtoupper( sanitize_text_field( wp_unslash( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) );
 		$sub_action = '';
 
 		if ( $method === 'GET' ) {
@@ -81,9 +81,14 @@ final class IfthenpayService extends \WPCF7_Service {
 		}
 
 		if ( $sub_action === '' ) {
+			if ( $method === 'GET' ) {
+				$bk = Settings::get_backoffice_key();
+				if ( $bk !== '' ) {
+					IfthenpayApiFacade::connect( $bk );
+				}
+			}
 			return;
 		}
-
 
 		if ( $sub_action === 'reset' ) {
 			if ( $method === 'GET' ) {
@@ -109,7 +114,6 @@ final class IfthenpayService extends \WPCF7_Service {
 			return;
 		}
 
-
 		if ( $sub_action === 'connect_backoffice' ) {
 			check_admin_referer( 'iftp_cf7_service_setup' );
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -133,11 +137,15 @@ final class IfthenpayService extends \WPCF7_Service {
 				exit;
 			}
 
-			Settings::update_settings( [ 'backoffice_key' => $key, 'gateway_key' => '' ] );
+			Settings::update_settings(
+				array(
+					'backoffice_key' => $key,
+					'gateway_key'    => '',
+				)
+			);
 			wp_safe_redirect( $this->setup_url( 'message=connected' ) );
 			exit;
 		}
-
 
 		if ( $sub_action === 'save_config' ) {
 			check_admin_referer( 'iftp_cf7_service_setup' );
@@ -148,7 +156,6 @@ final class IfthenpayService extends \WPCF7_Service {
 			$gateway_key = isset( $_POST['gateway_key'] )
 				? sanitize_text_field( wp_unslash( (string) $_POST['gateway_key'] ) )
 				: '';
-
 
 			$default_method = isset( $_POST['default_method'] )
 				? strtoupper( sanitize_text_field( wp_unslash( (string) $_POST['default_method'] ) ) )
@@ -162,27 +169,29 @@ final class IfthenpayService extends \WPCF7_Service {
 				: 3;
 
 			$methods_raw = isset( $_POST['methods'] ) && is_array( $_POST['methods'] )
-				? (array) $_POST['methods']
-				: [];
+				? map_deep( wp_unslash( (array) $_POST['methods'] ), 'sanitize_text_field' )
+				: array();
 
 			$api_methods    = IfthenpayApiFacade::get_methods_for_gateway( $gateway_key );
-			$methods_config = [];
+			$methods_config = array();
 
 			foreach ( $api_methods as $entity => $m_data ) {
-				$entity_uc                  = strtoupper( (string) $entity );
-				$methods_config[$entity_uc] = [
-					'enabled' => ! empty( $methods_raw[$entity_uc]['enabled'] ),
+				$entity_uc                    = strtoupper( (string) $entity );
+				$methods_config[ $entity_uc ] = array(
+					'enabled' => ! empty( $methods_raw[ $entity_uc ]['enabled'] ),
 					'account' => sanitize_text_field( (string) ( $m_data['account'] ?? '' ) ),
-				];
+				);
 			}
 
-			Settings::update_settings( [
-				'gateway_key'    => $gateway_key,
-				'default_method' => $default_method,
-				'methods'        => $methods_config,
-				'description'    => $description,
-				'expire_days'    => $expire_days,
-			] );
+			Settings::update_settings(
+				array(
+					'gateway_key'    => $gateway_key,
+					'default_method' => $default_method,
+					'methods'        => $methods_config,
+					'description'    => $description,
+					'expire_days'    => $expire_days,
+				)
+			);
 
 			wp_safe_redirect( $this->setup_url( 'message=saved' ) );
 			exit;
@@ -194,8 +203,8 @@ final class IfthenpayService extends \WPCF7_Service {
 	public function display( $action = '' ): void {
 		$settings = Settings::get_settings();
 		$bk       = (string) ( $settings['backoffice_key'] ?? '' );
-		$message  = isset( $_GET['message'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			? sanitize_key( wp_unslash( (string) $_GET['message'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$message  = isset( $_GET['message'] ) // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+			? sanitize_key( wp_unslash( (string) $_GET['message'] ) ) // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 			: '';
 
 		$this->print_notice( $message );
@@ -210,9 +219,11 @@ final class IfthenpayService extends \WPCF7_Service {
 
 		if ( 'setup' !== $action ) {
 			echo '<p><a href="' . esc_url( $this->setup_url() ) . '" class="button">'
-				. esc_html( $this->is_active()
+				. esc_html(
+					$this->is_active()
 					? __( 'Manage integration', 'ifthenpay-payments-for-contactform7' )
-					: __( 'Setup integration', 'ifthenpay-payments-for-contactform7' ) )
+					: __( 'Setup integration', 'ifthenpay-payments-for-contactform7' )
+				)
 				. '</a></p>';
 			return;
 		}
@@ -244,13 +255,13 @@ final class IfthenpayService extends \WPCF7_Service {
 								id="iftp-backoffice-key"
 								name="backoffice_key"
 								class="regular-text code"
-								placeholder="XXXX-XXXX-XXXX-XXXX"
+								placeholder="Insert your backoffice key here!"
 								autocomplete="off"
 								maxlength="20"
 								required
 							/>
 							<p class="description">
-								<?php esc_html_e( 'Found in your ifthenpay Backoffice. Format: XXXX-XXXX-XXXX-XXXX.', 'ifthenpay-payments-for-contactform7' ); ?>
+								<?php esc_html_e( 'Found in your ifthenpay Backoffice', 'ifthenpay-payments-for-contactform7' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -266,23 +277,21 @@ final class IfthenpayService extends \WPCF7_Service {
 	/** @param array<string, mixed> $settings */
 	private function display_stage_2( array $settings ): void {
 		$bk             = (string) ( $settings['backoffice_key'] ?? '' );
-		$current_gk     = (string) ( $settings['gateway_key']    ?? '' );
+		$current_gk     = (string) ( $settings['gateway_key'] ?? '' );
 		$default_method = strtoupper( (string) ( $settings['default_method'] ?? '' ) );
-		$description    = (string) ( $settings['description']    ?? 'Payment' );
-		$expire_days    = (int)    ( $settings['expire_days']     ?? 3 );
-		$saved_methods  = (array)  ( $settings['methods']         ?? [] );
+		$description    = (string) ( $settings['description'] ?? 'Payment' );
+		$expire_days    = (int) ( $settings['expire_days'] ?? 3 );
+		$saved_methods  = (array) ( $settings['methods'] ?? array() );
 
 		$catalog    = IfthenpayApiFacade::get_gateway_catalog();
 		$method_cat = IfthenpayApiFacade::get_method_catalog();
 
-
 		$effective_gk = $current_gk !== '' ? $current_gk : (string) array_key_first( $catalog );
 
-
-		$label_map = [];
+		$label_map = array();
 		foreach ( $method_cat as $mc ) {
-			$ent              = strtoupper( (string) ( $mc['entity'] ?? '' ) );
-			$label_map[$ent]  = (string) ( $mc['label'] ?? $ent );
+			$ent               = strtoupper( (string) ( $mc['entity'] ?? '' ) );
+			$label_map[ $ent ] = (string) ( $mc['label'] ?? $ent );
 		}
 		?>
 		<form method="post" action="<?php echo esc_url( $this->setup_url() ); ?>" id="iftp-cf7-config-form">
@@ -335,31 +344,33 @@ final class IfthenpayService extends \WPCF7_Service {
 					<tr>
 						<th><?php esc_html_e( 'Payment Methods', 'ifthenpay-payments-for-contactform7' ); ?></th>
 						<td>
-							<?php foreach ( $catalog as $gk => $gw ) :
-								$api_methods = (array) ( $gw['methods'] ?? [] );
-							?>
+							<?php
+							foreach ( $catalog as $gk => $gw ) :
+								$api_methods = (array) ( $gw['methods'] ?? array() );
+								?>
 							<div class="iftp-gateway-methods"
 								data-gateway="<?php echo esc_attr( (string) $gk ); ?>"
 								style="display:<?php echo $effective_gk === (string) $gk ? '' : 'none'; ?>">
 
-								<?php foreach ( $api_methods as $entity => $m_data ) :
-									$entity_uc  = strtoupper( (string) $entity );
-									$m_label    = (string) ( $m_data['method'] ?? $entity_uc );
-									$m_account  = (string) ( $m_data['account'] ?? '' );
-									$logo       = '';
-									$logo_dark  = '';
+								<?php
+								foreach ( $api_methods as $entity => $m_data ) :
+									$entity_uc = strtoupper( (string) $entity );
+									$m_label   = (string) ( $m_data['method'] ?? $entity_uc );
+									$m_account = (string) ( $m_data['account'] ?? '' );
+									$logo      = '';
+									$logo_dark = '';
 									foreach ( $method_cat as $mc ) {
 										if ( strtoupper( (string) ( $mc['entity'] ?? '' ) ) === $entity_uc ) {
-											$logo      = (string) ( $mc['logo']      ?? '' );
+											$logo      = (string) ( $mc['logo'] ?? '' );
 											$logo_dark = (string) ( $mc['logo_dark'] ?? '' );
 											break;
 										}
 									}
 									$has_account = $m_account !== '';
-									$is_enabled  = $has_account && ! empty( $saved_methods[$entity_uc]['enabled'] );
-								?>
+									$is_enabled  = $has_account && ! empty( $saved_methods[ $entity_uc ]['enabled'] );
+									?>
 
-								<?php if ( $has_account ) : ?>
+									<?php if ( $has_account ) : ?>
 								<div class="iftp-method-item" data-entity="<?php echo esc_attr( $entity_uc ); ?>">
 									<label class="iftp-method-label">
 										<input type="checkbox"
@@ -409,6 +420,44 @@ final class IfthenpayService extends \WPCF7_Service {
 
 								<?php endif; ?>
 								<?php endforeach; ?>
+
+								<?php
+								/* Methods not in this gateway at all — show greyed out with Activate */
+								$gateway_entity_keys = array_map( 'strtoupper', array_keys( $api_methods ) );
+								foreach ( $method_cat as $mc ) :
+									$mc_entity = strtoupper( (string) ( $mc['entity'] ?? '' ) );
+									if ( $mc_entity === '' || in_array( $mc_entity, $gateway_entity_keys, true ) ) {
+										continue;
+									}
+									$mc_label     = (string) ( $mc['label'] ?? $mc_entity );
+									$mc_logo      = (string) ( $mc['logo'] ?? '' );
+									$mc_logo_dark = (string) ( $mc['logo_dark'] ?? '' );
+									?>
+								<div class="iftp-method-item iftp-method-item--inactive"
+									data-entity="<?php echo esc_attr( $mc_entity ); ?>">
+									<div class="iftp-method-disabled-layer">
+										<?php if ( $mc_logo !== '' ) : ?>
+										<img src="<?php echo esc_url( $mc_logo ); ?>"
+											<?php if ( $mc_logo_dark !== '' ) : ?>
+											data-logo-dark="<?php echo esc_url( $mc_logo_dark ); ?>"
+											<?php endif; ?>
+											alt="<?php echo esc_attr( $mc_label ); ?>"
+											class="iftp-method-logo"
+										/>
+										<?php endif; ?>
+										<strong><?php echo esc_html( $mc_label ); ?></strong>
+									</div>
+									<div class="iftp-method-activate-overlay">
+										<button type="button"
+											class="button button-small ifthenpay-activate"
+											data-entity="<?php echo esc_attr( $mc_entity ); ?>"
+											data-gateway="<?php echo esc_attr( (string) $gk ); ?>">
+											<?php esc_html_e( 'Activate Method', 'ifthenpay-payments-for-contactform7' ); ?>
+										</button>
+									</div>
+								</div>
+								<?php endforeach; ?>
+
 							</div>
 							<?php endforeach; ?>
 						</td>
@@ -423,12 +472,12 @@ final class IfthenpayService extends \WPCF7_Service {
 						</th>
 						<td>
 							<?php
-							$default_options = [];
-							if ( isset( $catalog[$effective_gk]['methods'] ) ) {
-								foreach ( $catalog[$effective_gk]['methods'] as $entity => $m_data ) {
+							$default_options = array();
+							if ( isset( $catalog[ $effective_gk ]['methods'] ) ) {
+								foreach ( $catalog[ $effective_gk ]['methods'] as $entity => $m_data ) {
 									$entity_uc = strtoupper( (string) $entity );
-									if ( ! empty( $saved_methods[$entity_uc]['enabled'] ) ) {
-										$default_options[$entity_uc] = $label_map[$entity_uc] ?? $entity_uc;
+									if ( ! empty( $saved_methods[ $entity_uc ]['enabled'] ) ) {
+										$default_options[ $entity_uc ] = $label_map[ $entity_uc ] ?? $entity_uc;
 									}
 								}
 							}
@@ -495,14 +544,17 @@ final class IfthenpayService extends \WPCF7_Service {
 			<?php submit_button( __( 'Save Configuration', 'ifthenpay-payments-for-contactform7' ) ); ?>
 		</form>
 		<?php
-
 	}
 
 
 
 	private function setup_url( string $extra = '' ): string {
 		$base = add_query_arg(
-			[ 'page' => 'wpcf7-integration', 'service' => 'ifthenpay', 'action' => 'setup' ],
+			array(
+				'page'    => 'wpcf7-integration',
+				'service' => 'ifthenpay',
+				'action'  => 'setup',
+			),
 			admin_url( 'admin.php' )
 		);
 		if ( $extra !== '' ) {
@@ -515,12 +567,12 @@ final class IfthenpayService extends \WPCF7_Service {
 	private function reset_url(): string {
 		return wp_nonce_url(
 			add_query_arg(
-				[
+				array(
 					'page'        => 'wpcf7-integration',
 					'service'     => 'ifthenpay',
 					'action'      => 'setup',
 					'iftp_action' => 'reset',
-				],
+				),
 				admin_url( 'admin.php' )
 			),
 			'iftp_cf7_service_setup'
@@ -528,23 +580,23 @@ final class IfthenpayService extends \WPCF7_Service {
 	}
 
 	private function print_notice( string $message ): void {
-		$map = [
-			'connected'      => [ 'success', __( 'Backoffice Key connected. Configure your gateway below.', 'ifthenpay-payments-for-contactform7' ) ],
-			'saved'          => [ 'success', __( 'Settings saved.', 'ifthenpay-payments-for-contactform7' ) ],
-			'reset'          => [ 'info',    __( 'ifthenpay integration reset.', 'ifthenpay-payments-for-contactform7' ) ],
-			'invalid_key'    => [ 'error',   __( 'Invalid Backoffice Key. Expected XXXX-XXXX-XXXX-XXXX.', 'ifthenpay-payments-for-contactform7' ) ],
-			'connect_failed' => [ 'error',   __( 'Could not validate the Backoffice Key. Please try again.', 'ifthenpay-payments-for-contactform7' ) ],
-			'no_gateways'    => [ 'error',   __( 'No gateways found. Contact ifthenpay support.', 'ifthenpay-payments-for-contactform7' ) ],
-		];
+		$map = array(
+			'connected'      => array( 'success', __( 'Backoffice Key connected. Configure your gateway below.', 'ifthenpay-payments-for-contactform7' ) ),
+			'saved'          => array( 'success', __( 'Settings saved.', 'ifthenpay-payments-for-contactform7' ) ),
+			'reset'          => array( 'info', __( 'ifthenpay integration reset.', 'ifthenpay-payments-for-contactform7' ) ),
+			'invalid_key'    => array( 'error', __( 'Invalid Backoffice Key.', 'ifthenpay-payments-for-contactform7' ) ),
+			'connect_failed' => array( 'error', __( 'Could not validate the Backoffice Key. Please try again.', 'ifthenpay-payments-for-contactform7' ) ),
+			'no_gateways'    => array( 'error', __( 'No gateways found. Contact ifthenpay support.', 'ifthenpay-payments-for-contactform7' ) ),
+		);
 
-		if ( $message === '' || ! isset( $map[$message] ) ) {
+		if ( $message === '' || ! isset( $map[ $message ] ) ) {
 			return;
 		}
 
-		[ $type, $text ] = $map[$message];
+		[ $type, $text ] = $map[ $message ];
 
 		if ( function_exists( 'wp_admin_notice' ) ) {
-			wp_admin_notice( esc_html( $text ), [ 'type' => $type ] );
+			wp_admin_notice( esc_html( $text ), array( 'type' => $type ) );
 		} else {
 			printf( '<div class="notice notice-%s"><p>%s</p></div>', esc_attr( $type ), esc_html( $text ) );
 		}

@@ -22,8 +22,8 @@ final class Settings {
 
 	/** @return array<string, mixed> */
 	public static function get_settings(): array {
-		$raw = get_option( self::OPTION_KEY, [] );
-		return is_array( $raw ) ? $raw : [];
+		$raw = get_option( self::OPTION_KEY, array() );
+		return is_array( $raw ) ? $raw : array();
 	}
 
 	public static function get_backoffice_key(): string {
@@ -35,8 +35,8 @@ final class Settings {
 	}
 
 	public static function get_methods(): array {
-		$methods = self::get_settings()['methods'] ?? [];
-		return is_array( $methods ) ? $methods : [];
+		$methods = self::get_settings()['methods'] ?? array();
+		return is_array( $methods ) ? $methods : array();
 	}
 
 	public static function get_description(): string {
@@ -52,13 +52,13 @@ final class Settings {
 	 */
 	public static function get_anti_phishing_key(): string {
 		$gk = self::get_gateway_key();
-		return $gk !== '' ? base64_encode( $gk ) : ''; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		return $gk !== '' ? base64_encode( $gk ) : ''; // placeholderphpcs:ignore(try fixing) WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 
 	/** @return array<string, mixed> */
 	public static function get_form_config( int $form_id ): array {
-		$raw = get_option( 'iftp_cf7_form_config_' . $form_id, [] );
-		return is_array( $raw ) ? $raw : [];
+		$raw = get_option( 'iftp_cf7_form_config_' . $form_id, array() );
+		return is_array( $raw ) ? $raw : array();
 	}
 
 
@@ -75,26 +75,62 @@ final class Settings {
 
 
 
-	public function ajax_activate_payment_method(): void {
+	public function ajax_refresh_gateway_data(): void {
 		check_ajax_referer( 'iftp_cf7_settings', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'ifthenpay-payments-for-contactform7' ) ], 403 );
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'ifthenpay-payments-for-contactform7' ) ), 403 );
 		}
 
 		$gateway_key = isset( $_POST['gateway_key'] )
 			? sanitize_text_field( wp_unslash( (string) $_POST['gateway_key'] ) )
 			: '';
-		$method = isset( $_POST['method'] )
+
+		if ( $gateway_key === '' ) {
+			wp_send_json_error( array( 'message' => __( 'Missing gateway key.', 'ifthenpay-payments-for-contactform7' ) ), 400 );
+		}
+
+		$bk = self::get_backoffice_key();
+		if ( $bk === '' ) {
+			wp_send_json_error( array( 'message' => __( 'No backoffice key configured.', 'ifthenpay-payments-for-contactform7' ) ), 400 );
+		}
+
+		$result = \Ifthenpay\CF7\Api\IfthenpayApiFacade::connect( $bk );
+		if ( ! $result['ok'] ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to refresh gateway data from ifthenpay API.', 'ifthenpay-payments-for-contactform7' ) ), 500 );
+		}
+
+		$api_methods = \Ifthenpay\CF7\Api\IfthenpayApiFacade::get_methods_for_gateway( $gateway_key );
+		$method_cat  = \Ifthenpay\CF7\Api\IfthenpayApiFacade::get_method_catalog();
+
+		wp_send_json_success(
+			array(
+				'gateway_key'    => $gateway_key,
+				'api_methods'    => $api_methods,
+				'method_catalog' => $method_cat,
+			)
+		);
+	}
+
+	public function ajax_activate_payment_method(): void {
+		check_ajax_referer( 'iftp_cf7_settings', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'ifthenpay-payments-for-contactform7' ) ), 403 );
+		}
+
+		$gateway_key = isset( $_POST['gateway_key'] )
+			? sanitize_text_field( wp_unslash( (string) $_POST['gateway_key'] ) )
+			: '';
+		$method      = isset( $_POST['method'] )
 			? sanitize_text_field( wp_unslash( (string) $_POST['method'] ) )
 			: '';
 
 		if ( $gateway_key === '' || $method === '' ) {
-			wp_send_json_error( [ 'message' => __( 'Missing parameters.', 'ifthenpay-payments-for-contactform7' ) ], 400 );
+			wp_send_json_error( array( 'message' => __( 'Missing parameters.', 'ifthenpay-payments-for-contactform7' ) ), 400 );
 		}
 
 		$cooldown_key = 'iftp_cf7_activation_' . md5( $gateway_key . $method );
 		if ( get_transient( $cooldown_key ) ) {
-			wp_send_json_error( [ 'message' => __( 'Request already sent in the last 24 hours.', 'ifthenpay-payments-for-contactform7' ) ], 429 );
+			wp_send_json_error( array( 'message' => __( 'Request already sent in the last 24 hours.', 'ifthenpay-payments-for-contactform7' ) ), 429 );
 		}
 
 		$sent = \Ifthenpay\CF7\Api\IfthenpayEmailHelper::send_activation_email(
@@ -105,9 +141,9 @@ final class Settings {
 
 		if ( $sent ) {
 			set_transient( $cooldown_key, 1, DAY_IN_SECONDS );
-			wp_send_json_success( [ 'message' => __( 'Activation request sent to ifthenpay support.', 'ifthenpay-payments-for-contactform7' ) ] );
+			wp_send_json_success( array( 'message' => __( 'Activation request sent to ifthenpay support.', 'ifthenpay-payments-for-contactform7' ) ) );
 		} else {
-			wp_send_json_error( [ 'message' => __( 'Failed to send activation email. Contact ifthenpay directly.', 'ifthenpay-payments-for-contactform7' ) ], 500 );
+			wp_send_json_error( array( 'message' => __( 'Failed to send activation email. Contact ifthenpay directly.', 'ifthenpay-payments-for-contactform7' ) ), 500 );
 		}
 	}
 

@@ -270,7 +270,7 @@
 	function submitCf7Form($form) {
 		enableFormButtons($form);
 		const $btn = $form
-			.find('.wpcf7-submit, input[type="submit"], button[type="submit"]')
+			.find('.wpcf7-submit:not(.iftp-cf7-pay-button), input[type="submit"]:not(.iftp-cf7-pay-button), button[type="submit"]:not(.iftp-cf7-pay-button)')
 			.first();
 		if ($btn.length) {
 			$btn.prop('disabled', false).trigger('click');
@@ -319,9 +319,6 @@
 
 
 			$field.find('.iftp-cf7-entry-id').val(entryId);
-			$field
-				.find('.iftp-cf7-modal-token')
-				.val(String((session && session.modal_token) || ''));
 			$field.find('.iftp-cf7-payment-status').val('pending');
 
 			clearSession();
@@ -339,6 +336,19 @@
 
 			clearSession();
 			showFieldMessage($field, status, paymentUrl);
+
+			const $output = $form.closest('.wpcf7').find('.wpcf7-response-output');
+			if ($output.length) {
+				const isCancelType = status === 'cancel';
+				const msg = isCancelType
+					? cfg.msg_cancel_prefix || 'Your payment was cancelled!'
+					: cfg.msg_error_prefix || 'Your payment failed!';
+				$output
+					.removeClass('wpcf7-mail-sent-ok wpcf7-mail-sent-ng wpcf7-validation-errors wpcf7-spam-blocked')
+					.addClass('wpcf7-mail-sent-ng')
+					.text(msg)
+					.show();
+			}
 		}
 	}
 
@@ -380,8 +390,8 @@
 		disableFormButtons($form);
 
 
-		const origText = String($button.text() || '').trim();
-		$button.text(cfg.opening_text || 'Opening payment...');
+		const origText = String($button.val() || $button.text() || '').trim();
+		$button.val(cfg.opening_text || 'Opening payment...');
 
 		apiPost('iftp_cf7_create_payment', {
 			form_id: formId,
@@ -397,7 +407,7 @@
 
 				if (!response || !response.success) {
 					enableFormButtons($form);
-					$button.text(origText);
+					$button.val(origText);
 					const $warn = $field.find('.iftp-cf7-runtime-warning');
 					const msg =
 						data.message ||
@@ -428,7 +438,6 @@
 				saveSession({
 					entry_id: data.entry_id,
 					payment_url: paymentUrl,
-					modal_token: String(data.modal_token || ''),
 					form_id: formId,
 					form_data: formData,
 					ts: Date.now(),
@@ -439,7 +448,7 @@
 			})
 			.fail(function () {
 				enableFormButtons($form);
-				$button.text(origText);
+				$button.val(origText);
 				showFieldMessage($field, 'error', null);
 			});
 	}
@@ -453,15 +462,10 @@
 		pendingAfterSuccess = false;
 
 		const $form = $(event.target);
-		const $output = $form.closest('.wpcf7').find('.wpcf7-response-output');
-		if ($output.length) {
-			$output
-				.text(
-					cfg.msg_pending ||
-						'Your payment is pending. You can close this window while you wait.'
-				)
-				.addClass('iftp-pending-output');
-		}
+		$form.find('.iftp-cf7-runtime-warning')
+			.hide()
+			.removeClass('iftp-warn-pending iftp-warn-cancel iftp-warn-error')
+			.empty();
 	});
 
 
@@ -504,6 +508,46 @@
 
 
 
+	function validateCF7Fields($form) {
+
+		$form.find('.iftp-cf7-not-valid-tip').remove();
+		$form.find('.iftp-cf7-not-valid')
+			.removeClass('iftp-cf7-not-valid wpcf7-not-valid')
+			.attr('aria-invalid', 'false');
+
+		var valid = true;
+
+		function markInvalid($field, message) {
+			$field.addClass('wpcf7-not-valid iftp-cf7-not-valid').attr('aria-invalid', 'true');
+			var $wrap = $field.closest('.wpcf7-form-control-wrap');
+			$('<span class="wpcf7-not-valid-tip iftp-cf7-not-valid-tip" aria-hidden="true"></span>')
+				.text(message)
+				.appendTo($wrap.length ? $wrap : $field.parent());
+			valid = false;
+		}
+
+
+		$form.find('input[aria-required="true"], textarea[aria-required="true"], select[aria-required="true"]').each(function () {
+			var $field = $(this);
+			if (!String($field.val() || '').trim()) {
+				markInvalid($field, cfg.error_field_required || 'Please fill in this field.');
+			}
+		});
+
+
+		$form.find('input[type="email"]').each(function () {
+			var $field = $(this);
+			var val = String($field.val() || '');
+			if (val.length > 100) {
+				markInvalid($field, cfg.error_email_too_long || 'Email address must be 100 characters or fewer.');
+			}
+		});
+
+		return valid;
+	}
+
+
+
 	$(function () {
 		handleReturnParams();
 		initThemeLogos();
@@ -513,7 +557,31 @@
 			'.iftp-cf7-pay-button:not([disabled])',
 			function (e) {
 				e.preventDefault();
-				handlePayClick($(this));
+				var $button = $(this);
+				var $form   = $button.closest('form');
+				var formEl  = $form[0];
+				if (formEl && typeof formEl.checkValidity === 'function' && !formEl.checkValidity()) {
+					if (typeof formEl.reportValidity === 'function') {
+						formEl.reportValidity();
+					}
+					return;
+				}
+				if (!validateCF7Fields($form)) {
+					return;
+				}
+				handlePayClick($button);
+			}
+		);
+
+
+		$(document).on(
+			'input change',
+			'.wpcf7-form-control.iftp-cf7-not-valid',
+			function () {
+				var $field = $(this);
+				$field.removeClass('iftp-cf7-not-valid wpcf7-not-valid').attr('aria-invalid', 'false');
+				var $wrap = $field.closest('.wpcf7-form-control-wrap');
+				($wrap.length ? $wrap : $field.parent()).find('.iftp-cf7-not-valid-tip').remove();
 			}
 		);
 

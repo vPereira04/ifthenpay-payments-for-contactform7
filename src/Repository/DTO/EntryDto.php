@@ -11,23 +11,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 final readonly class EntryDto {
 
 	public function __construct(
-		public int     $id,
-		public int     $form_id,
-		public string  $form_title,
-		public string  $customer_name,
-		public string  $customer_email,
-		public float   $amount,
-		public string  $payment_method,
-		public string  $transaction_id,
+		public int $id,
+		public int $form_id,
+		public string $form_title,
+		public string $customer_name,
+		public string $customer_email,
+		public float $amount,
+		public string $payment_method,
+		public string $transaction_id,
 		public ?string $request_id,
-		public string  $payment_status,
-		public string  $payment_url,
-		public string  $return_url,
-		public string  $form_data,
-		public string  $modal_token,
-		public bool    $is_read,
-		public string  $created_at,
-		public string  $updated_at,
+		public string $payment_status,
+		public string $payment_url,
+		public string $return_url,
+		public string $form_data,
+		public string $created_at,
+		public string $updated_at,
 	) {}
 
 	/** @param array<string, mixed> $raw */
@@ -37,23 +35,21 @@ final readonly class EntryDto {
 			: null;
 
 		return new self(
-			id:             absint( $raw['id']             ?? 0 ),
-			form_id:        absint( $raw['form_id']        ?? 0 ),
-			form_title:     sanitize_text_field( (string) ( $raw['form_title']     ?? '' ) ),
-			customer_name:  sanitize_text_field( (string) ( $raw['customer_name']  ?? '' ) ),
-			customer_email: sanitize_email(      (string) ( $raw['customer_email'] ?? '' ) ),
-			amount:         (float)              ( $raw['amount']         ?? 0.0 ),
+			id:             absint( $raw['id'] ?? 0 ),
+			form_id:        absint( $raw['form_id'] ?? 0 ),
+			form_title:     sanitize_text_field( (string) ( $raw['form_title'] ?? '' ) ),
+			customer_name:  sanitize_text_field( (string) ( $raw['customer_name'] ?? '' ) ),
+			customer_email: sanitize_email( (string) ( $raw['customer_email'] ?? '' ) ),
+			amount:         (float) ( $raw['amount'] ?? 0.0 ),
 			payment_method: strtoupper( sanitize_key( (string) ( $raw['payment_method'] ?? '' ) ) ),
 			transaction_id: sanitize_text_field( (string) ( $raw['transaction_id'] ?? '' ) ),
 			request_id:     $req,
-			payment_status: sanitize_key(        (string) ( $raw['payment_status'] ?? 'pending' ) ),
-			payment_url:    esc_url_raw(         (string) ( $raw['payment_url']    ?? '' ) ),
-			return_url:     esc_url_raw(         (string) ( $raw['return_url']     ?? '' ) ),
-			form_data:      (string)             ( $raw['form_data']      ?? '' ),
-			modal_token:    sanitize_text_field( (string) ( $raw['modal_token']    ?? '' ) ),
-			is_read:        (bool)               ( $raw['is_read']        ?? false ),
-			created_at:     sanitize_text_field( (string) ( $raw['created_at']     ?? '' ) ),
-			updated_at:     sanitize_text_field( (string) ( $raw['updated_at']     ?? '' ) ),
+			payment_status: sanitize_key( (string) ( $raw['payment_status'] ?? 'pending' ) ),
+			payment_url:    esc_url_raw( (string) ( $raw['payment_url'] ?? '' ) ),
+			return_url:     esc_url_raw( (string) ( $raw['return_url'] ?? '' ) ),
+			form_data:      (string) ( $raw['form_data'] ?? '' ),
+			created_at:     sanitize_text_field( (string) ( $raw['created_at'] ?? '' ) ),
+			updated_at:     sanitize_text_field( (string) ( $raw['updated_at'] ?? '' ) ),
 		);
 	}
 

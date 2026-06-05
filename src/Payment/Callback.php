@@ -29,23 +29,22 @@ final class Callback {
 		register_rest_route(
 			self::REST_NAMESPACE,
 			self::REST_ROUTE,
-			[
+			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => [ $this, 'handle' ],
+				'callback'            => array( $this, 'handle' ),
 				'permission_callback' => '__return_true',
-			]
+			)
 		);
 	}
 
 	public function handle( WP_REST_Request $request ): WP_REST_Response {
 		$payload = $request->get_params();
 
-
 		$expected = Settings::get_anti_phishing_key();
 		if ( $expected !== '' ) {
 			$received = sanitize_text_field( (string) ( $payload['chave'] ?? $payload['key'] ?? $payload['sk'] ?? '' ) );
 			if ( $received !== $expected ) {
-				return new WP_REST_Response( [ 'error' => 'invalid_key' ], 403 );
+				return new WP_REST_Response( array( 'error' => 'invalid_key' ), 403 );
 			}
 		}
 
@@ -54,7 +53,7 @@ final class Callback {
 		$is_success     = IfthenpayReturn::is_successful_callback( $payload );
 
 		if ( $transaction_id === '' && $entry_id <= 0 ) {
-			return new WP_REST_Response( [ 'error' => 'missing_parameters' ], 400 );
+			return new WP_REST_Response( array( 'error' => 'missing_parameters' ), 400 );
 		}
 
 		$repo  = new EntryRepository();
@@ -64,7 +63,7 @@ final class Callback {
 		}
 
 		if ( $entry === null ) {
-			return new WP_REST_Response( [ 'error' => 'entry_not_found' ], 404 );
+			return new WP_REST_Response( array( 'error' => 'entry_not_found' ), 404 );
 		}
 
 		if ( $is_success ) {
@@ -78,7 +77,7 @@ final class Callback {
 			do_action( 'iftp_cf7_payment_failed', $entry->id, $transaction_id );
 		}
 
-		return new WP_REST_Response( [ 'status' => 'ok' ], 200 );
+		return new WP_REST_Response( array( 'status' => 'ok' ), 200 );
 	}
 
 	public static function get_callback_url(): string {
