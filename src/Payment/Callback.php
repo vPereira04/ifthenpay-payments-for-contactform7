@@ -48,33 +48,34 @@ final class Callback {
 			}
 		}
 
-		$transaction_id = IfthenpayReturn::get_callback_transaction_id( $payload );
-		$entry_id       = IfthenpayReturn::get_callback_entry_id( $payload );
-		$is_success     = IfthenpayReturn::is_successful_callback( $payload );
+		$entry_id   = IfthenpayReturn::get_callback_entry_id( $payload );
+		$is_success = IfthenpayReturn::is_successful_callback( $payload );
 
-		if ( $transaction_id === '' && $entry_id <= 0 ) {
+		if ( $entry_id <= 0 ) {
 			return new WP_REST_Response( array( 'error' => 'missing_parameters' ), 400 );
 		}
 
 		$repo  = new EntryRepository();
-		$entry = $transaction_id !== '' ? $repo->get_by_transaction_id( $transaction_id ) : null;
-		if ( $entry === null && $entry_id > 0 ) {
-			$entry = $repo->get_by_id( $entry_id );
-		}
+		$entry = $repo->get_by_id( $entry_id );
 
 		if ( $entry === null ) {
 			return new WP_REST_Response( array( 'error' => 'entry_not_found' ), 404 );
 		}
 
+		$val = sanitize_text_field( (string) ( $payload['val'] ?? $payload['amount'] ?? '' ) );
+		if ( $val !== '' && number_format( (float) $val, 2, '.', '' ) !== number_format( $entry->amount, 2, '.', '' ) ) {
+			return new WP_REST_Response( array( 'error' => 'amount_mismatch' ), 403 );
+		}
+
 		if ( $is_success ) {
 			$method = sanitize_text_field( (string) ( $payload['PaymentMethod'] ?? $payload['Method'] ?? '' ) );
-			$repo->update_transaction( $entry->id, $transaction_id ?: $entry->transaction_id, $method, 'completed' );
+			$repo->update_transaction( $entry->id, $method, 'completed' );
 
 			/** @fires iftp_cf7_payment_confirmed after ifthenpay confirms payment via webhook */
-			do_action( 'iftp_cf7_payment_confirmed', $entry->id, $transaction_id, $method );
+			do_action( 'iftp_cf7_payment_confirmed', $entry->id, $method );
 		} else {
 			$repo->update_status( $entry->id, 'failed' );
-			do_action( 'iftp_cf7_payment_failed', $entry->id, $transaction_id );
+			do_action( 'iftp_cf7_payment_failed', $entry->id );
 		}
 
 		return new WP_REST_Response( array( 'status' => 'ok' ), 200 );

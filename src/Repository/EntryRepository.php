@@ -53,7 +53,6 @@ final class EntryRepository {
 				'customer_email' => $dto->customer_email,
 				'amount'         => number_format( $dto->amount, 2, '.', '' ),
 				'payment_method' => $dto->payment_method,
-				'transaction_id' => $dto->transaction_id,
 				'payment_status' => $dto->payment_status,
 				'payment_url'    => $dto->payment_url,
 				'return_url'     => $dto->return_url,
@@ -61,7 +60,7 @@ final class EntryRepository {
 				'created_at'     => $now,
 				'updated_at'     => $now,
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( $wpdb->last_error ) {
@@ -97,27 +96,21 @@ final class EntryRepository {
 	}
 
 	/**
-	 * Update transaction details after a successful payment or webhook.
+	 * Update payment details after a successful payment or webhook.
 	 *
 	 * @param int         $id             Entry ID.
-	 * @param string      $transaction_id Gateway transaction identifier.
 	 * @param string      $payment_method Payment method entity code (optional).
 	 * @param string      $status         New payment status (default 'completed').
 	 * @param string|null $request_id     Gateway request ID (optional).
 	 * @return bool True on success, false on failure.
 	 */
-	public function update_transaction( int $id, string $transaction_id, string $payment_method = '', string $status = 'completed', ?string $request_id = null ): bool {
+	public function update_transaction( int $id, string $payment_method = '', string $status = 'completed', ?string $request_id = null ): bool {
 		global $wpdb;
-
 		$data    = array(
 			'payment_status' => sanitize_key( $status ),
 			'updated_at'     => current_time( 'mysql' ),
 		);
 		$formats = array( '%s', '%s' );
-		if ( '' !== $transaction_id ) {
-			$data['transaction_id'] = $transaction_id;
-			$formats[]              = '%s';
-		}
 		if ( '' !== $payment_method ) {
 			$data['payment_method'] = strtoupper( sanitize_text_field( $payment_method ) );
 			$formats[]              = '%s';
@@ -217,21 +210,6 @@ final class EntryRepository {
 		global $wpdb;
 		$row = $wpdb->get_row( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d LIMIT 1', $this->table, $id ),
-			ARRAY_A
-		);
-		return is_array( $row ) ? EntryDto::from( $row ) : null;
-	}
-
-	/**
-	 * Retrieve a single entry by the gateway transaction ID.
-	 *
-	 * @param string $txn_id Gateway transaction identifier.
-	 * @return EntryDto|null The entry DTO, or null if not found.
-	 */
-	public function get_by_transaction_id( string $txn_id ): ?EntryDto {
-		global $wpdb;
-		$row = $wpdb->get_row( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->prepare( 'SELECT * FROM %i WHERE transaction_id = %s LIMIT 1', $this->table, $txn_id ),
 			ARRAY_A
 		);
 		return is_array( $row ) ? EntryDto::from( $row ) : null;
@@ -355,7 +333,6 @@ final class EntryRepository {
 			'customer_name',
 			'customer_email',
 			'form_title',
-			'transaction_id',
 			'request_id',
 			'payment_method',
 			'amount',

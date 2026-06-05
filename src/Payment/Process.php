@@ -31,7 +31,7 @@ final class Process {
 	 * @return array<string, mixed>
 	 */
 	public function inject_posted_fields( array $posted_data ): array {
-		$keys = array( 'iftp_cf7_entry_id', 'iftp_cf7_transaction_id', 'iftp_cf7_payment_status' );
+		$keys = array( 'iftp_cf7_entry_id', 'iftp_cf7_payment_status' );
 		foreach ( $keys as $key ) {
 			if ( isset( $_POST[ $key ] ) ) { // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
 				$posted_data[ $key ] = sanitize_text_field( wp_unslash( (string) $_POST[ $key ] ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
@@ -109,13 +109,12 @@ final class Process {
 		}
 
 		return match ( $name ) {
-			'ifthenpay-transaction-id' => esc_html( $entry->transaction_id ),
-			'ifthenpay-amount'         => esc_html( $entry->amount_formatted() ),
-			'ifthenpay-method'         => esc_html( $entry->payment_method ),
-			'ifthenpay-status'         => esc_html( $entry->status_label() ),
-			'ifthenpay-payment-url'    => esc_url( $entry->payment_url ),
-			'ifthenpay-entry-id'       => esc_html( (string) $entry->id ),
-			default                    => $output,
+			'ifthenpay-amount'      => esc_html( $entry->amount_formatted() ),
+			'ifthenpay-method'      => esc_html( $entry->payment_method ),
+			'ifthenpay-status'      => esc_html( $entry->status_label() ),
+			'ifthenpay-payment-url' => esc_url( $entry->payment_url ),
+			'ifthenpay-entry-id'    => esc_html( (string) $entry->id ),
+			default                 => $output,
 		};
 	}
 
@@ -245,7 +244,6 @@ final class Process {
 		wp_send_json_success(
 			array(
 				'status'         => $entry->payment_status,
-				'transaction_id' => $entry->transaction_id,
 				'payment_method' => $entry->payment_method,
 			)
 		);

@@ -82,7 +82,6 @@ final class GatewayEndpoint {
 		$mtd    = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['mtd'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
 		$req    = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['req'] ?? $_REQUEST['requestId'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$txn_id = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['TransactionID'] ?? $_REQUEST['transactionId'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
 		$error_msg = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['error'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 		if ( $status === '' && $error_msg !== '' ) {
@@ -120,7 +119,7 @@ final class GatewayEndpoint {
 
 		if ( $apk !== '' && $val !== '' && $status === '' ) {
 
-			self::process_success( $entry_id, $apk, $mtd, $req, $txn_id );
+			self::process_success( $entry_id, $apk, $val, $mtd, $req );
 			wp_safe_redirect(
 				add_query_arg(
 					array(
@@ -136,7 +135,7 @@ final class GatewayEndpoint {
 		if ( $status !== '' ) {
 
 			$new_status = $status === 'cancel' ? 'cancelled' : 'failed';
-			self::process_other( $entry_id, $new_status, $txn_id, $mtd, $req );
+			self::process_other( $entry_id, $new_status, $mtd, $req );
 			wp_safe_redirect(
 				add_query_arg(
 					array(
@@ -155,7 +154,7 @@ final class GatewayEndpoint {
 
 
 
-	private static function process_success( int $entry_id, string $apk, string $method = '', string $request_id = '', string $txn_id = '' ): void {
+	private static function process_success( int $entry_id, string $apk, string $val = '', string $method = '', string $request_id = '' ): void {
 		if ( $entry_id <= 0 ) {
 			return;
 		}
@@ -165,32 +164,32 @@ final class GatewayEndpoint {
 			return;
 		}
 
-		$repo = new EntryRepository();
-		if ( $txn_id === '' ) {
-
-			$existing_entry = $repo->get_by_id( $entry_id );
-			if ( $existing_entry !== null && $existing_entry->transaction_id !== '' ) {
-				$txn_id = $existing_entry->transaction_id;
-			}
+		$repo  = new EntryRepository();
+		$entry = $repo->get_by_id( $entry_id );
+		if ( $entry === null ) {
+			return;
 		}
+
+		if ( $val !== '' && number_format( (float) $val, 2, '.', '' ) !== number_format( $entry->amount, 2, '.', '' ) ) {
+			return;
+		}
+
 		$repo->update_transaction(
-			$entry_id,
-			$txn_id,
+			$entry->id,
 			$method,
 			'completed',
 			$request_id !== '' ? $request_id : null
 		);
 	}
 
-	private static function process_other( int $entry_id, string $status, string $txn_id = '', string $method = '', string $request_id = '' ): void {
+	private static function process_other( int $entry_id, string $status, string $method = '', string $request_id = '' ): void {
 		if ( $entry_id <= 0 ) {
 			return;
 		}
 		$repo = new EntryRepository();
-		if ( $txn_id !== '' || $method !== '' || $request_id !== '' ) {
+		if ( $method !== '' || $request_id !== '' ) {
 			$repo->update_transaction(
 				$entry_id,
-				$txn_id,
 				$method,
 				$status,
 				$request_id !== '' ? $request_id : null
@@ -216,19 +215,22 @@ final class GatewayEndpoint {
 			return;
 		}
 
+		$val = sanitize_text_field( wp_unslash( (string) ( $_REQUEST['val'] ?? $_REQUEST['amount'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		if ( $val !== '' && number_format( (float) $val, 2, '.', '' ) !== number_format( $entry->amount, 2, '.', '' ) ) {
+			return;
+		}
+
 		$method     = sanitize_text_field( wp_unslash( (string) ( $_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
-		$txn_id     = sanitize_text_field( wp_unslash( (string) ( $_POST['TransactionID'] ?? $_POST['transactionId'] ?? '' ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
 		$request_id = sanitize_text_field( wp_unslash( (string) ( $_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get ) ) ); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Missing
 
 		$repo->update_transaction(
 			$entry->id,
-			$txn_id ?: $entry->transaction_id,
 			$method,
 			'completed',
 			$request_id !== '' ? $request_id : null
 		);
 
-		do_action( 'iftp_cf7_payment_confirmed', $entry->id, $txn_id, $method );
+		do_action( 'iftp_cf7_payment_confirmed', $entry->id, $method );
 	}
 
 

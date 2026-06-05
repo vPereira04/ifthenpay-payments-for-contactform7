@@ -24,15 +24,6 @@ final class IfthenpayReturn {
 		return in_array( $status, array( '1', 'OK', 'SUCCESS', 'PAID' ), true );
 	}
 
-	public static function get_callback_transaction_id( array $payload ): string {
-		foreach ( array( 'transactionId', 'transaction_id', 'TransactionId', 'id', 'requestId', 'request_id' ) as $key ) {
-			if ( ! empty( $payload[ $key ] ) ) {
-				return sanitize_text_field( (string) $payload[ $key ] );
-			}
-		}
-		return '';
-	}
-
 	public static function get_callback_entry_id( array $payload ): int {
 		foreach ( array( 'iftp_cf7_entry', 'entry_id', 'order_id', 'id' ) as $key ) {
 			if ( ! empty( $payload[ $key ] ) ) {

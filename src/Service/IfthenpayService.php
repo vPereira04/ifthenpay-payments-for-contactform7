@@ -303,7 +303,7 @@ final class IfthenpayService extends \WPCF7_Service {
 
 					<?php /* Backoffice key + Disconnect */ ?>
 					<tr>
-						<th><?php esc_html_e( 'Backoffice Key', 'ifthenpay-payments-for-contactform7' ); ?></th>
+						<th><?php esc_html_e( 'Backoffice Key (Required)', 'ifthenpay-payments-for-contactform7' ); ?></th>
 						<td>
 							<code><?php echo esc_html( substr( $bk, 0, 4 ) . '-****-****-****' ); ?></code>
 							&nbsp;&nbsp;
@@ -319,7 +319,7 @@ final class IfthenpayService extends \WPCF7_Service {
 					<tr>
 						<th>
 							<label for="iftp-gateway-key">
-								<?php esc_html_e( 'Gateway Key', 'ifthenpay-payments-for-contactform7' ); ?>
+								<?php esc_html_e( 'Gateway Key (Required)', 'ifthenpay-payments-for-contactform7' ); ?>
 							</label>
 						</th>
 						<td>
@@ -342,7 +342,7 @@ final class IfthenpayService extends \WPCF7_Service {
 
 					<?php /* Payment methods table */ ?>
 					<tr>
-						<th><?php esc_html_e( 'Payment Methods', 'ifthenpay-payments-for-contactform7' ); ?></th>
+						<th><?php esc_html_e( 'Payment Methods (Required)', 'ifthenpay-payments-for-contactform7' ); ?></th>
 						<td>
 							<?php
 							foreach ( $catalog as $gk => $gw ) :
@@ -467,7 +467,7 @@ final class IfthenpayService extends \WPCF7_Service {
 					<tr>
 						<th>
 							<label for="iftp-default-method">
-								<?php esc_html_e( 'Default Payment Method', 'ifthenpay-payments-for-contactform7' ); ?>
+								<?php esc_html_e( 'Default Payment Method (Optional)', 'ifthenpay-payments-for-contactform7' ); ?>
 							</label>
 						</th>
 						<td>
@@ -502,7 +502,7 @@ final class IfthenpayService extends \WPCF7_Service {
 					<tr>
 						<th>
 							<label for="iftp-description">
-								<?php esc_html_e( 'Default Description', 'ifthenpay-payments-for-contactform7' ); ?>
+								<?php esc_html_e( 'Default Description (Optional)', 'ifthenpay-payments-for-contactform7' ); ?>
 							</label>
 						</th>
 						<td>
@@ -523,7 +523,7 @@ final class IfthenpayService extends \WPCF7_Service {
 					<tr>
 						<th>
 							<label for="iftp-expire-days">
-								<?php esc_html_e( 'Payment expires in (days)', 'ifthenpay-payments-for-contactform7' ); ?>
+								<?php esc_html_e( 'Payment expires in (days) / (Optional)', 'ifthenpay-payments-for-contactform7' ); ?>
 							</label>
 						</th>
 						<td>

@@ -84,16 +84,27 @@
 }
 
 /* Table column widths */
-.iftp-cf7-entries-table .column-cb          { width: 32px; }
-.iftp-cf7-entries-table .column-id          { width: 56px; }
-.iftp-cf7-entries-table .column-customer    { min-width: 140px; }
-.iftp-cf7-entries-table .column-transaction { width: 120px; }
-.iftp-cf7-entries-table .column-request     { width: 110px; }
-.iftp-cf7-entries-table .column-form        { width: 140px; }
-.iftp-cf7-entries-table .column-method      { width: 120px; }
-.iftp-cf7-entries-table .column-amount      { width: 90px; }
-.iftp-cf7-entries-table .column-status      { width: 110px; }
-.iftp-cf7-entries-table .column-date        { width: 130px; }
+.iftp-cf7-entries-table .column-cb       { width: 32px; }
+.iftp-cf7-entries-table .column-id       { width: 56px; }
+.iftp-cf7-entries-table .column-customer { max-width: 180px; overflow: hidden; }
+.iftp-cf7-entries-table .column-request  { width: 130px; max-width: 130px; overflow: hidden; }
+.iftp-cf7-entries-table .column-form     { max-width: 160px; overflow: hidden; }
+.iftp-cf7-entries-table .column-method   { width: 120px; }
+.iftp-cf7-entries-table .column-amount   { width: 90px; }
+.iftp-cf7-entries-table .column-status   { width: 110px; }
+.iftp-cf7-entries-table .column-date     { width: 130px; }
+
+/* Truncate long text in list table cells */
+.iftp-cf7-entries-table td.column-customer strong,
+.iftp-cf7-entries-table td.column-customer a,
+.iftp-cf7-entries-table td.column-form,
+.iftp-cf7-entries-table td.column-request code {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 100%;
+}
 
 /* Selection bar (shown when items are selected) */
 .iftp-sel-bar {
@@ -723,6 +734,32 @@ table.iftp-submitted tbody td:first-child {
 	font-size: 12px;
 	background: #f6f7f7;
 	border-right: 1px solid #dcdcde;
+}
+
+table.iftp-submitted tbody td:last-child {
+	word-break: break-word;
+	max-width: 480px;
+}
+
+/* Read more / less toggle in submitted data */
+.iftp-val-full {
+	display: none;
+}
+
+.iftp-val-full.iftp-val-open {
+	display: inline;
+}
+
+.iftp-read-more {
+	display: inline-block;
+	margin-top: 3px;
+	font-size: 11px;
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.iftp-read-more:hover {
+	text-decoration: underline;
 }
 
 /* Summary card */

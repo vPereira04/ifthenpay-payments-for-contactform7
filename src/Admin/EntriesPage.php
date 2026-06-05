@@ -215,7 +215,6 @@ final class EntriesPage {
 								</td>
 								<th class="column-id"><?php esc_html_e( 'ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-customer"><?php esc_html_e( 'Customer', 'ifthenpay-payments-for-contactform7' ); ?></th>
-								<th class="column-transaction"><?php esc_html_e( 'Transaction ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-request"><?php esc_html_e( 'Request ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-form"><?php esc_html_e( 'Form', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-method"><?php esc_html_e( 'Method', 'ifthenpay-payments-for-contactform7' ); ?></th>
@@ -264,9 +263,6 @@ final class EntriesPage {
 									<br /><a href="mailto:<?php echo esc_attr( $entry->customer_email ); ?>" style="font-size:12px;"><?php echo esc_html( $entry->customer_email ); ?></a>
 									<?php endif; ?>
 								</td>
-								<td class="column-transaction" style="font-size:12px;">
-									<?php echo $entry->transaction_id ? '<code>' . esc_html( $entry->transaction_id ) . '</code>' : '—'; ?>
-								</td>
 								<td class="column-request" style="font-size:12px;">
 									<?php echo $entry->request_id ? '<code>' . esc_html( $entry->request_id ) . '</code>' : '—'; ?>
 								</td>
@@ -312,7 +308,6 @@ final class EntriesPage {
 								<td class="manage-column column-cb check-column"><input id="cb-select-all-2" type="checkbox" /></td>
 								<th class="column-id"><?php esc_html_e( 'ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-customer"><?php esc_html_e( 'Customer', 'ifthenpay-payments-for-contactform7' ); ?></th>
-								<th class="column-transaction"><?php esc_html_e( 'Transaction ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-request"><?php esc_html_e( 'Request ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-form"><?php esc_html_e( 'Form', 'ifthenpay-payments-for-contactform7' ); ?></th>
 								<th class="column-method"><?php esc_html_e( 'Method', 'ifthenpay-payments-for-contactform7' ); ?></th>
@@ -417,7 +412,6 @@ final class EntriesPage {
 			'customer_name'  => __( 'Name', 'ifthenpay-payments-for-contactform7' ),
 			'customer_email' => __( 'Email', 'ifthenpay-payments-for-contactform7' ),
 			'form_title'     => __( 'Form', 'ifthenpay-payments-for-contactform7' ),
-			'transaction_id' => __( 'Transaction ID', 'ifthenpay-payments-for-contactform7' ),
 			'payment_method' => __( 'Method', 'ifthenpay-payments-for-contactform7' ),
 			'amount'         => __( 'Amount', 'ifthenpay-payments-for-contactform7' ),
 		);
@@ -644,10 +638,6 @@ final class EntriesPage {
 									</td>
 								</tr>
 								<tr>
-									<th><?php esc_html_e( 'Transaction ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
-									<td><code><?php echo esc_html( $entry->transaction_id ?: '—' ); ?></code></td>
-								</tr>
-								<tr>
 									<th><?php esc_html_e( 'Request ID', 'ifthenpay-payments-for-contactform7' ); ?></th>
 									<td><code><?php echo esc_html( $entry->request_id ?? '—' ); ?></code></td>
 								</tr>
@@ -728,11 +718,27 @@ final class EntriesPage {
 								<?php
 								foreach ( $form_data as $key => $value ) :
 									if ( strpos( (string) $key, 'iftp_cf7_' ) === 0 ) {
-										continue; }
+										continue;
+									}
+									$str_val = is_array( $value ) ? implode( ', ', $value ) : (string) $value;
+									$max_len = 200;
+									$is_long = mb_strlen( $str_val ) > $max_len;
 									?>
 									<tr>
 										<td><?php echo esc_html( (string) $key ); ?></td>
-										<td><?php echo esc_html( is_array( $value ) ? implode( ', ', $value ) : (string) $value ); ?></td>
+										<td>
+											<?php if ( $is_long ) : ?>
+											<span class="iftp-val-short"><?php echo esc_html( mb_substr( $str_val, 0, $max_len ) ); ?>&hellip;</span>
+											<span class="iftp-val-full"><?php echo esc_html( $str_val ); ?></span>
+											<br /><a href="#" class="iftp-read-more"
+												data-more="<?php esc_attr_e( 'Read more', 'ifthenpay-payments-for-contactform7' ); ?>"
+												data-less="<?php esc_attr_e( 'Read less', 'ifthenpay-payments-for-contactform7' ); ?>">
+												<?php esc_html_e( 'Read more', 'ifthenpay-payments-for-contactform7' ); ?>
+											</a>
+											<?php else : ?>
+											<?php echo esc_html( $str_val ); ?>
+											<?php endif; ?>
+										</td>
 									</tr>
 								<?php endforeach; ?>
 								</tbody>
@@ -768,10 +774,6 @@ final class EntriesPage {
 								<div class="iftp-meta-row">
 									<span class="iftp-meta-label"><?php esc_html_e( 'Entry', 'ifthenpay-payments-for-contactform7' ); ?></span>
 									<span class="iftp-meta-value">#<?php echo esc_html( (string) $entry->id ); ?></span>
-								</div>
-								<div class="iftp-meta-row">
-									<span class="iftp-meta-label"><?php esc_html_e( 'Transaction ID', 'ifthenpay-payments-for-contactform7' ); ?></span>
-									<span class="iftp-meta-value"><code><?php echo esc_html( $entry->transaction_id ?: '—' ); ?></code></span>
 								</div>
 								<div class="iftp-meta-row">
 									<span class="iftp-meta-label"><?php esc_html_e( 'Form', 'ifthenpay-payments-for-contactform7' ); ?></span>
@@ -829,6 +831,28 @@ final class EntriesPage {
 
 			</div><!-- .iftp-detail-layout -->
 		</div><!-- .wrap -->
+		<script>
+		(function() {
+			document.querySelectorAll('.iftp-read-more').forEach(function(btn) {
+				btn.addEventListener('click', function(e) {
+					e.preventDefault();
+					var td   = btn.closest('td');
+					var full = td.querySelector('.iftp-val-full');
+					var short = td.querySelector('.iftp-val-short');
+					var open = full.classList.contains('iftp-val-open');
+					if (open) {
+						full.classList.remove('iftp-val-open');
+						short.style.display = '';
+						btn.textContent = btn.getAttribute('data-more');
+					} else {
+						full.classList.add('iftp-val-open');
+						short.style.display = 'none';
+						btn.textContent = btn.getAttribute('data-less');
+					}
+				});
+			});
+		})();
+		</script>
 		<?php
 	}
 }
