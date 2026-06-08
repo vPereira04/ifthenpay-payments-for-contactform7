@@ -81,12 +81,6 @@ final class IfthenpayService extends \WPCF7_Service {
 		}
 
 		if ( $sub_action === '' ) {
-			if ( $method === 'GET' ) {
-				$bk = Settings::get_backoffice_key();
-				if ( $bk !== '' ) {
-					IfthenpayApiFacade::connect( $bk );
-				}
-			}
 			return;
 		}
 

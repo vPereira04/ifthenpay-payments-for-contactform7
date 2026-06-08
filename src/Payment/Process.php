@@ -134,6 +134,8 @@ final class Process {
 			$form_data_raw = wp_unslash( (string) $_POST['form_data'] ); // placeholderphpcs:ignore(try fixing) WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		}
 
+		$customer_ip = sanitize_text_field( wp_unslash( (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ) );
+
 		$settings    = Settings::get_settings();
 		$backoffice  = (string) ( $settings['backoffice_key'] ?? '' );
 		$gateway_key = (string) ( $settings['gateway_key'] ?? '' );
@@ -192,6 +194,7 @@ final class Process {
 				'selected_method_code' => $selected_code,
 				'customer_name'        => $name,
 				'customer_email'       => $email,
+				'customer_ip'          => $customer_ip,
 				'description'          => $description,
 				'expire_days'          => $expire_days,
 				'base_url'             => $base_url,

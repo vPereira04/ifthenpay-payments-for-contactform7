@@ -86,6 +86,7 @@ final class PblPayment implements Payment {
 					'form_title'     => $this->data->form_title,
 					'customer_name'  => $this->data->customer_name,
 					'customer_email' => $this->data->customer_email,
+					'customer_ip'    => $this->data->customer_ip,
 					'amount'         => $this->data->amount,
 					'payment_method' => '',
 					'transaction_id' => '',

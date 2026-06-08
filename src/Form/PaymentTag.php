@@ -129,7 +129,7 @@ final class PaymentTag
 				<div class="iftp-cf7-config-warning" style="display:none"></div>
 			<?php endif; ?>
 
-			<div class="iftp-cf7-runtime-warning" id="iftp-payment-status-<?php echo esc_attr((string) $form_id); ?>" role="alert"></div>
+			<div class="iftp-cf7-runtime-warning" id="iftp-msg" role="alert"></div>
 
 			<input type="hidden" name="iftp_cf7_entry_id" class="iftp-cf7-entry-id" value="" />
 			<input type="hidden" name="iftp_cf7_transaction_id" class="iftp-cf7-transaction-id" value="" />

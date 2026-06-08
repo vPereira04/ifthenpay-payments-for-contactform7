@@ -51,6 +51,7 @@ final class EntryRepository {
 				'form_title'     => $dto->form_title,
 				'customer_name'  => $dto->customer_name,
 				'customer_email' => $dto->customer_email,
+				'customer_ip'    => $dto->customer_ip,
 				'amount'         => number_format( $dto->amount, 2, '.', '' ),
 				'payment_method' => $dto->payment_method,
 				'payment_status' => $dto->payment_status,
@@ -60,7 +61,7 @@ final class EntryRepository {
 				'created_at'     => $now,
 				'updated_at'     => $now,
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( $wpdb->last_error ) {
@@ -201,6 +202,55 @@ final class EntryRepository {
 
 
 	/**
+	 * Update payment_status for multiple entries.
+	 *
+	 * @param int[]  $ids    Array of entry IDs.
+	 * @param string $status New status value.
+	 * @return int Number of rows updated.
+	 */
+	public function bulk_update_status( array $ids, string $status ): int {
+		global $wpdb;
+		$ids    = array_filter( array_map( 'absint', $ids ) );
+		$status = sanitize_key( $status );
+		if ( empty( $ids ) || $status === '' ) {
+			return 0;
+		}
+		$fmt = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$now = current_time( 'mysql' );
+		return (int) $wpdb->query( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				'UPDATE %i SET payment_status = %s, updated_at = %s WHERE id IN (' . $fmt . ')', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				array_merge( array( $this->table, $status, $now ), array_values( $ids ) )
+			)
+		);
+	}
+
+	/**
+	 * Retrieve multiple entries by their primary keys.
+	 *
+	 * @param int[] $ids Array of entry IDs.
+	 * @return EntryDto[]
+	 */
+	public function get_by_ids( array $ids ): array {
+		global $wpdb;
+		$ids = array_filter( array_map( 'absint', $ids ) );
+		if ( empty( $ids ) ) {
+			return array();
+		}
+		$fmt  = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$rows = $wpdb->get_results( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE id IN (' . $fmt . ') ORDER BY created_at DESC', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				array_merge( array( $this->table ), array_values( $ids ) )
+			),
+			ARRAY_A
+		);
+		return is_array( $rows ) ? array_map( array( EntryDto::class, 'from' ), $rows ) : array();
+	}
+
+
+
+	/**
 	 * Retrieve a single entry by its primary key.
 	 *
 	 * @param int $id Entry ID.
@@ -246,7 +296,7 @@ final class EntryRepository {
 			// placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 			$wpdb->prepare(
 				/*translators: 1. SQL query with placeholders, not user-facing text. Do not translate or localize. */
-				'SELECT * FROM %i' . $where_tpl . ' ORDER BY created_at DESC LIMIT %d OFFSET %d', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				'SELECT * FROM %i' . $where_tpl . ' ORDER BY id DESC LIMIT %d OFFSET %d', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
 				...$args
 			),
 			ARRAY_A
@@ -305,6 +355,76 @@ final class EntryRepository {
 				...$args
 			)
 		);
+	}
+
+	/**
+	 * Sum amounts filtered by status and a time period — used for the revenue card.
+	 *
+	 * Period values: 'day' (today), 'week' (last 7 days), 'month' (current calendar month),
+	 *               'year' (current calendar year), 'all' (no date filter, the default).
+	 */
+	public function sum_amount_period( string $status = '', string $period = 'all' ): float {
+		global $wpdb;
+		$status = sanitize_key( $status );
+		$period = sanitize_key( $period );
+
+		[ $where_tpl, $w_args ] = $this->build_where( $status );
+
+
+		$period_sql = $this->period_condition( $period );
+		if ( $period_sql !== '' ) {
+			$where_tpl = $where_tpl === ''
+				? ' WHERE ' . $period_sql
+				: $where_tpl . ' AND ' . $period_sql;
+		}
+
+		$args = array_merge( array( $this->table ), $w_args );
+		return (float) $wpdb->get_var( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				...$args
+			)
+		);
+	}
+
+	/** Count rows filtered by status and a time period — mirrors sum_amount_period(). */
+	public function count_period( string $status = '', string $period = 'all' ): int {
+		global $wpdb;
+		$status = sanitize_key( $status );
+		$period = sanitize_key( $period );
+
+		[ $where_tpl, $w_args ] = $this->build_where( $status );
+
+		$period_sql = $this->period_condition( $period );
+		if ( $period_sql !== '' ) {
+			$where_tpl = $where_tpl === ''
+				? ' WHERE ' . $period_sql
+				: $where_tpl . ' AND ' . $period_sql;
+		}
+
+		$args = array_merge( array( $this->table ), $w_args );
+		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				...$args
+			)
+		);
+	}
+
+	/** Returns a safe, hardcoded SQL snippet for the requested period (no user data). */
+	private function period_condition( string $period ): string {
+		switch ( $period ) {
+			case 'day':
+				return "DATE(created_at) = CURDATE()";
+			case 'week':
+				return "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+			case 'month':
+				return "YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())";
+			case 'year':
+				return "YEAR(created_at) = YEAR(NOW())";
+			default:
+				return '';
+		}
 	}
 
 	/**

@@ -57,13 +57,17 @@ final class Plugin {
 		add_filter( 'wpcf7_validate_email', array( $process, 'validate_email_length' ), 20, 2 );
 		add_filter( 'wpcf7_validate_email*', array( $process, 'validate_email_length' ), 20, 2 );
 
+		add_filter( 'wpcf7_form_action_url', array( $this, 'strip_payment_params_from_action_url' ) );
+
 		$tag = new PaymentTag();
 		add_action( 'wpcf7_init', array( $tag, 'register' ) );
 
 		if ( is_admin() ) {
 			$settings = new \Ifthenpay\CF7\Admin\Settings();
 			add_action( 'wp_ajax_iftp_cf7_activate_payment_method', array( $settings, 'ajax_activate_payment_method' ) );
-			add_action( 'wp_ajax_iftp_cf7_refresh_gateway_data', array( $settings, 'ajax_refresh_gateway_data' ) );
+
+			$entries_ajax = new EntriesPage();
+			add_action( 'wp_ajax_iftp_cf7_add_payment', array( $entries_ajax, 'ajax_add_payment' ) );
 
 			add_action( 'admin_menu', array( $this, 'register_admin_menus' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
@@ -113,6 +117,12 @@ final class Plugin {
 			array( $entries_page, 'render_page' )
 		);
 		add_action( 'load-' . $hook, array( $entries_page, 'process_actions' ) );
+	}
+
+
+
+	public function strip_payment_params_from_action_url( string $url ): string {
+		return remove_query_arg( array( 'iftp_cf7_pay', 'iftp_cf7_entry' ), $url );
 	}
 
 
@@ -191,6 +201,7 @@ final class Plugin {
 			array(
 				'ajax_url'              => admin_url( 'admin-ajax.php' ),
 				'nonce'                 => wp_create_nonce( 'iftp_cf7_settings' ),
+				'add_payment_nonce'     => wp_create_nonce( 'iftp_cf7_add_payment' ),
 				'activate_method_label' => __( 'Activate Method', 'ifthenpay-payments-for-contactform7' ),
 				'saved_methods'         => Settings::get_methods(),
 			)

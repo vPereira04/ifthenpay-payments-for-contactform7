@@ -45,128 +45,8 @@
 
 
 	$(document).on('change', '#iftp-gateway-key', function () {
-		var newKey = String($(this).val() || '');
-		iftpShowForGateway(newKey);
-		iftpRefreshGatewayMethods(newKey);
+		iftpShowForGateway(String($(this).val() || ''));
 	});
-
-
-
-	function iftpEscAttr(s) {
-		return String(s)
-			.replace(/&/g, '&amp;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
-	}
-
-	function iftpBuildInactiveMethodHtml(entity_uc, label, logo, logo_dark, gateway_key) {
-		var activateLabel = (window.iftpCf7Admin || {}).activate_method_label || 'Activate Method';
-		var html  = '<div class="iftp-method-item iftp-method-item--inactive" data-entity="' + iftpEscAttr(entity_uc) + '">';
-		html += '<div class="iftp-method-disabled-layer">';
-		if (logo) {
-			html += '<img src="' + iftpEscAttr(logo) + '" alt="' + iftpEscAttr(label) + '" class="iftp-method-logo"';
-			if (logo_dark) { html += ' data-logo-dark="' + iftpEscAttr(logo_dark) + '"'; }
-			html += ' />';
-		}
-		html += '<strong>' + iftpEscAttr(label) + '</strong>';
-		html += '</div>';
-		html += '<div class="iftp-method-activate-overlay">';
-		html += '<button type="button" class="button button-small ifthenpay-activate"';
-		html += ' data-entity="' + iftpEscAttr(entity_uc) + '"';
-		html += ' data-gateway="' + iftpEscAttr(gateway_key) + '">';
-		html += iftpEscAttr(activateLabel);
-		html += '</button>';
-		html += '</div>';
-		html += '</div>';
-		return html;
-	}
-
-	function iftpBuildMethodsHtml(gateway_key, api_methods, method_cat) {
-		var catalogMap   = {};
-		var savedMethods = (window.iftpCf7Admin || {}).saved_methods || {};
-
-		method_cat.forEach(function (mc) {
-			var ent = String(mc.entity || '').toUpperCase();
-			if (ent) { catalogMap[ent] = mc; }
-		});
-
-		var gatewayEntities = Object.keys(api_methods).map(function (e) { return e.toUpperCase(); });
-		var html = '';
-
-		Object.keys(api_methods).forEach(function (entity) {
-			var entity_uc = entity.toUpperCase();
-			var m_data    = api_methods[entity] || {};
-			var m_account = String(m_data.account || '');
-			var m_label   = String(m_data.method  || entity_uc);
-			var cat       = catalogMap[entity_uc] || {};
-			var logo      = String(cat.logo      || '');
-			var logo_dark = String(cat.logo_dark || '');
-
-			if (m_account !== '') {
-				var savedEntry  = savedMethods[entity_uc] || {};
-				var wasEnabled  = savedEntry.enabled ? ' checked' : '';
-				html += '<div class="iftp-method-item" data-entity="' + iftpEscAttr(entity_uc) + '">';
-				html += '<label class="iftp-method-label">';
-				html += '<input type="checkbox" class="ifthenpay-method-checkbox"';
-				html += ' name="methods[' + iftpEscAttr(entity_uc) + '][enabled]" value="1"' + wasEnabled + ' />';
-				if (logo) {
-					html += '<img src="' + iftpEscAttr(logo) + '" alt="' + iftpEscAttr(m_label) + '" class="iftp-method-logo"';
-					if (logo_dark) { html += ' data-logo-dark="' + iftpEscAttr(logo_dark) + '"'; }
-					html += ' />';
-				}
-				html += '<strong>' + iftpEscAttr(m_label) + '</strong>';
-				html += '</label>';
-				html += '<div class="iftp-method-right"><code class="iftp-account">' + iftpEscAttr(m_account) + '</code></div>';
-				html += '</div>';
-			} else {
-				html += iftpBuildInactiveMethodHtml(entity_uc, m_label, logo, logo_dark, gateway_key);
-			}
-		});
-
-		method_cat.forEach(function (mc) {
-			var mc_entity = String(mc.entity || '').toUpperCase();
-			if (!mc_entity || gatewayEntities.indexOf(mc_entity) !== -1) { return; }
-			var mc_label     = String(mc.label     || mc_entity);
-			var mc_logo      = String(mc.logo      || '');
-			var mc_logo_dark = String(mc.logo_dark || '');
-			html += iftpBuildInactiveMethodHtml(mc_entity, mc_label, mc_logo, mc_logo_dark, gateway_key);
-		});
-
-		return html;
-	}
-
-	function iftpRefreshGatewayMethods(gateway_key) {
-		if (!gateway_key) { return; }
-		var $panel = $('.iftp-gateway-methods[data-gateway="' + gateway_key + '"]');
-		if (!$panel.length) { return; }
-
-		$panel.css('opacity', '0.5');
-
-		$.post(
-			(window.iftpCf7Admin || {}).ajax_url || '',
-			{
-				action:      'iftp_cf7_refresh_gateway_data',
-				nonce:       (window.iftpCf7Admin || {}).nonce || '',
-				gateway_key: gateway_key,
-			},
-			null,
-			'json'
-		)
-			.done(function (response) {
-				$panel.css('opacity', '');
-				if (!response || !response.success) { return; }
-				var data        = response.data || {};
-				var api_methods = data.api_methods    || {};
-				var method_cat  = data.method_catalog || [];
-				$panel.html(iftpBuildMethodsHtml(gateway_key, api_methods, method_cat));
-				iftpRebuildDefaultMethod(gateway_key);
-			})
-			.fail(function () {
-				$panel.css('opacity', '');
-			});
-	}
 
 
 	$(document).on('change', '.ifthenpay-method-checkbox', function () {
@@ -335,6 +215,92 @@ $(document).on('click', '#iftp-bulk-form input[type="submit"]', function() {
 			iftpSelClear();
 		}
 		return true;
+	});
+
+
+
+
+
+	function iftpModalOpen() {
+		$('#iftp-add-payment-form')[0].reset();
+		$('.iftp-modal-error').hide().text('');
+		$('.iftp-modal-submit').prop('disabled', false).text(
+			(window.iftpCf7Admin || {}).add_payment_label || 'Add Payment'
+		);
+		$('#iftp-add-payment-modal').fadeIn(150);
+		$('#ap_amount').trigger('focus');
+	}
+
+	function iftpModalClose() {
+		$('#iftp-add-payment-modal').fadeOut(150);
+	}
+
+	$(document).on('click', '#iftp-add-payment-btn', function (e) {
+		e.preventDefault();
+		iftpModalOpen();
+	});
+
+	$(document).on('click', '.iftp-modal-overlay, .iftp-modal-close, .iftp-modal-cancel', function () {
+		iftpModalClose();
+	});
+
+	$(document).on('keydown', function (e) {
+		if (e.key === 'Escape' && $('#iftp-add-payment-modal').is(':visible')) {
+			iftpModalClose();
+		}
+	});
+
+	$(document).on('click', '.iftp-modal-box', function (e) {
+		e.stopPropagation();
+	});
+
+	$(document).on('submit', '#iftp-add-payment-form', function (e) {
+		e.preventDefault();
+		var $form   = $(this);
+		var $btn    = $form.find('.iftp-modal-submit');
+		var $error  = $('.iftp-modal-error');
+		var amount  = parseFloat($form.find('[name="ap_amount"]').val() || '0');
+
+		if (!amount || amount <= 0) {
+			$error.text('Please enter a valid amount.').show();
+			return;
+		}
+
+		$btn.prop('disabled', true).text('Saving…');
+		$error.hide().text('');
+
+		$.post(
+			(window.iftpCf7Admin || {}).ajax_url || '',
+			{
+				action:          'iftp_cf7_add_payment',
+				nonce:           (window.iftpCf7Admin || {}).add_payment_nonce || '',
+				customer_name:   $form.find('[name="ap_customer_name"]').val(),
+				customer_email:  $form.find('[name="ap_customer_email"]').val(),
+				customer_ip:     $form.find('[name="ap_customer_ip"]').val(),
+				amount:          $form.find('[name="ap_amount"]').val(),
+				payment_method:  $form.find('[name="ap_payment_method"]').val(),
+				payment_status:  $form.find('[name="ap_payment_status"]').val(),
+				form_title:      $form.find('[name="ap_form_title"]').val(),
+			},
+			null,
+			'json'
+		)
+			.done(function (response) {
+				if (response && response.success) {
+					iftpModalClose();
+					window.location.reload();
+				} else {
+					var msg = (response && response.data && response.data.message)
+						? String(response.data.message)
+						: 'Failed to save entry.';
+					$error.text(msg).show();
+					$btn.prop('disabled', false).text('Add Payment');
+				}
+			})
+			.fail(function () {
+				$error.text('Network error. Please try again.').show();
+				$btn.prop('disabled', false).text('Add Payment');
+			});
 	});
 
 

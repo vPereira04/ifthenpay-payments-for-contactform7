@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Activation {
 
-	private const DB_VERSION     = '1.4';
+	private const DB_VERSION     = '1.5';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
 	public static function activate(): void {
@@ -41,6 +41,7 @@ final class Activation {
 			form_title   VARCHAR(255)    NOT NULL DEFAULT '',
 			customer_name  VARCHAR(255)  NOT NULL DEFAULT '',
 			customer_email VARCHAR(100)  NOT NULL DEFAULT '',
+			customer_ip  VARCHAR(45)     NOT NULL DEFAULT '',
 			amount       DECIMAL(10,2)   NOT NULL DEFAULT '0.00',
 			payment_method VARCHAR(20)   NOT NULL DEFAULT '',
 			transaction_id VARCHAR(100)  NOT NULL DEFAULT '',

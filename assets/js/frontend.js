@@ -5,8 +5,6 @@
 	const SESSION_KEY = 'iftp_cf7_pbl_session';
 	let pendingAfterSuccess = false;
 
-
-
 	function apiPost(action, data) {
 		return $.post(
 			cfg.ajax_url,
@@ -15,8 +13,6 @@
 			'json'
 		);
 	}
-
-
 
 	function saveSession(data) {
 		try {
@@ -35,8 +31,6 @@
 			sessionStorage.removeItem(SESSION_KEY);
 		} catch (_e) {}
 	}
-
-
 
 	function getReturnStatus() {
 		try {
@@ -66,17 +60,13 @@
 		}
 		try {
 			const url = new URL(window.location.href);
-			['iftp_cf7_pay', 'iftp_cf7_entry', 'transaction_id'].forEach(
-				function (k) {
-					url.searchParams.delete(k);
-				}
-			);
-			url.hash = '';
+			['iftp_cf7_pay', 'iftp_cf7_entry'].forEach(function (k) {
+				url.searchParams.delete(k);
+			});
+			url.hash = 'iftp-msg';
 			history.replaceState({}, document.title, url.toString());
 		} catch (_e) {}
 	}
-
-
 
 	function captureFormData($form) {
 		const data = {};
@@ -120,8 +110,6 @@
 		});
 	}
 
-
-
 	function disableFormButtons($form) {
 		$form.find('button, input[type="submit"]').each(function () {
 			const $el = $(this);
@@ -139,15 +127,11 @@
 		});
 	}
 
-
-
 	function resolveAmount($form, $field) {
-
 		const inline = parseFloat(String($field.data('amount') || ''));
 		if (!isNaN(inline) && inline > 0) {
 			return inline;
 		}
-
 
 		const btnAmt = parseFloat(
 			String($field.find('.iftp-cf7-pay-button').data('amount') || '')
@@ -155,7 +139,6 @@
 		if (!isNaN(btnAmt) && btnAmt > 0) {
 			return btnAmt;
 		}
-
 
 		let amount = 0;
 		$form.find('input[name], select[name]').each(function () {
@@ -174,8 +157,6 @@
 		});
 		return amount;
 	}
-
-
 
 	function extractCustomer($form) {
 		let name = '',
@@ -200,8 +181,6 @@
 			});
 		return { name, email };
 	}
-
-
 
 	/**
 	 * Show a status message in the payment field's runtime-warning container.
@@ -254,23 +233,34 @@
 			$p.append(
 				document.createTextNode(' ' + (cfg.msg_or || 'or') + ' ')
 			);
+			$p.append(
+				$('<a href="#">')
+					.addClass('iftp-new-payment')
+					.text(cfg.msg_new_payment || 'New Payment')
+			);
+		} else if (isCancelType) {
+			$p.append(
+				$('<a href="#">')
+					.addClass('iftp-new-payment')
+					.text(cfg.msg_new_payment || 'New Payment')
+			);
+		} else {
+			$p.append(
+				$('<a href="#">')
+					.addClass('iftp-new-payment')
+					.text(cfg.msg_retry || 'Retry')
+			);
 		}
-
-		$p.append(
-			$('<a href="#">')
-				.addClass('iftp-new-payment')
-				.text(cfg.msg_new_payment || 'New Payment')
-		);
 
 		$warn.append($p);
 	}
 
-
-
 	function submitCf7Form($form) {
 		enableFormButtons($form);
 		const $btn = $form
-			.find('.wpcf7-submit:not(.iftp-cf7-pay-button), input[type="submit"]:not(.iftp-cf7-pay-button), button[type="submit"]:not(.iftp-cf7-pay-button)')
+			.find(
+				'.wpcf7-submit:not(.iftp-cf7-pay-button), input[type="submit"]:not(.iftp-cf7-pay-button), button[type="submit"]:not(.iftp-cf7-pay-button)'
+			)
 			.first();
 		if ($btn.length) {
 			$btn.prop('disabled', false).trigger('click');
@@ -278,8 +268,6 @@
 			$form.trigger('submit');
 		}
 	}
-
-
 
 	function handleReturnParams() {
 		const status = getReturnStatus();
@@ -290,12 +278,9 @@
 		let entryId = getReturnEntryId();
 		const session = loadSession();
 
-
 		entryId = entryId || String((session && session.entry_id) || '');
 
-
 		cleanUrl();
-
 
 		const formId = session && session.form_id;
 		const $field = formId
@@ -313,46 +298,54 @@
 
 		if (status === 'success') {
 
+			try {
+				var formEl = $form[0];
+				if (formEl && formEl.action) {
+					var actionUrl = new URL(formEl.action, window.location.href);
+					actionUrl.searchParams.delete('iftp_cf7_pay');
+					actionUrl.searchParams.delete('iftp_cf7_entry');
+					formEl.action = actionUrl.toString();
+				}
+			} catch (_e) {}
+
 			if (session && session.form_data) {
 				restoreFormData($form, session.form_data);
 			}
-
 
 			$field.find('.iftp-cf7-entry-id').val(entryId);
 			$field.find('.iftp-cf7-payment-status').val('pending');
 
 			clearSession();
 
-
 			$field.find('.iftp-cf7-pay-button').hide();
 			showFieldMessage($field, 'pending', null);
 			pendingAfterSuccess = true;
-
 
 			setTimeout(function () {
 				submitCf7Form($form);
 			}, 200);
 		} else {
-
 			clearSession();
 			showFieldMessage($field, status, paymentUrl);
 
-			const $output = $form.closest('.wpcf7').find('.wpcf7-response-output');
+			const $output = $form
+				.closest('.wpcf7')
+				.find('.wpcf7-response-output');
 			if ($output.length) {
 				const isCancelType = status === 'cancel';
 				const msg = isCancelType
 					? cfg.msg_cancel_prefix || 'Your payment was cancelled!'
 					: cfg.msg_error_prefix || 'Your payment failed!';
 				$output
-					.removeClass('wpcf7-mail-sent-ok wpcf7-mail-sent-ng wpcf7-validation-errors wpcf7-spam-blocked')
+					.removeClass(
+						'wpcf7-mail-sent-ok wpcf7-mail-sent-ng wpcf7-validation-errors wpcf7-spam-blocked'
+					)
 					.addClass('wpcf7-mail-sent-ng')
 					.text(msg)
 					.show();
 			}
 		}
 	}
-
-
 
 	function handlePayClick($button) {
 		const $form = $button.closest('form');
@@ -364,7 +357,6 @@
 		const formTitle = String(
 			$form.find('.wpcf7-form-title, h2').first().text() || ''
 		).trim();
-
 
 		if (!gatewayKey || !formId) {
 			showFieldMessage($field, 'error', null);
@@ -383,12 +375,9 @@
 			return;
 		}
 
-
 		const formData = captureFormData($form);
 
-
 		disableFormButtons($form);
-
 
 		const origText = String($button.val() || $button.text() || '').trim();
 		$button.val(cfg.opening_text || 'Opening payment...');
@@ -434,7 +423,6 @@
 					return;
 				}
 
-
 				saveSession({
 					entry_id: data.entry_id,
 					payment_url: paymentUrl,
@@ -442,7 +430,6 @@
 					form_data: formData,
 					ts: Date.now(),
 				});
-
 
 				window.location.href = paymentUrl;
 			})
@@ -453,22 +440,18 @@
 			});
 	}
 
-
-
-	document.addEventListener('wpcf7mailsent', function (event) {
+	document.addEventListener('wpcf7mailsent', function () {
 		if (!pendingAfterSuccess) {
 			return;
 		}
 		pendingAfterSuccess = false;
 
-		const $form = $(event.target);
-		$form.find('.iftp-cf7-runtime-warning')
-			.hide()
-			.removeClass('iftp-warn-pending iftp-warn-cancel iftp-warn-error')
-			.empty();
+		try {
+			const url = new URL(window.location.href);
+			url.hash = 'iftp-msg';
+			history.replaceState({}, document.title, url.toString());
+		} catch (_e) {}
 	});
-
-
 
 	function initThemeLogos() {
 		document
@@ -506,47 +489,59 @@
 			});
 	}
 
-
-
 	function validateCF7Fields($form) {
 
 		$form.find('.iftp-cf7-not-valid-tip').remove();
-		$form.find('.iftp-cf7-not-valid')
+		$form
+			.find('.iftp-cf7-not-valid')
 			.removeClass('iftp-cf7-not-valid wpcf7-not-valid')
 			.attr('aria-invalid', 'false');
 
-		var valid = true;
+		let valid = true;
 
 		function markInvalid($field, message) {
-			$field.addClass('wpcf7-not-valid iftp-cf7-not-valid').attr('aria-invalid', 'true');
-			var $wrap = $field.closest('.wpcf7-form-control-wrap');
-			$('<span class="wpcf7-not-valid-tip iftp-cf7-not-valid-tip" aria-hidden="true"></span>')
+			$field
+				.addClass('wpcf7-not-valid iftp-cf7-not-valid')
+				.attr('aria-invalid', 'true');
+			const $wrap = $field.closest('.wpcf7-form-control-wrap');
+			$(
+				'<span class="wpcf7-not-valid-tip iftp-cf7-not-valid-tip" aria-hidden="true"></span>'
+			)
 				.text(message)
 				.appendTo($wrap.length ? $wrap : $field.parent());
 			valid = false;
 		}
 
 
-		$form.find('input[aria-required="true"], textarea[aria-required="true"], select[aria-required="true"]').each(function () {
-			var $field = $(this);
-			if (!String($field.val() || '').trim()) {
-				markInvalid($field, cfg.error_field_required || 'Please fill in this field.');
-			}
-		});
+		$form
+			.find(
+				'input[aria-required="true"], textarea[aria-required="true"], select[aria-required="true"]'
+			)
+			.each(function () {
+				const $field = $(this);
+				if (!String($field.val() || '').trim()) {
+					markInvalid(
+						$field,
+						cfg.error_field_required || 'Please fill in this field.'
+					);
+				}
+			});
 
 
 		$form.find('input[type="email"]').each(function () {
-			var $field = $(this);
-			var val = String($field.val() || '');
+			const $field = $(this);
+			const val = String($field.val() || '');
 			if (val.length > 100) {
-				markInvalid($field, cfg.error_email_too_long || 'Email address must be 100 characters or fewer.');
+				markInvalid(
+					$field,
+					cfg.error_email_too_long ||
+						'Email address must be 100 characters or fewer.'
+				);
 			}
 		});
 
 		return valid;
 	}
-
-
 
 	$(function () {
 		handleReturnParams();
@@ -557,10 +552,14 @@
 			'.iftp-cf7-pay-button:not([disabled])',
 			function (e) {
 				e.preventDefault();
-				var $button = $(this);
-				var $form   = $button.closest('form');
-				var formEl  = $form[0];
-				if (formEl && typeof formEl.checkValidity === 'function' && !formEl.checkValidity()) {
+				const $button = $(this);
+				const $form = $button.closest('form');
+				const formEl = $form[0];
+				if (
+					formEl &&
+					typeof formEl.checkValidity === 'function' &&
+					!formEl.checkValidity()
+				) {
 					if (typeof formEl.reportValidity === 'function') {
 						formEl.reportValidity();
 					}
@@ -578,10 +577,14 @@
 			'input change',
 			'.wpcf7-form-control.iftp-cf7-not-valid',
 			function () {
-				var $field = $(this);
-				$field.removeClass('iftp-cf7-not-valid wpcf7-not-valid').attr('aria-invalid', 'false');
-				var $wrap = $field.closest('.wpcf7-form-control-wrap');
-				($wrap.length ? $wrap : $field.parent()).find('.iftp-cf7-not-valid-tip').remove();
+				const $field = $(this);
+				$field
+					.removeClass('iftp-cf7-not-valid wpcf7-not-valid')
+					.attr('aria-invalid', 'false');
+				const $wrap = $field.closest('.wpcf7-form-control-wrap');
+				($wrap.length ? $wrap : $field.parent())
+					.find('.iftp-cf7-not-valid-tip')
+					.remove();
 			}
 		);
 

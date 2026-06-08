@@ -102,7 +102,7 @@ final class GatewayEndpoint {
 					$ret = $entry->return_url;
 				}
 				if ( $entry->form_id > 0 ) {
-					$anchor = '#iftp-payment-status-' . $entry->form_id;
+					$anchor = '#iftp-msg';
 				}
 			}
 		}
