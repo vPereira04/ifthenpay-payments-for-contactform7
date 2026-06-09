@@ -190,16 +190,16 @@ final class EntryRepository {
 			return 0;
 		}
 
-		$fmt = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		return (int) $wpdb->query( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$fmt        = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$query_stmt = "DELETE FROM %i WHERE id IN ($fmt)";
+
+		return (int) $wpdb->query(
 			$wpdb->prepare(
-				'DELETE FROM %i WHERE id IN (' . $fmt . ')', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				$query_stmt, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- String estrutural preparada dinamicamente com segurança.
 				array_merge( array( $this->table ), array_values( $ids ) )
 			)
 		);
 	}
-
-
 
 	/**
 	 * Update payment_status for multiple entries.
@@ -215,11 +215,14 @@ final class EntryRepository {
 		if ( empty( $ids ) || $status === '' ) {
 			return 0;
 		}
-		$fmt = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		$now = current_time( 'mysql' );
-		return (int) $wpdb->query( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$fmt        = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$now        = current_time( 'mysql' );
+		$query_stmt = "UPDATE %i SET payment_status = %s, updated_at = %s WHERE id IN ($fmt)";
+
+		return (int) $wpdb->query(
 			$wpdb->prepare(
-				'UPDATE %i SET payment_status = %s, updated_at = %s WHERE id IN (' . $fmt . ')', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				$query_stmt, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- String estrutural preparada dinamicamente com segurança.
 				array_merge( array( $this->table, $status, $now ), array_values( $ids ) )
 			)
 		);
@@ -276,7 +279,7 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return EntryDto[]
 	 */
-	public function get_all( int $page = 1, int $per_page = 20, string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '' ): array {
+	public function get_all( int $page = 1, int $per_page = 20, string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all' ): array {
 		global $wpdb;
 		$page                    = max( 1, $page );
 		$offset                  = ( $page - 1 ) * $per_page;
@@ -287,6 +290,11 @@ final class EntryRepository {
 		$search_query			 = sanitize_text_field( $search_query );
 
 		[ $where_tpl, $w_args ]  = $this->build_where( $status, $search_field, $search_op, $search_query );
+
+		$period_sql = $this->period_condition( $period, $status, true );
+		if ( $period_sql !== '' ) {
+			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
+		}
 
 		$per_page				 = absint( $per_page );
 		$offset   				 = absint( $offset );
@@ -314,7 +322,7 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return int Total number of matching entries.
 	 */
-	public function count_all( string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '' ): int {
+	public function count_all( string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all' ): int {
 		global $wpdb;
 		$status 				 = sanitize_key( $status );
 		$search_field 			 = sanitize_key( $search_field );
@@ -322,6 +330,12 @@ final class EntryRepository {
 		$search_query			 = sanitize_text_field( $search_query );
 
 		[ $where_tpl, $w_args ]  = $this->build_where( $status, $search_field, $search_op, $search_query );
+
+		$period_sql = $this->period_condition( $period, $status, true );
+		if ( $period_sql !== '' ) {
+			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
+		}
+
 		$args = array_merge( array( $this->table ), $w_args );
 		return (int) $wpdb->get_var( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
@@ -340,7 +354,7 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return float Sum of amounts, or 0.0.
 	 */
-	public function sum_amount( string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '' ): float {
+	public function sum_amount( string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all' ): float {
 		global $wpdb;
 		$status 				 = sanitize_key( $status );
 		$search_field 			 = sanitize_key( $search_field );
@@ -348,6 +362,12 @@ final class EntryRepository {
 		$search_query			 = sanitize_text_field( $search_query );
 
 		[ $where_tpl, $w_args ]  = $this->build_where( $status, $search_field, $search_op, $search_query );
+
+		$period_sql = $this->period_condition( $period, $status, true );
+		if ( $period_sql !== '' ) {
+			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
+		}
+
 		$args = array_merge( array( $this->table ), $w_args );
 		return (float) $wpdb->get_var( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
@@ -371,7 +391,7 @@ final class EntryRepository {
 		[ $where_tpl, $w_args ] = $this->build_where( $status );
 
 
-		$period_sql = $this->period_condition( $period );
+		$period_sql = $this->period_condition( $period, $status );
 		if ( $period_sql !== '' ) {
 			$where_tpl = $where_tpl === ''
 				? ' WHERE ' . $period_sql
@@ -388,14 +408,14 @@ final class EntryRepository {
 	}
 
 	/** Count rows filtered by status and a time period — mirrors sum_amount_period(). */
-	public function count_period( string $status = '', string $period = 'all' ): int {
+	public function count_period( string $status = '', string $period = 'all', bool $any_activity = false ): int {
 		global $wpdb;
 		$status = sanitize_key( $status );
 		$period = sanitize_key( $period );
 
 		[ $where_tpl, $w_args ] = $this->build_where( $status );
 
-		$period_sql = $this->period_condition( $period );
+		$period_sql = $this->period_condition( $period, $status, $any_activity );
 		if ( $period_sql !== '' ) {
 			$where_tpl = $where_tpl === ''
 				? ' WHERE ' . $period_sql
@@ -411,17 +431,96 @@ final class EntryRepository {
 		);
 	}
 
-	/** Returns a safe, hardcoded SQL snippet for the requested period (no user data). */
-	private function period_condition( string $period ): string {
+	/**
+	 * Return per-bucket counts and amounts for the chart.
+	 *
+	 * Bucket keys:
+	 *  - 'day'   → string hour "0"–"23"
+	 *  - 'year'  → "YYYY-MM"
+	 *  - others  → "YYYY-MM-DD"
+	 *
+	 * @return array<int, array{bucket: string, cnt: string, total: string}>
+	 */
+	public function get_chart_data( string $status = '', string $period = 'all' ): array {
+		global $wpdb;
+		$status = sanitize_key( $status );
+		$col    = $status === 'completed' ? 'updated_at' : 'created_at';
+
+		[ $where_tpl, $w_args ] = $this->build_where( $status );
+
+		if ( $period === 'day' ) {
+			$group_expr  = "HOUR({$col})";
+			$period_cond = "DATE({$col}) = CURDATE()";
+		} elseif ( $period === 'year' ) {
+			$group_expr  = "DATE_FORMAT({$col}, '%Y-%m')";
+			$period_cond = "YEAR({$col}) = YEAR(NOW())";
+		} elseif ( $period === 'month' ) {
+			$group_expr  = "DATE({$col})";
+			$period_cond = "YEAR({$col}) = YEAR(NOW()) AND MONTH({$col}) = MONTH(NOW())";
+		} elseif ( $period === 'week' ) {
+			$group_expr  = "DATE({$col})";
+			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+		} else {
+			$group_expr  = "DATE({$col})";
+			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+		}
+
+		$where_tpl = $where_tpl === ''
+			? " WHERE {$period_cond}"
+			: $where_tpl . " AND {$period_cond}";
+
+		$args = array_merge( [ $this->table ], $w_args );
+
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+				"SELECT {$group_expr} AS bucket, COUNT(*) AS cnt, COALESCE(SUM(amount),0) AS total FROM %i{$where_tpl} GROUP BY {$group_expr} ORDER BY {$group_expr}",
+				...$args
+			),
+			ARRAY_A
+		);
+
+		return is_array( $rows ) ? $rows : [];
+	}
+
+
+
+	/**
+	 * Returns a safe, hardcoded SQL snippet for the requested period (no user data).
+	 *
+	 * Two modes:
+	 * - Stats cards ($any_activity = false): completed uses updated_at so a payment
+	 *   created on a previous day but paid today is counted in today's revenue/count.
+	 *   All other statuses use created_at.
+	 * - Table ($any_activity = true): entry appears if created_at OR updated_at falls
+	 *   within the period, so cancelled/failed attempts from earlier entries surface too.
+	 */
+	private function period_condition( string $period, string $status = '', bool $any_activity = false ): string {
+		if ( $any_activity ) {
+			switch ( $period ) {
+				case 'day':
+					return "(DATE(created_at) = CURDATE() OR DATE(updated_at) = CURDATE())";
+				case 'week':
+					return "(created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) OR updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))";
+				case 'month':
+					return "((YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())) OR (YEAR(updated_at) = YEAR(NOW()) AND MONTH(updated_at) = MONTH(NOW())))";
+				case 'year':
+					return "(YEAR(created_at) = YEAR(NOW()) OR YEAR(updated_at) = YEAR(NOW()))";
+				default:
+					return '';
+			}
+		}
+
+		$col = $status === 'completed' ? 'updated_at' : 'created_at';
 		switch ( $period ) {
 			case 'day':
-				return "DATE(created_at) = CURDATE()";
+				return "DATE({$col}) = CURDATE()";
 			case 'week':
-				return "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+				return "{$col} >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
 			case 'month':
-				return "YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())";
+				return "YEAR({$col}) = YEAR(NOW()) AND MONTH({$col}) = MONTH(NOW())";
 			case 'year':
-				return "YEAR(created_at) = YEAR(NOW())";
+				return "YEAR({$col}) = YEAR(NOW())";
 			default:
 				return '';
 		}

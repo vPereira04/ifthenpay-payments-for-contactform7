@@ -220,6 +220,13 @@ $(document).on('click', '#iftp-bulk-form input[type="submit"]', function() {
 
 
 
+	$(document).on('click', '#iftp-refresh-btn', function () {
+		window.location.reload();
+	});
+
+
+
+
 
 	function iftpModalOpen() {
 		$('#iftp-add-payment-form')[0].reset();
@@ -305,6 +312,172 @@ $(document).on('click', '#iftp-bulk-form input[type="submit"]', function() {
 
 
 
+
+	function iftpInitDashChart() {
+		var canvas = document.getElementById('iftp-cf7-dash-chart');
+		if (!canvas || typeof Chart === 'undefined') return;
+
+		var raw;
+		try { raw = JSON.parse(canvas.dataset.chart || '{}'); }
+		catch (_e) { raw = {}; }
+		if (!raw.labels || !raw.labels.length) return;
+
+		new Chart(canvas, {
+			type: 'line',
+			data: {
+				labels: raw.labels,
+				datasets: [{
+					data:                 raw.amounts,
+					fill:                 true,
+					tension:              0.4,
+					borderColor:          '#00609c',
+					backgroundColor:      'rgba(0,96,156,.08)',
+					pointRadius:          2,
+					pointHoverRadius:     4,
+					pointBackgroundColor: '#00609c',
+					borderWidth:          1.5,
+				}],
+			},
+			options: {
+				responsive:          true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend:  { display: false },
+					tooltip: {
+						callbacks: {
+							label: function(ctx) { return ' € ' + Number(ctx.raw).toFixed(2); },
+						},
+					},
+				},
+				scales: {
+					x: {
+						grid:  { display: false },
+						border: { display: false },
+						ticks: { color: '#8c8f94', font: { size: 10 }, maxTicksLimit: 7 },
+					},
+					y: {
+						display:     false,
+						beginAtZero: true,
+					},
+				},
+			},
+		});
+	}
+
+
+
+
+	function iftpInitChart() {
+		var canvas = document.getElementById('iftp-cf7-chart');
+		if (!canvas || typeof Chart === 'undefined') return;
+
+		var raw;
+		try {
+			raw = JSON.parse(canvas.dataset.chart || '{}');
+		} catch (_e) {
+			raw = {};
+		}
+		if (!raw.labels || !raw.labels.length) return;
+
+		var currentMode = 'count';
+		var chartInst   = null;
+
+		function getConfig(mode) {
+			var isRev   = mode === 'revenue';
+			var data    = isRev ? (raw.amounts || []) : (raw.counts || []);
+			var color   = isRev ? '#00a32a' : '#00609c';
+			var bgColor = isRev ? 'rgba(0,163,42,.07)' : 'rgba(0,96,156,.07)';
+			var ptR     = raw.labels.length > 15 ? 2 : 3;
+
+			return {
+				color:   color,
+				bgColor: bgColor,
+				ptR:     ptR,
+				data:    data,
+				yTick:   isRev
+					? function(v) { return '€ ' + v.toFixed(0); }
+					: function(v) { return v; },
+				tooltip: isRev
+					? function(ctx) { return ' € ' + Number(ctx.raw).toFixed(2); }
+					: function(ctx) { return ' ' + ctx.raw + ' payment' + (ctx.raw === 1 ? '' : 's'); },
+			};
+		}
+
+		function buildChart(mode) {
+			var cfg = getConfig(mode);
+
+			if (chartInst) {
+				var ds = chartInst.data.datasets[0];
+				ds.data               = cfg.data;
+				ds.borderColor        = cfg.color;
+				ds.backgroundColor    = cfg.bgColor;
+				ds.pointBackgroundColor = cfg.color;
+				chartInst.options.scales.y.ticks.callback = cfg.yTick;
+				chartInst.options.plugins.tooltip.callbacks.label = cfg.tooltip;
+				chartInst.update();
+				return;
+			}
+
+			chartInst = new Chart(canvas, {
+				type: 'line',
+				data: {
+					labels: raw.labels,
+					datasets: [{
+						label: '',
+						data:  cfg.data,
+						fill:  true,
+						tension: 0.4,
+						borderColor:          cfg.color,
+						backgroundColor:      cfg.bgColor,
+						pointBackgroundColor: cfg.color,
+						pointRadius:      cfg.ptR,
+						pointHoverRadius: 5,
+					}],
+				},
+				options: {
+					responsive:          true,
+					maintainAspectRatio: false,
+					interaction: { mode: 'index', intersect: false },
+					plugins: {
+						legend:  { display: false },
+						tooltip: {
+							callbacks: { label: cfg.tooltip },
+						},
+					},
+					scales: {
+						x: {
+							grid:  { color: 'rgba(0,0,0,.05)' },
+							ticks: { color: '#646970', font: { size: 11 }, maxTicksLimit: 12 },
+						},
+						y: {
+							beginAtZero: true,
+							grid:  { color: 'rgba(0,0,0,.05)' },
+							ticks: {
+								color: '#646970',
+								font:  { size: 11 },
+								callback: cfg.yTick,
+							},
+						},
+					},
+				},
+			});
+		}
+
+		buildChart(currentMode);
+
+		document.querySelectorAll('.iftp-chart-mode').forEach(function(btn) {
+			btn.addEventListener('click', function() {
+				currentMode = this.dataset.mode;
+				document.querySelectorAll('.iftp-chart-mode').forEach(function(b) {
+					b.classList.toggle('active', b.dataset.mode === currentMode);
+				});
+				buildChart(currentMode);
+			});
+		});
+	}
+
+
+
 	$(function () {
 
 		var $gatewaySel = $('#iftp-gateway-key');
@@ -324,6 +497,9 @@ $(document).on('click', '#iftp-bulk-form input[type="submit"]', function() {
 		if ($('#iftp-bulk-form').length) {
 			iftpSelUpdateUI();
 		}
+
+		iftpInitChart();
+		iftpInitDashChart();
 	});
 
 })(jQuery);

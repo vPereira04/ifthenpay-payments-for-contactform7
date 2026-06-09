@@ -5,6 +5,37 @@
    ============================================================ */
 
 .iftp-cf7-entries-wrap {
+	/* Override the WP admin theme colour token so every native .button
+	   and var(--wp-admin-theme-color) reference picks up our brand blue. */
+	--wp-admin-theme-color: #00609c;
+	--wp-admin-theme-color-darker-10: #004f80;
+	--wp-admin-theme-color-darker-20: #003e63;
+}
+
+/* Links */
+.iftp-cf7-entries-wrap a {
+	color: #00609c;
+}
+
+.iftp-cf7-entries-wrap a:hover {
+	color: #004f80;
+}
+
+/* Primary button */
+.iftp-cf7-entries-wrap .button-primary,
+.iftp-cf7-entries-wrap .button-primary:visited {
+	background: #00609c !important;
+	border-color: #00609c !important;
+	color: #fff !important;
+}
+
+.iftp-cf7-entries-wrap .button-primary:hover,
+.iftp-cf7-entries-wrap .button-primary:focus,
+.iftp-cf7-entries-wrap .button-primary:active {
+	background: #004f80 !important;
+	border-color: #004f80 !important;
+	box-shadow: 0 0 0 1px #004f80 !important;
+	color: #fff !important;
 }
 
 /* ── Stats row (top) ── */
@@ -19,7 +50,7 @@
 .iftp-stat-card {
 	background: #fff;
 	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	border-radius: 8px;
 	padding: 10px 14px;
 	display: flex;
@@ -81,16 +112,16 @@
 }
 
 .iftp-period-tab:hover {
-	color: #2271b1;
+	color: #00609c;
 	background: #f0f6fc;
 	border-color: #c3c4c7;
 	text-decoration: none;
 }
 
 .iftp-period-tab.active {
-	color: #2271b1;
+	color: #00609c;
 	background: #fff;
-	border-color: #2271b1;
+	border-color: #00609c;
 	font-weight: 600;
 }
 
@@ -125,6 +156,66 @@
 .iftp-stat-val--failed     { color: #8b1a1c; }
 .iftp-stat-label--cancelled { color: #646970; }
 .iftp-stat-val--cancelled   { color: #646970; }
+
+/* ── Payments chart card ── */
+.iftp-chart-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 8px;
+	padding: 16px 20px 20px;
+	margin-bottom: 16px;
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
+}
+
+.iftp-chart-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.iftp-chart-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.iftp-chart-modes {
+	display: flex;
+	gap: 0;
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 99px;
+	padding: 2px;
+}
+
+.iftp-chart-mode {
+	padding: 3px 14px;
+	border-radius: 99px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #646970;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	transition: background .12s, color .12s;
+	line-height: 1.5;
+}
+
+.iftp-chart-mode:hover {
+	color: #1d2327;
+}
+
+.iftp-chart-mode.active {
+	background: #00609c;
+	color: #fff;
+}
+
+.iftp-chart-canvas-wrap {
+	position: relative;
+	height: 220px;
+}
 
 /* ── Info box (bottom of list) ── */
 .iftp-info-box {
@@ -185,7 +276,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
-	background: #2271b1;
+	background: #00609c;
 	color: #fff;
 	font-size: 10px;
 	font-weight: 600;
@@ -195,6 +286,171 @@
 	padding: 3px 8px;
 	border-radius: 3px;
 	vertical-align: middle;
+}
+
+.iftp-milestone-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	padding: 3px 8px;
+	border-radius: 3px;
+	vertical-align: middle;
+}
+
+/* Bronze — solid matte */
+.iftp-milestone-badge--first-waver {
+	background: #b16a6a;
+	box-shadow: 0 1px 3px rgb(167 98 86 / 45%);
+}
+
+/* Titanium — solid slate grey */
+.iftp-milestone-badge--catalyst {
+	background: #708090;
+	box-shadow: 0 1px 3px rgb(112 128 144 / 45%);
+}
+
+/* Gold — rich gradient, dark text for contrast */
+.iftp-milestone-badge--centurion {
+	background: linear-gradient(135deg, #b45309, #fcd34d);
+	color: #422006;
+	box-shadow: 0 1px 3px rgb(180 83 9 / 45%);
+}
+
+/* Platinum — light liquid metal with sweep shimmer, dark text */
+.iftp-milestone-badge--mclub {
+	background: linear-gradient(105deg, #94a3b8 0%, #f1f5f9 45%, #94a3b8 55%, #f1f5f9 100%);
+	background-size: 250% 100%;
+	color: #1e293b;
+	box-shadow: 0 1px 3px rgb(148 163 184 / 50%);
+	animation: iftp-platinum-sweep 3s linear infinite;
+}
+
+/* Wrapper — neutral inline container; oracle tier adds outer meteor pseudo-elements */
+.iftp-milestone-badge-wrap {
+	display: inline-flex;
+	vertical-align: middle;
+}
+
+.iftp-milestone-badge-wrap--oracle {
+	position: relative;
+}
+
+/* Dark meteor above badge — only visible against the light admin background outside the badge */
+.iftp-milestone-badge-wrap--oracle::before {
+	content: '';
+	position: absolute;
+	top: -2px;
+	left: 0;
+	width: 9px;
+	height: 1.5px;
+	background: linear-gradient(90deg, transparent, rgb(5 10 20 / 60%), transparent);
+	border-radius: 1px;
+	transform: translateX(-20px);
+	animation: iftp-outer-meteor-a 3.4s linear infinite;
+	pointer-events: none;
+}
+
+/* Dark meteor below badge */
+.iftp-milestone-badge-wrap--oracle::after {
+	content: '';
+	position: absolute;
+	bottom: -2px;
+	left: 0;
+	width: 6px;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, rgb(5 10 20 / 50%), transparent);
+	border-radius: 1px;
+	transform: translateX(-14px);
+	animation: iftp-outer-meteor-b 2.7s linear infinite;
+	animation-delay: 1.5s;
+	pointer-events: none;
+}
+
+/* Obsidian Onyx badge — dark base, overflow clips inner effects */
+.iftp-milestone-badge--oracle {
+	background: linear-gradient(135deg, #0f172a, #1e293b);
+	position: relative;
+	overflow: hidden;
+}
+
+/* Light-beam sweep — enters left edge, exits right edge via translateX */
+.iftp-milestone-badge--oracle::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(105deg,
+		transparent 35%,
+		rgb(255 255 255 / 4%) 44%,
+		rgb(255 255 255 / 16%) 50%,
+		rgb(255 255 255 / 4%) 56%,
+		transparent 65%
+	);
+	animation: iftp-oracle-sweep 3s linear infinite;
+	pointer-events: none;
+}
+
+/* Interior white meteor streak — thin, fast */
+.iftp-milestone-badge--oracle::after {
+	content: '';
+	position: absolute;
+	top: 35%;
+	left: 0;
+	width: 16px;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, rgb(255 255 255 / 85%), transparent);
+	border-radius: 1px;
+	animation: iftp-oracle-inner-meteor 2.3s linear infinite;
+	animation-delay: 0.9s;
+	pointer-events: none;
+}
+
+@keyframes iftp-platinum-sweep {
+	0%   { background-position: 100% 0; }
+	100% { background-position: -100% 0; }
+}
+
+/* Translates the full-badge overlay so the highlight enters left and exits right */
+@keyframes iftp-oracle-sweep {
+	0%   { transform: translateX(-150%); }
+	100% { transform: translateX(150%); }
+}
+
+/* Fast inner meteor, enters from outside-left, exits outside-right (clipped by overflow:hidden) */
+@keyframes iftp-oracle-inner-meteor {
+	0%   { transform: translateX(-25px); }
+	100% { transform: translateX(130px); }
+}
+
+/* Dark meteors outside — travel left to right, visible only on light admin background */
+@keyframes iftp-outer-meteor-a {
+	0%   { transform: translateX(-20px); opacity: 0; }
+	6%   { opacity: 0.65; }
+	94%  { opacity: 0.65; }
+	100% { transform: translateX(140px); opacity: 0; }
+}
+
+@keyframes iftp-outer-meteor-b {
+	0%   { transform: translateX(-14px); opacity: 0; }
+	6%   { opacity: 0.55; }
+	94%  { opacity: 0.55; }
+	100% { transform: translateX(140px); opacity: 0; }
+}
+
+@keyframes iftp-oracle-pulse {
+	0%, 100% {
+		box-shadow: 0 0 4px 1px rgb(99 102 241 / 30%);
+	}
+
+	50% {
+		box-shadow: 0 0 10px 3px rgb(99 102 241 / 65%),
+		            0 0 22px 6px rgb(99 102 241 / 20%);
+	}
 }
 
 
@@ -236,13 +492,13 @@
 .iftp-cf7-entries-main .subsubsub a:hover {
 	background: #fff;
 	border-color: #c3c4c7;
-	color: #2271b1;
+	color: #00609c;
 }
 
 .iftp-cf7-entries-main .subsubsub a.current {
 	background: #fff;
-	border-color: #2271b1;
-	color: #2271b1;
+	border-color: #00609c;
+	color: #00609c;
 	font-weight: 600;
 }
 
@@ -267,6 +523,28 @@
 .iftp-cf7-entries-table th.column-amount,
 .iftp-cf7-entries-table td.column-amount {
 	text-align: right;
+}
+
+/* Muted email link in Customer column */
+.iftp-cf7-entries-table .iftp-list-email,
+.iftp-cf7-entries-table .iftp-list-email:visited {
+	font-size: 12px;
+	color: #3c434a;
+	text-decoration: none;
+}
+
+.iftp-cf7-entries-table .iftp-list-email:hover {
+	color: #1d2327;
+	text-decoration: none;
+}
+
+/* Row-click cursor */
+.iftp-cf7-entries-table tbody tr[data-href] {
+	cursor: pointer;
+}
+
+.iftp-cf7-entries-table tbody tr[data-href] .check-column {
+	cursor: default;
 }
 
 /* Truncate long text in list table cells */
@@ -413,7 +691,7 @@
 	gap: 4px;
 	font-size: 11px;
 	font-weight: 600;
-	color: #2271b1;
+	color: #00609c;
 	text-decoration: none;
 	padding: 3px 10px;
 	border: 1px solid #c3c4c7;
@@ -423,8 +701,8 @@
 	transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.iftp-open-link:hover {
-	background: #2271b1;
+.iftp-cf7-entries-wrap .iftp-open-link:hover {
+	background: #00609c;
 	color: #fff;
 	border-color: #135e96;
 }
@@ -486,7 +764,7 @@
 .iftp-cf7-entries-main {
 	background: #fff;
 	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	border-radius: 8px;
 	overflow: hidden;
 	display: flex;
@@ -532,9 +810,9 @@
 
 .iftp-search-bar select:focus,
 .iftp-search-bar input[type="search"]:focus {
-	border-color: #2271b1;
+	border-color: #00609c;
 	outline: none;
-	box-shadow: 0 0 0 1px #2271b1;
+	box-shadow: 0 0 0 1px #00609c;
 }
 
 .iftp-search-bar .button {
@@ -547,6 +825,20 @@
 
 .iftp-search-bar #iftp-add-payment-btn {
 	margin-left: auto;
+}
+
+.iftp-search-bar .iftp-icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	width: 32px;
+	min-width: 32px;
+	max-width: 32px;
+	height: 32px;
+	line-height: 1;
+	flex-shrink: 0;
+	box-sizing: border-box;
 }
 
 /* ── Method pill ── */
@@ -592,7 +884,7 @@
 .iftp-metabox {
 	background: #fff;
 	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	border-radius: 8px;
 	overflow: hidden;
 }
@@ -701,6 +993,14 @@
 	margin-bottom: 0;
 }
 
+/* ── Dashboard widget mini chart ── */
+.iftp-dash-chart-wrap {
+	height: 80px;
+	margin: 14px -14px -14px;
+	overflow: hidden;
+	border-radius: 0 0 8px 8px;
+}
+
 /* ── Tablenav (bulk actions) ── */
 .iftp-cf7-entries-main .tablenav {
 	padding: 6px 14px;
@@ -726,6 +1026,13 @@
 	line-height: 28px;
 }
 
+/* Pagination prev / next / first / last buttons */
+.iftp-cf7-entries-main .pagination-links .button,
+.iftp-cf7-entries-main .pagination-links a.button,
+.iftp-cf7-entries-main .pagination-links span.button {
+	border-radius: 10px !important;
+}
+
 /* ── Table scroll wrapper ── */
 .iftp-entries-table-wrap {
 	overflow-x: auto;
@@ -736,8 +1043,44 @@
 	min-width: 600px;
 }
 
+/* ── Responsive — compact search bar (tablet) ── */
+@media (width <= 960px) {
+	.iftp-search-bar {
+		gap: 4px;
+		padding: 8px 10px;
+	}
+
+	.iftp-search-bar select {
+		height: 28px;
+		font-size: 12px;
+		padding: 0 5px;
+	}
+
+	.iftp-search-bar input[type="search"] {
+		width: 140px;
+		height: 28px;
+		font-size: 12px;
+	}
+
+	.iftp-search-bar .button,
+	.iftp-search-bar button.button {
+		height: 28px;
+		line-height: 26px;
+		font-size: 12px;
+		padding: 0 8px;
+	}
+
+	.iftp-search-bar .iftp-icon-btn {
+		width: 28px;
+		min-width: 28px;
+		max-width: 28px;
+		height: 28px;
+		padding: 0;
+	}
+}
+
 /* ── Responsive — stats row ── */
-@media (max-width: 1100px) {
+@media (width <= 1100px) {
 	.iftp-stats-row {
 		grid-template-columns: 1fr 1fr 1fr;
 	}
@@ -747,7 +1090,7 @@
 	}
 }
 
-@media (max-width: 782px) {
+@media (width <= 782px) {
 	.iftp-stats-row {
 		grid-template-columns: 1fr 1fr;
 	}
@@ -757,7 +1100,7 @@
 	}
 }
 
-@media (max-width: 600px) {
+@media (width <= 600px) {
 	.iftp-stats-row {
 		grid-template-columns: 1fr 1fr;
 	}
@@ -770,8 +1113,20 @@
 	.iftp-search-bar select,
 	.iftp-search-bar input[type="search"],
 	.iftp-search-bar input[type="submit"],
-	.iftp-search-bar .button {
+	.iftp-search-bar .button,
+	.iftp-search-bar button.button {
 		width: 100%;
+		height: 36px;
+		line-height: 34px;
+		font-size: 13px;
+	}
+
+	.iftp-search-bar .iftp-icon-btn {
+		width: 32px;
+		min-width: 32px;
+		max-width: 32px;
+		height: 36px;
+		align-self: center;
 	}
 
 	.iftp-page-header {
@@ -794,18 +1149,18 @@
 	align-items: center;
 	gap: 4px;
 	font-size: 13px;
-	color: #2271b1;
+	color: #00609c;
 	text-decoration: none;
 	padding: 4px 12px;
 	border: 1px solid #c3c4c7;
 	border-radius: 6px;
 	background: #fff;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	white-space: nowrap;
 }
 
-.iftp-back-link:hover {
-	background: #2271b1;
+.iftp-cf7-entries-wrap .iftp-back-link:hover {
+	background: #00609c;
 	color: #fff;
 	border-color: #135e96;
 }
@@ -813,7 +1168,7 @@
 .iftp-back-link svg {
 	width: 13px;
 	height: 13px;
-	stroke: currentColor;
+	stroke: currentcolor;
 	fill: none;
 	stroke-width: 2.2;
 	stroke-linecap: round;
@@ -836,7 +1191,7 @@
 	white-space: nowrap;
 }
 
-.iftp-delete-btn:hover {
+.iftp-cf7-entries-wrap .iftp-delete-btn:hover {
 	background: #d63638;
 	color: #fff;
 	border-color: #a71d2a;
@@ -845,7 +1200,7 @@
 .iftp-delete-btn svg {
 	width: 13px;
 	height: 13px;
-	stroke: currentColor;
+	stroke: currentcolor;
 	fill: none;
 	stroke-width: 2;
 	stroke-linecap: round;
@@ -876,7 +1231,7 @@
 .iftp-card {
 	background: #fff;
 	border: 1px solid #c3c4c7;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	border-radius: 8px;
 	overflow: hidden;
 }
@@ -948,7 +1303,7 @@ table.iftp-detail-table td {
 }
 
 table.iftp-detail-table td a {
-	color: #2271b1;
+	color: #00609c;
 	text-decoration: none;
 }
 
@@ -978,7 +1333,7 @@ table.iftp-detail-table code {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
-	color: #2271b1;
+	color: #00609c;
 	text-decoration: none;
 	font-size: 13px;
 }
@@ -990,7 +1345,7 @@ table.iftp-detail-table code {
 .iftp-pay-link svg {
 	width: 12px;
 	height: 12px;
-	stroke: currentColor;
+	stroke: currentcolor;
 	fill: none;
 	stroke-width: 2;
 	stroke-linecap: round;
@@ -1048,7 +1403,7 @@ table.iftp-submitted tbody td:first-child {
 }
 
 table.iftp-submitted tbody td:last-child {
-	word-break: break-word;
+	word-break: word-break;
 	max-width: 480px;
 }
 
@@ -1065,7 +1420,7 @@ table.iftp-submitted tbody td:last-child {
 	display: inline-block;
 	margin-top: 3px;
 	font-size: 11px;
-	color: #2271b1;
+	color: #00609c;
 	text-decoration: none;
 }
 
@@ -1176,7 +1531,7 @@ table.iftp-submitted tbody td:last-child {
 	justify-content: center;
 	font-size: 14px;
 	font-weight: 700;
-	color: #2271b1;
+	color: #00609c;
 	flex-shrink: 0;
 }
 
@@ -1203,12 +1558,30 @@ table.iftp-submitted tbody td:last-child {
 }
 
 .iftp-customer-email a {
-	color: #2271b1;
+	color: #00609c;
 	text-decoration: none;
 }
 
 .iftp-customer-email a:hover {
 	text-decoration: underline;
+}
+
+.iftp-customer-ip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #f0f0f1;
+	font-size: 12px;
+}
+
+.iftp-customer-ip .iftp-meta-label {
+	color: #646970;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
 }
 
 /* Timestamps card */
@@ -1244,7 +1617,7 @@ table.iftp-submitted tbody td:last-child {
 }
 
 /* Detail responsive */
-@media (max-width: 860px) {
+@media (width <= 860px) {
 	.iftp-detail-layout {
 		grid-template-columns: 1fr;
 	}
@@ -1256,7 +1629,7 @@ table.iftp-submitted tbody td:last-child {
 	}
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
 	.iftp-detail-aside {
 		grid-template-columns: 1fr;
 	}
@@ -1384,14 +1757,14 @@ table.iftp-submitted tbody td:last-child {
 .iftp-modal-overlay {
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.55);
+	background: rgb(0 0 0 / 55%);
 }
 
 .iftp-modal-box {
 	position: relative;
 	background: #fff;
 	border: 1px solid #c3c4c7;
-	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+	box-shadow: 0 4px 24px rgb(0 0 0 / 18%);
 	border-radius: 10px;
 	width: 560px;
 	max-width: calc(100vw - 32px);
@@ -1454,7 +1827,7 @@ table.iftp-submitted tbody td:last-child {
 .iftp-modal-close svg {
 	width: 14px;
 	height: 14px;
-	stroke: currentColor;
+	stroke: currentcolor;
 	fill: none;
 	stroke-width: 2.2;
 	stroke-linecap: round;
@@ -1533,7 +1906,7 @@ table.iftp-submitted tbody td:last-child {
 	flex-shrink: 0;
 }
 
-@media (max-width: 540px) {
+@media (width <= 540px) {
 	.iftp-modal-row {
 		grid-template-columns: 1fr;
 	}

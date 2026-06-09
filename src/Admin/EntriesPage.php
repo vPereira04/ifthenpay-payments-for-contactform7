@@ -69,9 +69,9 @@ final class EntriesPage {
 
 		$db_status = in_array( $status, array( 'pending', 'completed', 'failed', 'cancelled' ), true ) ? $status : '';
 
-		$total        = $repo->count_all( $db_status, $search_field, $search_op, $search_query );
-		$total_amount = $repo->sum_amount( $db_status, $search_field, $search_op, $search_query );
-		$entries      = $repo->get_all( $current_page, self::PER_PAGE, $db_status, $search_field, $search_op, $search_query );
+		$total        = $repo->count_all( $db_status, $search_field, $search_op, $search_query, $period );
+		$total_amount = $repo->sum_amount( $db_status, $search_field, $search_op, $search_query, $period );
+		$entries      = $repo->get_all( $current_page, self::PER_PAGE, $db_status, $search_field, $search_op, $search_query, $period );
 		$total_pages  = max( 1, (int) ceil( $total / self::PER_PAGE ) );
 
 		$this->render_list( $repo, $entries, $current_page, $total_pages, $total, $total_amount, $status, $search_field, $search_op, $search_query, $period );
@@ -109,9 +109,21 @@ final class EntriesPage {
 			'mark_paid'      => $repo->bulk_update_status( $ids, 'completed' ),
 			'mark_cancelled' => $repo->bulk_update_status( $ids, 'cancelled' ),
 			'mark_failed'    => $repo->bulk_update_status( $ids, 'failed' ),
+			'mark_pending'   => $repo->bulk_update_status( $ids, 'pending' ),
 			'export_csv'     => $this->export_csv( $ids, $repo ),
 			default          => null,
 		};
+
+		if ( $action !== 'export_csv' ) {
+			$args = array( 'page' => 'ifthenpay-cf7-entries' );
+			foreach ( array( 'status', 'period', 'paged', 'search_field', 'search_op', 'search_query' ) as $key ) {
+				if ( ! empty( $_GET[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					$args[ $key ] = sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				}
+			}
+			wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+			exit;
+		}
 	}
 
 
@@ -171,6 +183,7 @@ final class EntriesPage {
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 		header( 'Pragma: no-cache' );
 		$out = fopen( 'php://output', 'w' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Usado php://output para download direto de CSV.
 		fwrite( $out, "\xEF\xBB\xBF" );
 		fputcsv( $out, array( 'ID', 'Form', 'Customer Name', 'Email', 'IP', 'Amount', 'Method', 'Status', 'Request ID', 'Created At', 'Updated At' ) );
 		foreach ( $entries as $entry ) {
@@ -191,8 +204,28 @@ final class EntriesPage {
 				)
 			);
 		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Fecho de stream de output direto.
 		fclose( $out );
 		exit;
+	}
+
+
+
+	/** @return array{label: string, tier: string} */
+	private function get_milestone_badge( float $total_paid ): array {
+		$milestones = array(
+			10_000_000 => array( 'label' => '|', 'tier' => 'oracle' ),
+			1_000_000  => array( 'label' => '|',     'tier' => 'mclub' ),
+			100_000    => array( 'label' => '|',  'tier' => 'centurion' ),
+			10_000     => array( 'label' => '|',   'tier' => 'catalyst' ),
+			1_000      => array( 'label' => '|','tier' => 'first-waver' ),
+		);
+		foreach ( $milestones as $threshold => $data ) {
+			if ( $total_paid >= $threshold ) {
+				return $data;
+			}
+		}
+		return array();
 	}
 
 
@@ -214,17 +247,25 @@ final class EntriesPage {
 		string $period = 'all'
 	): void {
 		$counts        = array(
-			''          => $repo->count_all(),
-			'pending'   => $repo->count_all( 'pending' ),
-			'completed' => $repo->count_all( 'completed' ),
-			'failed'    => $repo->count_all( 'failed' ),
-			'cancelled' => $repo->count_all( 'cancelled' ),
+			''          => $repo->count_period( '', $period, true ),
+			'pending'   => $repo->count_period( 'pending', $period, true ),
+			'completed' => $repo->count_period( 'completed', $period, true ),
+			'failed'    => $repo->count_period( 'failed', $period, true ),
+			'cancelled' => $repo->count_period( 'cancelled', $period, true ),
 		);
 
 		$validated_tab   = in_array( $current_tab, array( 'pending', 'completed', 'failed', 'cancelled' ), true ) ? $current_tab : '';
 		$revenue_status  = $validated_tab !== '' ? $validated_tab : 'completed';
 		$sidebar_revenue = $repo->sum_amount_period( $revenue_status, $period );
 		$sidebar_count   = $repo->count_period( $revenue_status, $period );
+
+		$chart_raw           = $repo->get_chart_data( $validated_tab, $period );
+		$chart_series        = $this->build_chart_series( $chart_raw, $period );
+		$chart_json          = (string) wp_json_encode( $chart_series );
+
+		$all_time_paid   = $repo->sum_amount_period( 'completed', 'all' );
+		$milestone_badge = $this->get_milestone_badge( $all_time_paid );
+		$show_revenue_toggle = $current_tab === 'completed';
 		$method_catalog_raw  = get_option( 'iftp_cf7_method_catalog', array() );
 		$method_logos        = array();
 		$method_logos_alt    = array();
@@ -278,6 +319,14 @@ final class EntriesPage {
 						<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><rect x="10.2" y="9" width="3.6" height="11" rx="1.5"/></svg>
 						ifthenpay
 					</span>
+					<?php if ( ! empty( $milestone_badge ) ) : ?>
+					<span class="iftp-milestone-badge-wrap iftp-milestone-badge-wrap--<?php echo esc_attr( $milestone_badge['tier'] ); ?>">
+						<span class="iftp-milestone-badge iftp-milestone-badge--<?php echo esc_attr( $milestone_badge['tier'] ); ?>">
+							<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+							<?php echo esc_html( $milestone_badge['label'] ); ?>
+						</span>
+					</span>
+					<?php endif; ?>
 				</div>
 			</div>
 			<hr class="wp-header-end" />
@@ -349,10 +398,10 @@ final class EntriesPage {
 						?>
 					</div>
 					<div class="iftp-rev-bar">
-						<div class="iftp-rev-seg" style="flex:<?php echo max( 1, (int) ( $counts['completed'] ?? 0 ) ); ?>;background:#00a32a"></div>
-						<div class="iftp-rev-seg" style="flex:<?php echo max( 1, (int) ( $counts['pending'] ?? 0 ) ); ?>;background:#dba617"></div>
-						<div class="iftp-rev-seg" style="flex:<?php echo max( 1, (int) ( $counts['failed'] ?? 0 ) ); ?>;background:#d63638"></div>
-						<div class="iftp-rev-seg" style="flex:<?php echo max( 1, (int) ( $counts['cancelled'] ?? 0 ) ); ?>;background:#8c8f94"></div>
+						<?php if ( ( $counts['completed'] ?? 0 ) > 0 ) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['completed']; ?>;background:#00a32a"></div><?php endif; ?>
+						<?php if ( ( $counts['pending'] ?? 0 ) > 0 ) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#dba617"></div><?php endif; ?>
+						<?php if ( ( $counts['failed'] ?? 0 ) > 0 ) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['failed']; ?>;background:#d63638"></div><?php endif; ?>
+						<?php if ( ( $counts['cancelled'] ?? 0 ) > 0 ) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['cancelled']; ?>;background:#8c8f94"></div><?php endif; ?>
 					</div>
 				</div>
 				<div class="iftp-stat-card">
@@ -370,6 +419,28 @@ final class EntriesPage {
 				<div class="iftp-stat-card">
 					<div class="iftp-stat-card-label iftp-stat-label--cancelled"><?php esc_html_e( 'Cancelled', 'ifthenpay-payments-for-contactform7' ); ?></div>
 					<div class="iftp-stat-card-val iftp-stat-val--cancelled"><?php echo esc_html( (string) ( $counts['cancelled'] ?? 0 ) ); ?></div>
+				</div>
+			</div>
+
+			<?php /* ── Chart ── */ ?>
+			<div class="iftp-chart-card">
+				<div class="iftp-chart-header">
+					<span class="iftp-chart-title">
+						<?php esc_html_e( 'Payments over time', 'ifthenpay-payments-for-contactform7' ); ?>
+					</span>
+					<div class="iftp-chart-modes">
+						<button type="button" class="iftp-chart-mode active" data-mode="count">
+							<?php esc_html_e( 'Payments', 'ifthenpay-payments-for-contactform7' ); ?>
+						</button>
+						<?php if ( $show_revenue_toggle ) : ?>
+						<button type="button" class="iftp-chart-mode" data-mode="revenue">
+							<?php esc_html_e( 'Revenue', 'ifthenpay-payments-for-contactform7' ); ?>
+						</button>
+						<?php endif; ?>
+					</div>
+				</div>
+				<div class="iftp-chart-canvas-wrap">
+					<canvas id="iftp-cf7-chart" data-chart="<?php echo esc_attr( $chart_json ); ?>"></canvas>
 				</div>
 			</div>
 
@@ -469,7 +540,7 @@ final class EntriesPage {
 								admin_url( 'admin.php' )
 							);
 							?>
-							<tr>
+							<tr data-href="<?php echo esc_url( $view_url ); ?>">
 								<th class="check-column">
 									<input type="checkbox" name="entry_ids[]" value="<?php echo esc_attr( (string) $entry->id ); ?>" />
 								</th>
@@ -484,7 +555,7 @@ final class EntriesPage {
 								<td class="column-customer">
 									<strong><?php echo esc_html( $entry->customer_name ?: '—' ); ?></strong>
 									<?php if ( $entry->customer_email !== '' ) : ?>
-									<br /><a href="mailto:<?php echo esc_attr( $entry->customer_email ); ?>" style="font-size:12px;"><?php echo esc_html( $entry->customer_email ); ?></a>
+									<br /><a href="mailto:<?php echo esc_attr( $entry->customer_email ); ?>" class="iftp-list-email"><?php echo esc_html( $entry->customer_email ); ?></a>
 									<?php endif; ?>
 								</td>
 								<td class="column-request" style="font-size:12px;">
@@ -663,6 +734,17 @@ final class EntriesPage {
 
 		<script>
 		(function() {
+			/* Reset entry checkboxes — guards against bfcache restoring a prior selection */
+			function iftpResetCheckboxes() {
+				document.querySelectorAll('input[name="entry_ids[]"]').forEach(function(cb) { cb.checked = false; });
+				['cb-select-all', 'cb-select-all-2'].forEach(function(id) {
+					var el = document.getElementById(id);
+					if (el) el.checked = false;
+				});
+			}
+			iftpResetCheckboxes();
+			window.addEventListener('pageshow', function(e) { if (e.persisted) iftpResetCheckboxes(); });
+
 			/* Page-number input: navigate on Enter */
 			var pageInput = document.getElementById('iftp-paged-input');
 			if (pageInput) {
@@ -676,6 +758,18 @@ final class EntriesPage {
 					var url = new URL(window.location.href);
 					url.searchParams.set('paged', p);
 					window.location.href = url.toString();
+				});
+			}
+
+			/* Row-click navigation — click anywhere on a row to open entry */
+			var entriesTable = document.querySelector('.iftp-cf7-entries-table tbody');
+			if (entriesTable) {
+				entriesTable.addEventListener('click', function(e) {
+					var row = e.target.closest('tr[data-href]');
+					if (!row) return;
+					if (e.target.closest('.check-column')) return;
+					if (e.target.closest('a, button, input')) return;
+					window.location.href = row.getAttribute('data-href');
 				});
 			}
 		})();
@@ -722,6 +816,7 @@ final class EntriesPage {
 			<input type="search" name="search_query" value="<?php echo esc_attr( $search_query ); ?>"
 				class="regular-text" placeholder="<?php esc_attr_e( 'Type to search…', 'ifthenpay-payments-for-contactform7' ); ?>" />
 			<input type="submit" class="button" value="<?php esc_attr_e( 'Search', 'ifthenpay-payments-for-contactform7' ); ?>" />
+			<button type="button" id="iftp-refresh-btn" class="button iftp-icon-btn" aria-label="<?php esc_attr_e( 'Refresh', 'ifthenpay-payments-for-contactform7' ); ?>"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.76"/></svg></button>
 			<?php if ( $search_query !== '' ) : ?>
 			<a href="<?php echo esc_url( $clear_url ); ?>" class="button"><?php esc_html_e( 'Clear', 'ifthenpay-payments-for-contactform7' ); ?></a>
 			<?php endif; ?>
@@ -739,6 +834,7 @@ final class EntriesPage {
 					<option value="mark_paid"><?php esc_html_e( 'Mark as Paid', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="mark_cancelled"><?php esc_html_e( 'Mark as Cancelled', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="mark_failed"><?php esc_html_e( 'Mark as Failed', 'ifthenpay-payments-for-contactform7' ); ?></option>
+					<option value="mark_pending"><?php esc_html_e( 'Mark as Pending', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="export_csv"><?php esc_html_e( 'Export Selected CSV', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="delete"><?php esc_html_e( 'Delete', 'ifthenpay-payments-for-contactform7' ); ?></option>
 				</select>
@@ -759,6 +855,7 @@ final class EntriesPage {
 					<option value="mark_paid"><?php esc_html_e( 'Mark as Paid', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="mark_cancelled"><?php esc_html_e( 'Mark as Cancelled', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="mark_failed"><?php esc_html_e( 'Mark as Failed', 'ifthenpay-payments-for-contactform7' ); ?></option>
+					<option value="mark_pending"><?php esc_html_e( 'Mark as Pending', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="export_csv"><?php esc_html_e( 'Export Selected CSV', 'ifthenpay-payments-for-contactform7' ); ?></option>
 					<option value="delete"><?php esc_html_e( 'Delete', 'ifthenpay-payments-for-contactform7' ); ?></option>
 				</select>
@@ -795,8 +892,8 @@ final class EntriesPage {
 		?>
 		<span class="pagination-links">
 			<?php if ( $current_page > 1 ) : ?>
-			<a class="first-page button" href="<?php echo $first_url; // placeholderphpcs:ignore(try fixing) WordPress.Security.EscapeOutput.OutputNotEscaped ?>"><span aria-hidden="true">&laquo;</span><span class="screen-reader-text"><?php esc_html_e( 'First page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
-			<a class="prev-page button" href="<?php echo $prev_url; // placeholderphpcs:ignore(try fixing) WordPress.Security.EscapeOutput.OutputNotEscaped ?>"><span aria-hidden="true">&lsaquo;</span><span class="screen-reader-text"><?php esc_html_e( 'Previous page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
+			<a class="first-page button" href="<?php echo esc_url( $first_url ); ?>"><span aria-hidden="true">&laquo;</span><span class="screen-reader-text"><?php esc_html_e( 'First page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
+			<a class="prev-page button" href="<?php echo esc_url( $prev_url ); ?>"><span aria-hidden="true">&lsaquo;</span><span class="screen-reader-text"><?php esc_html_e( 'Previous page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
 			<?php else : ?>
 			<span class="first-page button disabled" aria-hidden="true">&laquo;</span>
 			<span class="prev-page button disabled" aria-hidden="true">&lsaquo;</span>
@@ -812,14 +909,89 @@ final class EntriesPage {
 			</span>
 
 			<?php if ( $current_page < $total_pages ) : ?>
-			<a class="next-page button" href="<?php echo $next_url; // placeholderphpcs:ignore(try fixing) WordPress.Security.EscapeOutput.OutputNotEscaped ?>"><span aria-hidden="true">&rsaquo;</span><span class="screen-reader-text"><?php esc_html_e( 'Next page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
-			<a class="last-page button" href="<?php echo $last_url; // placeholderphpcs:ignore(try fixing) WordPress.Security.EscapeOutput.OutputNotEscaped ?>"><span aria-hidden="true">&raquo;</span><span class="screen-reader-text"><?php esc_html_e( 'Last page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
+			<a class="next-page button" href="<?php echo esc_url( $next_url ); ?>"><span aria-hidden="true">&rsaquo;</span><span class="screen-reader-text"><?php esc_html_e( 'Next page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
+			<a class="last-page button" href="<?php echo esc_url( $last_url ); ?>"><span aria-hidden="true">&raquo;</span><span class="screen-reader-text"><?php esc_html_e( 'Last page', 'ifthenpay-payments-for-contactform7' ); ?></span></a>
 			<?php else : ?>
 			<span class="next-page button disabled" aria-hidden="true">&rsaquo;</span>
 			<span class="last-page button disabled" aria-hidden="true">&raquo;</span>
 			<?php endif; ?>
 		</span>
 		<?php
+	}
+
+
+
+	/**
+	 * Fill chart DB rows into a complete label/count/amount series for every bucket.
+	 *
+	 * @param array<int, array{bucket: string, cnt: string, total: string}> $rows
+	 * @return array{labels: string[], counts: int[], amounts: float[]}
+	 */
+	private function build_chart_series( array $rows, string $period ): array {
+		$map_cnt   = [];
+		$map_total = [];
+		foreach ( $rows as $row ) {
+			$map_cnt[ (string) $row['bucket'] ]   = (int) $row['cnt'];
+			$map_total[ (string) $row['bucket'] ] = (float) $row['total'];
+		}
+
+		$labels  = [];
+		$counts  = [];
+		$amounts = [];
+		$now     = current_time( 'timestamp' );
+
+		if ( $period === 'day' ) {
+			for ( $h = 0; $h < 24; $h++ ) {
+				$labels[]  = sprintf( '%02d:00', $h );
+				$counts[]  = $map_cnt[ (string) $h ] ?? 0;
+				$amounts[] = round( (float) ( $map_total[ (string) $h ] ?? 0.0 ), 2 );
+			}
+		} elseif ( $period === 'year' ) {
+			$year = (int) gmdate( 'Y', $now );
+			for ( $m = 1; $m <= 12; $m++ ) {
+				$key       = $year . '-' . sprintf( '%02d', $m );
+				$labels[]  = gmdate( 'M', mktime( 0, 0, 0, $m, 1, $year ) );
+				$counts[]  = $map_cnt[ $key ] ?? 0;
+				$amounts[] = round( (float) ( $map_total[ $key ] ?? 0.0 ), 2 );
+			}
+		} elseif ( $period === 'month' ) {
+			$days = (int) gmdate( 't', $now );
+			$ym   = gmdate( 'Y-m-', $now );
+			for ( $d = 1; $d <= $days; $d++ ) {
+				$key       = $ym . sprintf( '%02d', $d );
+				$labels[]  = (string) $d;
+				$counts[]  = $map_cnt[ $key ] ?? 0;
+				$amounts[] = round( (float) ( $map_total[ $key ] ?? 0.0 ), 2 );
+			}
+		} elseif ( $period === 'week' ) {
+			for ( $i = 6; $i >= 0; $i-- ) {
+				$ts        = $now - $i * DAY_IN_SECONDS;
+				$key       = gmdate( 'Y-m-d', $ts );
+				$labels[]  = gmdate( 'd/m', $ts );
+				$counts[]  = $map_cnt[ $key ] ?? 0;
+				$amounts[] = round( (float) ( $map_total[ $key ] ?? 0.0 ), 2 );
+			}
+		} else {
+			for ( $i = 29; $i >= 0; $i-- ) {
+				$ts        = $now - $i * DAY_IN_SECONDS;
+				$key       = gmdate( 'Y-m-d', $ts );
+				$labels[]  = gmdate( 'd/m', $ts );
+				$counts[]  = $map_cnt[ $key ] ?? 0;
+				$amounts[] = round( (float) ( $map_total[ $key ] ?? 0.0 ), 2 );
+			}
+		}
+
+		return compact( 'labels', 'counts', 'amounts' );
+	}
+
+
+
+	private function format_field_label( string $key ): string {
+
+		$label = preg_replace( '/^(your[-_])/i', '', $key ) ?? $key;
+
+		$label = str_replace( array( '-', '_' ), ' ', $label );
+		return ucwords( $label );
 	}
 
 
@@ -989,39 +1161,6 @@ final class EntriesPage {
 						</div>
 					</div>
 
-					<!-- Customer card -->
-					<div class="iftp-card">
-						<div class="iftp-card-head">
-							<svg class="iftp-card-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-							<h2><?php esc_html_e( 'Customer', 'ifthenpay-payments-for-contactform7' ); ?></h2>
-						</div>
-						<div class="iftp-card-body">
-							<table class="iftp-detail-table">
-								<tr>
-									<th><?php esc_html_e( 'Name', 'ifthenpay-payments-for-contactform7' ); ?></th>
-									<td><?php echo esc_html( $entry->customer_name ?: '—' ); ?></td>
-								</tr>
-								<tr>
-									<th><?php esc_html_e( 'Email', 'ifthenpay-payments-for-contactform7' ); ?></th>
-									<td>
-										<?php if ( $entry->customer_email !== '' ) : ?>
-										<a href="mailto:<?php echo esc_attr( $entry->customer_email ); ?>"><?php echo esc_html( $entry->customer_email ); ?></a>
-											<?php
-										else :
-											?>
-											—<?php endif; ?>
-									</td>
-								</tr>
-								<?php if ( $entry->customer_ip !== '' ) : ?>
-								<tr>
-									<th><?php esc_html_e( 'IP Address', 'ifthenpay-payments-for-contactform7' ); ?></th>
-									<td><code><?php echo esc_html( $entry->customer_ip ); ?></code></td>
-								</tr>
-								<?php endif; ?>
-							</table>
-						</div>
-					</div>
-
 					<!-- Form card -->
 					<div class="iftp-card">
 						<div class="iftp-card-head">
@@ -1064,7 +1203,7 @@ final class EntriesPage {
 									$is_long = mb_strlen( $str_val ) > $max_len;
 									?>
 									<tr>
-										<td><?php echo esc_html( (string) $key ); ?></td>
+										<td><?php echo esc_html( $this->format_field_label( (string) $key ) ); ?></td>
 										<td>
 											<?php if ( $is_long ) : ?>
 											<span class="iftp-val-short"><?php echo esc_html( mb_substr( $str_val, 0, $max_len ) ); ?>&hellip;</span>
@@ -1145,6 +1284,12 @@ final class EntriesPage {
 									<?php endif; ?>
 								</div>
 							</div>
+							<?php if ( $entry->customer_ip !== '' ) : ?>
+							<div class="iftp-customer-ip">
+								<span class="iftp-meta-label"><?php esc_html_e( 'IP', 'ifthenpay-payments-for-contactform7' ); ?></span>
+								<code><?php echo esc_html( $entry->customer_ip ); ?></code>
+							</div>
+							<?php endif; ?>
 						</div>
 					</div>
 

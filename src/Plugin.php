@@ -181,9 +181,17 @@ final class Plugin {
 		}
 
 		wp_enqueue_script(
+			'chart-js',
+			'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
+			array(),
+			'4.4.1',
+			true
+		);
+
+		wp_enqueue_script(
 			'ifthenpay-cf7-admin',
 			IFTP_CF7_URL . 'assets/js/admin.js',
-			array( 'jquery' ),
+			array( 'jquery', 'chart-js' ),
 			IFTP_CF7_VERSION,
 			true
 		);
@@ -227,6 +235,24 @@ final class Plugin {
 			'failed'    => $repo->count_all( 'failed' ),
 			'cancelled' => $repo->count_all( 'cancelled' ),
 		);
+
+
+		$chart_raw = $repo->get_chart_data( 'completed', 'week' );
+		$map       = array();
+		foreach ( $chart_raw as $row ) {
+			$map[ (string) $row['bucket'] ] = (float) $row['total'];
+		}
+		$now     = current_time( 'timestamp' );
+		$labels  = array();
+		$amounts = array();
+		for ( $i = 6; $i >= 0; $i-- ) {
+			$ts        = $now - $i * DAY_IN_SECONDS;
+			$key       = gmdate( 'Y-m-d', $ts );
+			$labels[]  = gmdate( 'd/m', $ts );
+			$amounts[] = round( (float) ( $map[ $key ] ?? 0.0 ), 2 );
+		}
+		$dash_chart_json = (string) wp_json_encode( array( 'labels' => $labels, 'amounts' => $amounts ) );
+
 		$entries_url = admin_url( 'admin.php?page=ifthenpay-cf7-entries' );
 		?>
 		<div class="iftp-metabox-body">
@@ -262,6 +288,9 @@ final class Plugin {
 			<a href="<?php echo esc_url( $entries_url ); ?>" class="button button-secondary" style="display:block;margin-top:12px;text-align:center;">
 				<?php esc_html_e( 'View all entries', 'ifthenpay-payments-for-contactform7' ); ?>
 			</a>
+			<div class="iftp-dash-chart-wrap">
+				<canvas id="iftp-cf7-dash-chart" data-chart="<?php echo esc_attr( $dash_chart_json ); ?>"></canvas>
+			</div>
 		</div>
 		<?php
 	}
