@@ -4,32 +4,36 @@ declare(strict_types=1);
 
 namespace Ifthenpay\CF7;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Are you sure?' );
+if (! defined('ABSPATH')) {
+	die('Are you sure?');
 }
 
-final class Activation {
+final class Activation
+{
 
 	private const DB_VERSION     = '1.5';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
-	public static function activate(): void {
+	public static function activate(): void
+	{
 		self::create_table();
-		update_option( self::DB_VERSION_KEY, self::DB_VERSION, false );
+		update_option(self::DB_VERSION_KEY, self::DB_VERSION, false);
 
 		\Ifthenpay\CF7\Payment\GatewayEndpoint::flush();
 	}
 
 	public static function deactivate(): void {}
 
-	public static function maybe_upgrade(): void {
-		if ( get_option( self::DB_VERSION_KEY ) !== self::DB_VERSION ) {
+	public static function maybe_upgrade(): void
+	{
+		if (get_option(self::DB_VERSION_KEY) !== self::DB_VERSION) {
 			self::create_table();
-			update_option( self::DB_VERSION_KEY, self::DB_VERSION, false );
+			update_option(self::DB_VERSION_KEY, self::DB_VERSION, false);
 		}
 	}
 
-	private static function create_table(): void {
+	private static function create_table(): void
+	{
 		global $wpdb;
 
 		$table   = $wpdb->prefix . IFTP_CF7_TABLE;
@@ -59,6 +63,6 @@ final class Activation {
 		) {$charset};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql );
+		dbDelta($sql);
 	}
 }

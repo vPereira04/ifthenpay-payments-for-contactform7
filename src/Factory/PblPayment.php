@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ifthenpay\CF7\Factory;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Are you sure?' );
+if (! defined('ABSPATH')) {
+	die('Are you sure?');
 }
 
 use Ifthenpay\CF7\Api\IfthenpayApiFacade;
@@ -25,19 +25,22 @@ use Ifthenpay\CF7\Repository\DTO\EntryDto;
  *  4. Persist the payment URL to the entry.
  *  5. Return an immutable PaymentResult.
  */
-final class PblPayment implements Payment {
+final class PblPayment implements Payment
+{
 
 	private EntryRepository $repo;
 
-	public function __construct( private readonly PaymentData $data ) {
+	public function __construct(private readonly PaymentData $data)
+	{
 		$this->repo = new EntryRepository();
 	}
 
-	public function process(): PaymentResult {
+	public function process(): PaymentResult
+	{
 		$entry_id = $this->reserve_entry();
 
-		if ( $entry_id <= 0 ) {
-			return PaymentResult::failure( 'Could not reserve a payment slot.' );
+		if ($entry_id <= 0) {
+			return PaymentResult::failure('Could not reserve a payment slot.');
 		}
 
 		$gateway_urls = IfthenpayPayload::build_gateway_urls(
@@ -63,21 +66,22 @@ final class PblPayment implements Payment {
 			)
 		);
 
-		$response = IfthenpayApiFacade::create_payment( $this->data->gateway_key, $payload );
+		$response = IfthenpayApiFacade::create_payment($this->data->gateway_key, $payload);
 
-		if ( empty( $response['RedirectUrl'] ) ) {
-			$this->repo->update_status( $entry_id, 'failed' );
-			return PaymentResult::failure( 'Invalid response from ifthenpay.', $entry_id );
+		if (empty($response['RedirectUrl'])) {
+			$this->repo->update_status($entry_id, 'failed');
+			return PaymentResult::failure('Invalid response from ifthenpay.', $entry_id);
 		}
 
-		$payment_url = esc_url_raw( (string) $response['RedirectUrl'] );
+		$payment_url = esc_url_raw((string) $response['RedirectUrl']);
 
-		$this->repo->update_payment_url( $entry_id, $payment_url );
+		$this->repo->update_payment_url($entry_id, $payment_url);
 
-		return PaymentResult::success( $entry_id, $payment_url );
+		return PaymentResult::success($entry_id, $payment_url);
 	}
 
-	private function reserve_entry(): int {
+	private function reserve_entry(): int
+	{
 		return $this->repo->create(
 			EntryDto::from(
 				array(

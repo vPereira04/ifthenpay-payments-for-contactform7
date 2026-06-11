@@ -63,7 +63,7 @@
 			['iftp_cf7_pay', 'iftp_cf7_entry'].forEach(function (k) {
 				url.searchParams.delete(k);
 			});
-			url.hash = 'iftp-msg';
+			url.hash = '';
 			history.replaceState({}, document.title, url.toString());
 		} catch (_e) {}
 	}
@@ -200,29 +200,12 @@
 			.removeClass('iftp-warn-pending iftp-warn-cancel iftp-warn-error')
 			.show();
 
-		if (type === 'pending') {
-			$warn.addClass('iftp-warn-pending');
-			$warn.append(
-				$('<p class="iftp-msg iftp-msg-pending">').text(
-					cfg.msg_pending ||
-						'Your payment is pending. You can close this window while you wait.'
-				)
-			);
-			return;
-		}
-
 		const isCancelType = type === 'cancel';
 		$warn.addClass(isCancelType ? 'iftp-warn-cancel' : 'iftp-warn-error');
 
 		const $p = $('<p class="iftp-msg">').addClass(
 			isCancelType ? 'iftp-msg-cancel' : 'iftp-msg-error'
 		);
-
-		const prefix = isCancelType
-			? cfg.msg_cancel_prefix || 'Your payment was cancelled!'
-			: cfg.msg_error_prefix || 'Your payment failed!';
-
-		$p.append(document.createTextNode(prefix + ' '));
 
 		if (paymentUrl) {
 			$p.append(
@@ -238,17 +221,19 @@
 					.addClass('iftp-new-payment')
 					.text(cfg.msg_new_payment || 'New Payment')
 			);
-		} else if (isCancelType) {
-			$p.append(
-				$('<a href="#">')
-					.addClass('iftp-new-payment')
-					.text(cfg.msg_new_payment || 'New Payment')
-			);
 		} else {
 			$p.append(
 				$('<a href="#">')
 					.addClass('iftp-new-payment')
 					.text(cfg.msg_retry || 'Retry')
+			);
+			$p.append(
+				document.createTextNode(' ' + (cfg.msg_or || 'or') + ' ')
+			);
+			$p.append(
+				$('<a href="#">')
+					.addClass('iftp-new-payment')
+					.text(cfg.msg_new_payment || 'New Payment')
 			);
 		}
 
@@ -299,9 +284,12 @@
 		if (status === 'success') {
 
 			try {
-				var formEl = $form[0];
+				const formEl = $form[0];
 				if (formEl && formEl.action) {
-					var actionUrl = new URL(formEl.action, window.location.href);
+					const actionUrl = new URL(
+						formEl.action,
+						window.location.href
+					);
 					actionUrl.searchParams.delete('iftp_cf7_pay');
 					actionUrl.searchParams.delete('iftp_cf7_entry');
 					formEl.action = actionUrl.toString();
@@ -318,7 +306,6 @@
 			clearSession();
 
 			$field.find('.iftp-cf7-pay-button').hide();
-			showFieldMessage($field, 'pending', null);
 			pendingAfterSuccess = true;
 
 			setTimeout(function () {
@@ -327,23 +314,6 @@
 		} else {
 			clearSession();
 			showFieldMessage($field, status, paymentUrl);
-
-			const $output = $form
-				.closest('.wpcf7')
-				.find('.wpcf7-response-output');
-			if ($output.length) {
-				const isCancelType = status === 'cancel';
-				const msg = isCancelType
-					? cfg.msg_cancel_prefix || 'Your payment was cancelled!'
-					: cfg.msg_error_prefix || 'Your payment failed!';
-				$output
-					.removeClass(
-						'wpcf7-mail-sent-ok wpcf7-mail-sent-ng wpcf7-validation-errors wpcf7-spam-blocked'
-					)
-					.addClass('wpcf7-mail-sent-ng')
-					.text(msg)
-					.show();
-			}
 		}
 	}
 
@@ -446,11 +416,14 @@
 		}
 		pendingAfterSuccess = false;
 
-		try {
-			const url = new URL(window.location.href);
-			url.hash = 'iftp-msg';
-			history.replaceState({}, document.title, url.toString());
-		} catch (_e) {}
+
+		setTimeout(function () {
+			try {
+				const url = new URL(window.location.href);
+				url.hash = '';
+				history.replaceState({}, document.title, url.toString());
+			} catch (_e) {}
+		}, 0);
 	});
 
 	function initThemeLogos() {

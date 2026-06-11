@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ifthenpay\CF7\Factory;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Are you sure?' );
+if (! defined('ABSPATH')) {
+	die('Are you sure?');
 }
 
 use Ifthenpay\CF7\Factory\DTO\PaymentData;
@@ -19,23 +19,25 @@ use Ifthenpay\CF7\Factory\DTO\PaymentResult;
  * The template method `make()` is the stable algorithm; only the object
  * creation step is delegated to the subclass.
  */
-abstract class PaymentCreator {
+abstract class PaymentCreator
+{
 
 	/**
 	 * Factory method — override in concrete creators to return a Payment instance.
 	 */
-	abstract protected function create_payment( PaymentData $data ): Payment;
+	abstract protected function create_payment(PaymentData $data): Payment;
 
 	/**
 	 * Template method — orchestrates the payment lifecycle.
 	 * Calls the factory method internally; callers always use `make()`.
 	 */
-	final public function make( PaymentData $data ): PaymentResult {
+	final public function make(PaymentData $data): PaymentResult
+	{
 		try {
-			$payment = $this->create_payment( $data );
+			$payment = $this->create_payment($data);
 			return $payment->process();
-		} catch ( \Throwable $e ) {
-			return PaymentResult::failure( $e->getMessage() );
+		} catch (\Throwable $e) {
+			return PaymentResult::failure($e->getMessage());
 		}
 	}
 }

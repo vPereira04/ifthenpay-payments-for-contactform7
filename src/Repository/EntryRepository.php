@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Data-access layer for payment entries.
  *
@@ -9,8 +10,8 @@ declare(strict_types=1);
 
 namespace Ifthenpay\CF7\Repository;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Are you sure?' );
+if (! defined('ABSPATH')) {
+	die('Are you sure?');
 }
 
 use Ifthenpay\CF7\Repository\DTO\EntryDto;
@@ -18,7 +19,8 @@ use Ifthenpay\CF7\Repository\DTO\EntryDto;
 /**
  * Handles all CRUD operations on the ifthenpay_cf7_entries table.
  */
-final class EntryRepository {
+final class EntryRepository
+{
 
 	/** @var string Full (prefixed) table name. */
 	private string $table;
@@ -26,12 +28,11 @@ final class EntryRepository {
 	/**
 	 * Constructor — resolves the table name once on instantiation.
 	 */
-	public function __construct() {
+	public function __construct()
+	{
 		global $wpdb;
 		$this->table = $wpdb->prefix . IFTP_CF7_TABLE;
 	}
-
-
 
 	/**
 	 * Insert a new entry and return the new row ID (0 on failure).
@@ -39,12 +40,13 @@ final class EntryRepository {
 	 * @param EntryDto $dto Source data transfer object.
 	 * @return int Inserted row ID, or 0 on failure.
 	 */
-	public function create( EntryDto $dto ): int {
+	public function create(EntryDto $dto): int
+	{
 		global $wpdb;
 
-		$now = current_time( 'mysql' );
+		$now = current_time('mysql');
 
-		$wpdb->insert( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table; $wpdb->insert() handles escaping.
 			$this->table,
 			array(
 				'form_id'        => $dto->form_id,
@@ -52,7 +54,7 @@ final class EntryRepository {
 				'customer_name'  => $dto->customer_name,
 				'customer_email' => $dto->customer_email,
 				'customer_ip'    => $dto->customer_ip,
-				'amount'         => number_format( $dto->amount, 2, '.', '' ),
+				'amount'         => number_format($dto->amount, 2, '.', ''),
 				'payment_method' => $dto->payment_method,
 				'payment_status' => $dto->payment_status,
 				'payment_url'    => $dto->payment_url,
@@ -61,18 +63,15 @@ final class EntryRepository {
 				'created_at'     => $now,
 				'updated_at'     => $now,
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
 		);
 
-		if ( $wpdb->last_error ) {
-			error_log( 'iftp_cf7: DB insert failed: ' . $wpdb->last_error ); // placeholderphpcs:ignore(try fixing) WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		if ($wpdb->last_error) {
 			return 0;
 		}
 
 		return (int) $wpdb->insert_id;
 	}
-
-
 
 	/**
 	 * Update the payment_status column of a single entry.
@@ -81,17 +80,18 @@ final class EntryRepository {
 	 * @param string $status New status value.
 	 * @return bool True on success, false on failure.
 	 */
-	public function update_status( int $id, string $status ): bool {
+	public function update_status(int $id, string $status): bool
+	{
 		global $wpdb;
-		$rows = $wpdb->update( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; write operation.
 			$this->table,
 			array(
-				'payment_status' => sanitize_key( $status ),
-				'updated_at'     => current_time( 'mysql' ),
+				'payment_status' => sanitize_key($status),
+				'updated_at'     => current_time('mysql'),
 			),
-			array( 'id' => $id ),
-			array( '%s', '%s' ),
-			array( '%d' )
+			array('id' => $id),
+			array('%s', '%s'),
+			array('%d')
 		);
 		return false !== $rows;
 	}
@@ -105,27 +105,28 @@ final class EntryRepository {
 	 * @param string|null $request_id     Gateway request ID (optional).
 	 * @return bool True on success, false on failure.
 	 */
-	public function update_transaction( int $id, string $payment_method = '', string $status = 'completed', ?string $request_id = null ): bool {
+	public function update_transaction(int $id, string $payment_method = '', string $status = 'completed', ?string $request_id = null): bool
+	{
 		global $wpdb;
 		$data    = array(
-			'payment_status' => sanitize_key( $status ),
-			'updated_at'     => current_time( 'mysql' ),
+			'payment_status' => sanitize_key($status),
+			'updated_at'     => current_time('mysql'),
 		);
-		$formats = array( '%s', '%s' );
-		if ( '' !== $payment_method ) {
-			$data['payment_method'] = strtoupper( sanitize_text_field( $payment_method ) );
+		$formats = array('%s', '%s');
+		if ('' !== $payment_method) {
+			$data['payment_method'] = strtoupper(sanitize_text_field($payment_method));
 			$formats[]              = '%s';
 		}
-		if ( null !== $request_id ) {
-			$data['request_id'] = sanitize_text_field( $request_id );
+		if (null !== $request_id) {
+			$data['request_id'] = sanitize_text_field($request_id);
 			$formats[]          = '%s';
 		}
-		$rows = $wpdb->update( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; write operation.
 			$this->table,
 			$data,
-			array( 'id' => $id ),
+			array('id' => $id),
 			$formats,
-			array( '%d' )
+			array('%d')
 		);
 		return false !== $rows;
 	}
@@ -138,28 +139,27 @@ final class EntryRepository {
 	 * @param string $method      Payment method entity code (optional).
 	 * @return bool True on success, false on failure.
 	 */
-	public function update_payment_url( int $id, string $payment_url, string $method = '' ): bool {
+	public function update_payment_url(int $id, string $payment_url, string $method = ''): bool
+	{
 		global $wpdb;
 		$data    = array(
-			'payment_url' => esc_url_raw( $payment_url ),
-			'updated_at'  => current_time( 'mysql' ),
+			'payment_url' => esc_url_raw($payment_url),
+			'updated_at'  => current_time('mysql'),
 		);
-		$formats = array( '%s', '%s' );
-		if ( '' !== $method ) {
-			$data['payment_method'] = strtoupper( sanitize_text_field( $method ) );
+		$formats = array('%s', '%s');
+		if ('' !== $method) {
+			$data['payment_method'] = strtoupper(sanitize_text_field($method));
 			$formats[]              = '%s';
 		}
-		$rows = $wpdb->update( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; write operation.
 			$this->table,
 			$data,
-			array( 'id' => $id ),
+			array('id' => $id),
 			$formats,
-			array( '%d' )
+			array('%d')
 		);
 		return false !== $rows;
 	}
-
-
 
 	/**
 	 * Delete a single entry by primary key.
@@ -167,12 +167,13 @@ final class EntryRepository {
 	 * @param int $id Entry ID.
 	 * @return bool True if a row was deleted, false otherwise.
 	 */
-	public function delete( int $id ): bool {
+	public function delete(int $id): bool
+	{
 		global $wpdb;
-		$rows = $wpdb->delete( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; write operation.
 			$this->table,
-			array( 'id' => $id ),
-			array( '%d' )
+			array('id' => $id),
+			array('%d')
 		);
 		return false !== $rows && $rows > 0;
 	}
@@ -183,20 +184,21 @@ final class EntryRepository {
 	 * @param int[] $ids Array of entry IDs to delete.
 	 * @return int Number of rows deleted.
 	 */
-	public function bulk_delete( array $ids ): int {
+	public function bulk_delete(array $ids): int
+	{
 		global $wpdb;
-		$ids = array_filter( array_map( 'absint', $ids ) );
-		if ( empty( $ids ) ) {
+		$ids = array_filter(array_map('absint', $ids));
+		if (empty($ids)) {
 			return 0;
 		}
 
-		$fmt        = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$fmt        = implode(',', array_fill(0, count($ids), '%d'));
 		$query_stmt = "DELETE FROM %i WHERE id IN ($fmt)";
 
-		return (int) $wpdb->query(
+		return (int) $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; bulk write operation.
 			$wpdb->prepare(
-				$query_stmt, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- String estrutural preparada dinamicamente com segurança.
-				array_merge( array( $this->table ), array_values( $ids ) )
+				$query_stmt, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query_stmt built structurally with %i/%d placeholders only; no user data interpolated.
+				array_merge(array($this->table), array_values($ids))
 			)
 		);
 	}
@@ -208,22 +210,23 @@ final class EntryRepository {
 	 * @param string $status New status value.
 	 * @return int Number of rows updated.
 	 */
-	public function bulk_update_status( array $ids, string $status ): int {
+	public function bulk_update_status(array $ids, string $status): int
+	{
 		global $wpdb;
-		$ids    = array_filter( array_map( 'absint', $ids ) );
-		$status = sanitize_key( $status );
-		if ( empty( $ids ) || $status === '' ) {
+		$ids    = array_filter(array_map('absint', $ids));
+		$status = sanitize_key($status);
+		if (empty($ids) || $status === '') {
 			return 0;
 		}
 
-		$fmt        = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		$now        = current_time( 'mysql' );
+		$fmt        = implode(',', array_fill(0, count($ids), '%d'));
+		$now        = current_time('mysql');
 		$query_stmt = "UPDATE %i SET payment_status = %s, updated_at = %s WHERE id IN ($fmt)";
 
-		return (int) $wpdb->query(
+		return (int) $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; bulk write operation.
 			$wpdb->prepare(
-				$query_stmt, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- String estrutural preparada dinamicamente com segurança.
-				array_merge( array( $this->table, $status, $now ), array_values( $ids ) )
+				$query_stmt, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $query_stmt built structurally with %i/%s/%d placeholders only; no user data interpolated.
+				array_merge(array($this->table, $status, $now), array_values($ids))
 			)
 		);
 	}
@@ -234,24 +237,23 @@ final class EntryRepository {
 	 * @param int[] $ids Array of entry IDs.
 	 * @return EntryDto[]
 	 */
-	public function get_by_ids( array $ids ): array {
+	public function get_by_ids(array $ids): array
+	{
 		global $wpdb;
-		$ids = array_filter( array_map( 'absint', $ids ) );
-		if ( empty( $ids ) ) {
+		$ids = array_filter(array_map('absint', $ids));
+		if (empty($ids)) {
 			return array();
 		}
-		$fmt  = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-		$rows = $wpdb->get_results( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$fmt  = implode(',', array_fill(0, count($ids), '%d'));
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; caching payment data risks stale status.
 			$wpdb->prepare(
-				'SELECT * FROM %i WHERE id IN (' . $fmt . ') ORDER BY created_at DESC', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
-				array_merge( array( $this->table ), array_values( $ids ) )
+				'SELECT * FROM %i WHERE id IN (' . $fmt . ') ORDER BY created_at DESC', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $fmt is built with only %d placeholders; no user data interpolated.
+				array_merge(array($this->table), array_values($ids))
 			),
 			ARRAY_A
 		);
-		return is_array( $rows ) ? array_map( array( EntryDto::class, 'from' ), $rows ) : array();
+		return is_array($rows) ? array_map(array(EntryDto::class, 'from'), $rows) : array();
 	}
-
-
 
 	/**
 	 * Retrieve a single entry by its primary key.
@@ -259,13 +261,14 @@ final class EntryRepository {
 	 * @param int $id Entry ID.
 	 * @return EntryDto|null The entry DTO, or null if not found.
 	 */
-	public function get_by_id( int $id ): ?EntryDto {
+	public function get_by_id(int $id): ?EntryDto
+	{
 		global $wpdb;
-		$row = $wpdb->get_row( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d LIMIT 1', $this->table, $id ),
+		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; caching payment data risks stale status.
+			$wpdb->prepare('SELECT * FROM %i WHERE id = %d LIMIT 1', $this->table, $id),
 			ARRAY_A
 		);
-		return is_array( $row ) ? EntryDto::from( $row ) : null;
+		return is_array($row) ? EntryDto::from($row) : null;
 	}
 
 	/**
@@ -279,38 +282,41 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return EntryDto[]
 	 */
-	public function get_all( int $page = 1, int $per_page = 20, string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all' ): array {
+	public function get_all(int $page = 1, int $per_page = 20, string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all', string $orderby = 'id', string $order = 'desc'): array
+	{
 		global $wpdb;
-		$page                    = max( 1, $page );
-		$offset                  = ( $page - 1 ) * $per_page;
+		$page                    = max(1, $page);
+		$offset                  = ($page - 1) * $per_page;
 
-		$status 				 = sanitize_key( $status );
-		$search_field 			 = sanitize_key( $search_field );
-		$search_op 			 	 = in_array( $search_op, array( 'contains', 'is' ), true ) ? $search_op : 'contains';
-		$search_query			 = sanitize_text_field( $search_query );
+		$status 				 = sanitize_key($status);
+		$search_field 			 = sanitize_key($search_field);
+		$search_op 			 	 = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
+		$search_query			 = sanitize_text_field($search_query);
 
-		[ $where_tpl, $w_args ]  = $this->build_where( $status, $search_field, $search_op, $search_query );
+		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query);
 
-		$period_sql = $this->period_condition( $period, $status, true );
-		if ( $period_sql !== '' ) {
+		$period_sql = $this->period_condition($period, $status, true);
+		if ($period_sql !== '') {
 			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
 		}
 
-		$per_page				 = absint( $per_page );
-		$offset   				 = absint( $offset );
-		$args 					 = array_merge( array( $this->table ), $w_args, array( $per_page, $offset ) );
+		$allowed_order_cols = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
+		$orderby_col        = in_array($orderby, $allowed_order_cols, true) ? $orderby : 'id';
+		$order_dir          = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
 
-		$rows = $wpdb->get_results( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			// placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-			$wpdb->prepare(
-				/*translators: 1. SQL query with placeholders, not user-facing text. Do not translate or localize. */
-				'SELECT * FROM %i' . $where_tpl . ' ORDER BY id DESC LIMIT %d OFFSET %d', // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+		$per_page				 = absint($per_page);
+		$offset   				 = absint($offset);
+		$args 					 = array_merge(array($this->table), $w_args, array($orderby_col, $per_page, $offset));
+
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl built by build_where() using only %s/%d/%i placeholders.
+			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Replacement count matches dynamically-built placeholders in $where_tpl.
+				'SELECT * FROM %i' . $where_tpl . ' ORDER BY %i ' . $order_dir . ' LIMIT %d OFFSET %d', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() using only %s/%d/%i placeholders; $order_dir validated to 'ASC'/'DESC' only — SQL keyword, cannot use %s placeholder (would wrap in quotes and break syntax).
 				...$args
 			),
 			ARRAY_A
 		);
 
-		return is_array( $rows ) ? array_map( array( EntryDto::class, 'from' ), $rows ) : array();
+		return is_array($rows) ? array_map(array(EntryDto::class, 'from'), $rows) : array();
 	}
 
 	/**
@@ -322,24 +328,25 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return int Total number of matching entries.
 	 */
-	public function count_all( string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all' ): int {
+	public function count_all(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all'): int
+	{
 		global $wpdb;
-		$status 				 = sanitize_key( $status );
-		$search_field 			 = sanitize_key( $search_field );
-		$search_op 			 	 = in_array( $search_op, array( 'contains', 'is' ), true ) ? $search_op : 'contains';
-		$search_query			 = sanitize_text_field( $search_query );
+		$status 				 = sanitize_key($status);
+		$search_field 			 = sanitize_key($search_field);
+		$search_op 			 	 = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
+		$search_query			 = sanitize_text_field($search_query);
 
-		[ $where_tpl, $w_args ]  = $this->build_where( $status, $search_field, $search_op, $search_query );
+		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query);
 
-		$period_sql = $this->period_condition( $period, $status, true );
-		if ( $period_sql !== '' ) {
+		$period_sql = $this->period_condition($period, $status, true);
+		if ($period_sql !== '') {
 			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
 		}
 
-		$args = array_merge( array( $this->table ), $w_args );
-		return (int) $wpdb->get_var( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$args = array_merge(array($this->table), $w_args);
+		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
 			$wpdb->prepare(
-				'SELECT COUNT(*) FROM %i' . $where_tpl, // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				'SELECT COUNT(*) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
 				...$args
 			)
 		);
@@ -354,24 +361,25 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return float Sum of amounts, or 0.0.
 	 */
-	public function sum_amount( string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all' ): float {
+	public function sum_amount(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all'): float
+	{
 		global $wpdb;
-		$status 				 = sanitize_key( $status );
-		$search_field 			 = sanitize_key( $search_field );
-		$search_op 			 	 = in_array( $search_op, array( 'contains', 'is' ), true ) ? $search_op : 'contains';
-		$search_query			 = sanitize_text_field( $search_query );
+		$status 				 = sanitize_key($status);
+		$search_field 			 = sanitize_key($search_field);
+		$search_op 			 	 = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
+		$search_query			 = sanitize_text_field($search_query);
 
-		[ $where_tpl, $w_args ]  = $this->build_where( $status, $search_field, $search_op, $search_query );
+		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query);
 
-		$period_sql = $this->period_condition( $period, $status, true );
-		if ( $period_sql !== '' ) {
+		$period_sql = $this->period_condition($period, $status, true);
+		if ($period_sql !== '') {
 			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
 		}
 
-		$args = array_merge( array( $this->table ), $w_args );
-		return (float) $wpdb->get_var( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$args = array_merge(array($this->table), $w_args);
+		return (float) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
 			$wpdb->prepare(
-				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
 				...$args
 			)
 		);
@@ -383,49 +391,51 @@ final class EntryRepository {
 	 * Period values: 'day' (today), 'week' (last 7 days), 'month' (current calendar month),
 	 *               'year' (current calendar year), 'all' (no date filter, the default).
 	 */
-	public function sum_amount_period( string $status = '', string $period = 'all' ): float {
+	public function sum_amount_period(string $status = '', string $period = 'all'): float
+	{
 		global $wpdb;
-		$status = sanitize_key( $status );
-		$period = sanitize_key( $period );
+		$status = sanitize_key($status);
+		$period = sanitize_key($period);
 
-		[ $where_tpl, $w_args ] = $this->build_where( $status );
+		[$where_tpl, $w_args] = $this->build_where($status);
 
 
-		$period_sql = $this->period_condition( $period, $status );
-		if ( $period_sql !== '' ) {
+		$period_sql = $this->period_condition($period, $status);
+		if ($period_sql !== '') {
 			$where_tpl = $where_tpl === ''
 				? ' WHERE ' . $period_sql
 				: $where_tpl . ' AND ' . $period_sql;
 		}
 
-		$args = array_merge( array( $this->table ), $w_args );
-		return (float) $wpdb->get_var( // placeholderphpcs:ignore(try fixing) WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$args = array_merge(array($this->table), $w_args);
+		return (float) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl/$period_sql built internally using only hardcoded SQL and %s/%d/%i placeholders.
 			$wpdb->prepare(
-				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // placeholderphpcs:ignore(try fixing) WordPress.DB.PreparedSQL.NotPrepared
+				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
 				...$args
 			)
 		);
 	}
 
 	/** Count rows filtered by status and a time period — mirrors sum_amount_period(). */
-	public function count_period( string $status = '', string $period = 'all', bool $any_activity = false ): int {
+	public function count_period(string $status = '', string $period = 'all', bool $any_activity = false): int
+	{
 		global $wpdb;
-		$status = sanitize_key( $status );
-		$period = sanitize_key( $period );
+		$status = sanitize_key($status);
+		$period = sanitize_key($period);
 
-		[ $where_tpl, $w_args ] = $this->build_where( $status );
+		[$where_tpl, $w_args] = $this->build_where($status);
 
-		$period_sql = $this->period_condition( $period, $status, $any_activity );
-		if ( $period_sql !== '' ) {
+		$period_sql = $this->period_condition($period, $status, $any_activity);
+		if ($period_sql !== '') {
 			$where_tpl = $where_tpl === ''
 				? ' WHERE ' . $period_sql
 				: $where_tpl . ' AND ' . $period_sql;
 		}
 
-		$args = array_merge( array( $this->table ), $w_args );
-		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$args = array_merge(array($this->table), $w_args);
+		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl/$period_sql built internally using only hardcoded SQL and %s/%d/%i placeholders.
 			$wpdb->prepare(
-				'SELECT COUNT(*) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				'SELECT COUNT(*) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
 				...$args
 			)
 		);
@@ -441,25 +451,32 @@ final class EntryRepository {
 	 *
 	 * @return array<int, array{bucket: string, cnt: string, total: string}>
 	 */
-	public function get_chart_data( string $status = '', string $period = 'all' ): array {
+	public function get_chart_data(string $status = '', string $period = 'all'): array
+	{
 		global $wpdb;
-		$status = sanitize_key( $status );
+		$status = sanitize_key($status);
 		$col    = $status === 'completed' ? 'updated_at' : 'created_at';
 
-		[ $where_tpl, $w_args ] = $this->build_where( $status );
+		[$where_tpl, $w_args] = $this->build_where($status);
 
-		if ( $period === 'day' ) {
+		if ($period === 'day') {
 			$group_expr  = "HOUR({$col})";
 			$period_cond = "DATE({$col}) = CURDATE()";
-		} elseif ( $period === 'year' ) {
+		} elseif ($period === 'year') {
 			$group_expr  = "DATE_FORMAT({$col}, '%Y-%m')";
 			$period_cond = "YEAR({$col}) = YEAR(NOW())";
-		} elseif ( $period === 'month' ) {
+		} elseif ($period === 'month') {
 			$group_expr  = "DATE({$col})";
 			$period_cond = "YEAR({$col}) = YEAR(NOW()) AND MONTH({$col}) = MONTH(NOW())";
-		} elseif ( $period === 'week' ) {
+		} elseif ($period === 'week') {
 			$group_expr  = "DATE({$col})";
 			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+		} elseif ($period === '15day') {
+			$group_expr  = "DATE({$col})";
+			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 15 DAY)";
+		} elseif ($period === '30day') {
+			$group_expr  = "DATE({$col})";
+			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
 		} else {
 			$group_expr  = "DATE({$col})";
 			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
@@ -469,9 +486,9 @@ final class EntryRepository {
 			? " WHERE {$period_cond}"
 			: $where_tpl . " AND {$period_cond}";
 
-		$args = array_merge( [ $this->table ], $w_args );
+		$args = array_merge([$this->table], $w_args);
 
-		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; $group_expr derived from a hardcoded switch on $period/$col with no user-controlled values.
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 				"SELECT {$group_expr} AS bucket, COUNT(*) AS cnt, COALESCE(SUM(amount),0) AS total FROM %i{$where_tpl} GROUP BY {$group_expr} ORDER BY {$group_expr}",
@@ -480,10 +497,8 @@ final class EntryRepository {
 			ARRAY_A
 		);
 
-		return is_array( $rows ) ? $rows : [];
+		return is_array($rows) ? $rows : [];
 	}
-
-
 
 	/**
 	 * Returns a safe, hardcoded SQL snippet for the requested period (no user data).
@@ -495,13 +510,18 @@ final class EntryRepository {
 	 * - Table ($any_activity = true): entry appears if created_at OR updated_at falls
 	 *   within the period, so cancelled/failed attempts from earlier entries surface too.
 	 */
-	private function period_condition( string $period, string $status = '', bool $any_activity = false ): string {
-		if ( $any_activity ) {
-			switch ( $period ) {
+	private function period_condition(string $period, string $status = '', bool $any_activity = false): string
+	{
+		if ($any_activity) {
+			switch ($period) {
 				case 'day':
 					return "(DATE(created_at) = CURDATE() OR DATE(updated_at) = CURDATE())";
 				case 'week':
 					return "(created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) OR updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))";
+				case '15day':
+					return "(created_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) OR updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY))";
+				case '30day':
+					return "(created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) OR updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY))";
 				case 'month':
 					return "((YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())) OR (YEAR(updated_at) = YEAR(NOW()) AND MONTH(updated_at) = MONTH(NOW())))";
 				case 'year':
@@ -512,11 +532,15 @@ final class EntryRepository {
 		}
 
 		$col = $status === 'completed' ? 'updated_at' : 'created_at';
-		switch ( $period ) {
+		switch ($period) {
 			case 'day':
 				return "DATE({$col}) = CURDATE()";
 			case 'week':
 				return "{$col} >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+			case '15day':
+				return "{$col} >= DATE_SUB(NOW(), INTERVAL 15 DAY)";
+			case '30day':
+				return "{$col} >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
 			case 'month':
 				return "YEAR({$col}) = YEAR(NOW()) AND MONTH({$col}) = MONTH(NOW())";
 			case 'year':
@@ -538,14 +562,15 @@ final class EntryRepository {
 	 * @param string $search_query Search term.
 	 * @return array{string, array<int, mixed>} [clause_template, params]
 	 */
-	private function build_where( string $status, string $search_field = '', string $search_op = 'contains', string $search_query = '' ): array {
+	private function build_where(string $status, string $search_field = '', string $search_op = 'contains', string $search_query = ''): array
+	{
 		global $wpdb;
 		$conditions = array();
 		$params     = array();
 
-		if ( '' !== $status ) {
+		if ('' !== $status) {
 			$conditions[] = 'payment_status = %s';
-			$params[]     = sanitize_key( $status );
+			$params[]     = sanitize_key($status);
 		}
 
 		$allowed_fields = array(
@@ -556,24 +581,24 @@ final class EntryRepository {
 			'payment_method',
 			'amount',
 		);
-		if ( '' !== $search_field && '' !== $search_query && in_array( $search_field, $allowed_fields, true ) ) {
-			if ( 'is' === $search_op ) {
+		if ('' !== $search_field && '' !== $search_query && in_array($search_field, $allowed_fields, true)) {
+			if ('is' === $search_op) {
 				$conditions[] = '%i = %s';
 				$params[]     = $search_field;
 				$params[]     = $search_query;
 			} else {
 				$conditions[] = '%i LIKE %s';
 				$params[]     = $search_field;
-				$params[]     = '%' . $wpdb->esc_like( $search_query ) . '%';
+				$params[]     = '%' . $wpdb->esc_like($search_query) . '%';
 			}
 		}
 
-		if ( empty( $conditions ) ) {
-			return array( '', array() );
+		if (empty($conditions)) {
+			return array('', array());
 		}
 
 		return array(
-			' WHERE ' . implode( ' AND ', $conditions ),
+			' WHERE ' . implode(' AND ', $conditions),
 			$params,
 		);
 	}

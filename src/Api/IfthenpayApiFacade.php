@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ifthenpay\CF7\Api;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Are you sure?' );
+if (! defined('ABSPATH')) {
+	die('Are you sure?');
 }
 
 /**
@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * All catalog data (gateways, methods) is fetched once on connect and
  * persisted to wp_options.  The rest of the codebase reads from the DB.
  */
-final class IfthenpayApiFacade {
+final class IfthenpayApiFacade
+{
 
 	private const OPTION_GATEWAY_CATALOG = 'iftp_cf7_gateway_catalog';
 	private const OPTION_METHOD_CATALOG  = 'iftp_cf7_method_catalog';
@@ -34,9 +35,10 @@ final class IfthenpayApiFacade {
 	 *
 	 * @return array{ok:bool, gateways:array, methods:array, error:string}
 	 */
-	public static function connect( string $backoffice_key ): array {
-		$backoffice_key = trim( sanitize_text_field( $backoffice_key ) );
-		if ( $backoffice_key === '' ) {
+	public static function connect(string $backoffice_key): array
+	{
+		$backoffice_key = trim(sanitize_text_field($backoffice_key));
+		if ($backoffice_key === '') {
 			return array(
 				'ok'       => false,
 				'gateways' => array(),
@@ -47,11 +49,11 @@ final class IfthenpayApiFacade {
 
 		try {
 			$raw_methods     = IfthenpayClient::get_available_methods();
-			$gateway_catalog = IfthenpayClient::fetch_gateway_catalog( $backoffice_key, $raw_methods );
-			$method_catalog  = IfthenpayClient::build_method_catalog_from_raw( $raw_methods );
+			$gateway_catalog = IfthenpayClient::fetch_gateway_catalog($backoffice_key, $raw_methods);
+			$method_catalog  = IfthenpayClient::build_method_catalog_from_raw($raw_methods);
 
-			update_option( self::OPTION_GATEWAY_CATALOG, $gateway_catalog, false );
-			update_option( self::OPTION_METHOD_CATALOG, $method_catalog, false );
+			update_option(self::OPTION_GATEWAY_CATALOG, $gateway_catalog, false);
+			update_option(self::OPTION_METHOD_CATALOG, $method_catalog, false);
 
 			return array(
 				'ok'       => true,
@@ -59,7 +61,7 @@ final class IfthenpayApiFacade {
 				'methods'  => $method_catalog,
 				'error'    => '',
 			);
-		} catch ( \Throwable $e ) {
+		} catch (\Throwable $e) {
 			return array(
 				'ok'       => false,
 				'gateways' => array(),
@@ -69,22 +71,23 @@ final class IfthenpayApiFacade {
 		}
 	}
 
-
-
-	public static function get_gateway_catalog(): array {
-		$catalog = get_option( self::OPTION_GATEWAY_CATALOG, array() );
-		return is_array( $catalog ) ? $catalog : array();
+	public static function get_gateway_catalog(): array
+	{
+		$catalog = get_option(self::OPTION_GATEWAY_CATALOG, array());
+		return is_array($catalog) ? $catalog : array();
 	}
 
-	public static function get_method_catalog(): array {
-		$catalog = get_option( self::OPTION_METHOD_CATALOG, array() );
-		return is_array( $catalog ) ? $catalog : array();
+	public static function get_method_catalog(): array
+	{
+		$catalog = get_option(self::OPTION_METHOD_CATALOG, array());
+		return is_array($catalog) ? $catalog : array();
 	}
 
-	public static function get_methods_for_gateway( string $gateway_key ): array {
+	public static function get_methods_for_gateway(string $gateway_key): array
+	{
 		$catalog = self::get_gateway_catalog();
-		return isset( $catalog[ $gateway_key ]['methods'] ) && is_array( $catalog[ $gateway_key ]['methods'] )
-			? $catalog[ $gateway_key ]['methods']
+		return isset($catalog[$gateway_key]['methods']) && is_array($catalog[$gateway_key]['methods'])
+			? $catalog[$gateway_key]['methods']
 			: array();
 	}
 
@@ -93,22 +96,25 @@ final class IfthenpayApiFacade {
 	/**
 	 * @throws \RuntimeException on API failure
 	 */
-	public static function create_payment( string $gateway_key, array $payload ): array {
-		return IfthenpayClient::create_payment_link( $gateway_key, $payload );
+	public static function create_payment(string $gateway_key, array $payload): array
+	{
+		return IfthenpayClient::create_payment_link($gateway_key, $payload);
 	}
 
 	/**
 	 * @throws \RuntimeException on API failure
 	 */
-	public static function get_payment_status( string $transaction_id ): array {
-		return IfthenpayClient::get_payment_status( $transaction_id );
+	public static function get_payment_status(string $transaction_id): array
+	{
+		return IfthenpayClient::get_payment_status($transaction_id);
 	}
 
 
 
-	public static function clear_catalogs(): void {
-		delete_option( self::OPTION_GATEWAY_CATALOG );
-		delete_option( self::OPTION_METHOD_CATALOG );
+	public static function clear_catalogs(): void
+	{
+		delete_option(self::OPTION_GATEWAY_CATALOG);
+		delete_option(self::OPTION_METHOD_CATALOG);
 	}
 
 	private function __construct() {}

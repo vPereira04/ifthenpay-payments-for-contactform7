@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ifthenpay\CF7\Payment;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'Are you sure?' );
+if (! defined('ABSPATH')) {
+	die('Are you sure?');
 }
 
 use Ifthenpay\CF7\Admin\Settings;
@@ -20,68 +20,72 @@ use WP_REST_Response;
  * Anti-phishing key = base64_encode($gateway_key) — derived in Settings,
  * never stored. Validated here against the `chave` field sent by ifthenpay.
  */
-final class Callback {
+final class Callback
+{
 
 	private const REST_NAMESPACE = 'ifthenpay-cf7/v1';
 	private const REST_ROUTE     = '/callback';
 
-	public function register_routes(): void {
+	public function register_routes(): void
+	{
 		register_rest_route(
 			self::REST_NAMESPACE,
 			self::REST_ROUTE,
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle' ),
+				'callback'            => array($this, 'handle'),
 				'permission_callback' => '__return_true',
 			)
 		);
 	}
 
-	public function handle( WP_REST_Request $request ): WP_REST_Response {
+	public function handle(WP_REST_Request $request): WP_REST_Response
+	{
 		$payload = $request->get_params();
 
 		$expected = Settings::get_anti_phishing_key();
-		if ( $expected !== '' ) {
-			$received = sanitize_text_field( (string) ( $payload['chave'] ?? $payload['key'] ?? $payload['sk'] ?? '' ) );
-			if ( $received !== $expected ) {
-				return new WP_REST_Response( array( 'error' => 'invalid_key' ), 403 );
+		if ($expected !== '') {
+			$received = sanitize_text_field((string) ($payload['chave'] ?? $payload['key'] ?? $payload['sk'] ?? ''));
+			if ($received !== $expected) {
+				return new WP_REST_Response(array('error' => 'invalid_key'), 403);
 			}
 		}
 
-		$entry_id   = IfthenpayReturn::get_callback_entry_id( $payload );
-		$is_success = IfthenpayReturn::is_successful_callback( $payload );
+		$entry_id   = IfthenpayReturn::get_callback_entry_id($payload);
+		$is_success = IfthenpayReturn::is_successful_callback($payload);
 
-		if ( $entry_id <= 0 ) {
-			return new WP_REST_Response( array( 'error' => 'missing_parameters' ), 400 );
+		if ($entry_id <= 0) {
+			return new WP_REST_Response(array('error' => 'missing_parameters'), 400);
 		}
 
 		$repo  = new EntryRepository();
-		$entry = $repo->get_by_id( $entry_id );
+		$entry = $repo->get_by_id($entry_id);
 
-		if ( $entry === null ) {
-			return new WP_REST_Response( array( 'error' => 'entry_not_found' ), 404 );
+		if ($entry === null) {
+			return new WP_REST_Response(array('error' => 'entry_not_found'), 404);
 		}
 
-		$val = sanitize_text_field( (string) ( $payload['val'] ?? $payload['amount'] ?? '' ) );
-		if ( $val !== '' && number_format( (float) $val, 2, '.', '' ) !== number_format( $entry->amount, 2, '.', '' ) ) {
-			return new WP_REST_Response( array( 'error' => 'amount_mismatch' ), 403 );
+		$val = sanitize_text_field((string) ($payload['val'] ?? $payload['amount'] ?? ''));
+		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
+			return new WP_REST_Response(array('error' => 'amount_mismatch'), 403);
 		}
 
-		if ( $is_success ) {
-			$method = sanitize_text_field( (string) ( $payload['PaymentMethod'] ?? $payload['Method'] ?? '' ) );
-			$repo->update_transaction( $entry->id, $method, 'completed' );
+		if ($is_success) {
+			$method = sanitize_text_field((string) ($payload['PaymentMethod'] ?? $payload['Method'] ?? ''));
+			$repo->update_transaction($entry->id, $method, 'completed');
 
 			/** @fires iftp_cf7_payment_confirmed after ifthenpay confirms payment via webhook */
-			do_action( 'iftp_cf7_payment_confirmed', $entry->id, $method );
+			do_action('iftp_cf7_payment_confirmed', $entry->id, $method);
 		} else {
-			$repo->update_status( $entry->id, 'failed' );
-			do_action( 'iftp_cf7_payment_failed', $entry->id );
+			$repo->update_status($entry->id, 'failed');
+			do_action('iftp_cf7_payment_failed', $entry->id);
 		}
 
-		return new WP_REST_Response( array( 'status' => 'ok' ), 200 );
+		return new WP_REST_Response(array('status' => 'ok'), 200);
 	}
 
-	public static function get_callback_url(): string {
-		return rest_url( self::REST_NAMESPACE . self::REST_ROUTE );
+	public static function get_callback_url(): string
+	{
+		return rest_url(self::REST_NAMESPACE . self::REST_ROUTE);
 	}
 }
