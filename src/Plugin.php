@@ -146,7 +146,7 @@ final class Plugin
 			'ifthenpay-cf7-frontend',
 			IFTP_CF7_URL . 'assets/js/frontend.js',
 			array('jquery'),
-			IFTP_CF7_VERSION,
+			$this->asset_version('assets/js/frontend.js'),
 			true
 		);
 
@@ -154,7 +154,7 @@ final class Plugin
 			'ifthenpay-cf7-frontend',
 			IFTP_CF7_URL . 'assets/css/frontend.css',
 			array(),
-			IFTP_CF7_VERSION
+			$this->asset_version('assets/css/frontend.css')
 		);
 
 		wp_localize_script(
@@ -174,6 +174,17 @@ final class Plugin
 		);
 	}
 
+	/**
+	 * Version string for an asset: file mtime when readable (busts cache on every
+	 * edit), falling back to the plugin version. Path is relative to the plugin dir.
+	 */
+	private function asset_version(string $relative_path): string
+	{
+		$full = IFTP_CF7_DIR . $relative_path;
+		$mtime = is_readable($full) ? filemtime($full) : false;
+		return $mtime !== false ? (string) $mtime : IFTP_CF7_VERSION;
+	}
+
 	public function enqueue_admin_assets(string $hook): void
 	{
 		$cf7_hooks = array(
@@ -189,18 +200,10 @@ final class Plugin
 		}
 
 		wp_enqueue_script(
-			'chart-js',
-			IFTP_CF7_URL . 'assets/js/chart.umd.min.js',
-			array(),
-			'4.4.1',
-			true
-		);
-
-		wp_enqueue_script(
 			'ifthenpay-cf7-admin',
 			IFTP_CF7_URL . 'assets/js/admin.js',
-			array('jquery', 'chart-js'),
-			IFTP_CF7_VERSION,
+			array('jquery'),
+			$this->asset_version('assets/js/admin.js'),
 			true
 		);
 
@@ -208,7 +211,7 @@ final class Plugin
 			'ifthenpay-cf7-admin',
 			IFTP_CF7_URL . 'assets/css/admin.css',
 			array(),
-			IFTP_CF7_VERSION
+			$this->asset_version('assets/css/admin.css')
 		);
 
 		wp_localize_script(
@@ -240,62 +243,7 @@ final class Plugin
 		$repo = new \Ifthenpay\CF7\Repository\EntryRepository();
 
 
-		$periods_cfg = array(
-			'30' => array('db_period' => '30day', 'days' => 30),
-			'15' => array('db_period' => '15day', 'days' => 15),
-			'7'  => array('db_period' => 'week',  'days' => 7),
-			'1'  => array('db_period' => 'day',   'days' => 0),
-		);
-
-		$now         = current_time('timestamp');
-		$widget_data = array();
-
-		foreach ($periods_cfg as $btn_key => $cfg) {
-			$db = $cfg['db_period'];
-
-
-			$revenue_period = $repo->sum_amount_period('completed', $db);
-			$counts_period  = array(
-				'pending'   => $repo->count_period('pending',   $db, true),
-				'completed' => $repo->count_period('completed', $db, true),
-				'failed'    => $repo->count_period('failed',    $db, true),
-				'cancelled' => $repo->count_period('cancelled', $db, true),
-			);
-
-
-			$raw_rows = $repo->get_chart_data('completed', $db);
-			$map      = array();
-			foreach ($raw_rows as $row) {
-				$map[(string) $row['bucket']] = (int) $row['cnt'];
-			}
-
-			if (0 === $cfg['days']) {
-				$labels     = array();
-				$counts_arr = array();
-				for ($h = 0; $h < 24; $h++) {
-					$labels[]     = sprintf('%02d:00', $h);
-					$counts_arr[] = (int) ($map[(string) $h] ?? 0);
-				}
-			} else {
-				$labels     = array();
-				$counts_arr = array();
-				for ($i = $cfg['days'] - 1; $i >= 0; $i--) {
-					$ts           = $now - $i * DAY_IN_SECONDS;
-					$key          = gmdate('Y-m-d', $ts);
-					$labels[]     = gmdate('d/m', $ts);
-					$counts_arr[] = (int) ($map[$key] ?? 0);
-				}
-			}
-
-			$widget_data[$btn_key] = array(
-				'revenue' => round($revenue_period, 2),
-				'counts'  => $counts_period,
-				'chart'   => array(
-					'labels' => $labels,
-					'counts' => $counts_arr,
-				),
-			);
-		}
+		$widget_data = $repo->get_widget_period_stats();
 
 		$default_period = '1';
 		$default        = $widget_data[$default_period];
@@ -307,6 +255,9 @@ final class Plugin
 		$entries_url = admin_url('admin.php?page=ifthenpay-cf7-entries');
 ?>
 		<div class="iftp-metabox-body">
+			<span id="iftp-cf7-dash-data" hidden
+				data-period="<?php echo esc_attr($default_period); ?>"
+				data-chart="<?php echo esc_attr($dash_data_json); ?>"></span>
 			<div class="iftp-period-tabs iftp-dash-period-tabs" role="group" aria-label="<?php esc_attr_e('Time period', 'ifthenpay-payments-for-contactform7'); ?>">
 				<button type="button" class="iftp-period-tab" data-period="30">30d</button>
 				<button type="button" class="iftp-period-tab" data-period="15">15d</button>
@@ -342,9 +293,7 @@ final class Plugin
 					<span class="iftp-stat-lbl"><span class="iftp-stat-dot" style="background:#8c8f94"></span><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></span>
 					<span class="iftp-stat-val" id="iftp-cf7-dash-count-cancelled"><?php echo esc_html((string) $default['counts']['cancelled']); ?></span>
 				</div>
-			</div>
-			<div class="iftp-dash-chart-wrap">
-				<canvas id="iftp-cf7-dash-chart" data-period="<?php echo esc_attr($default_period); ?>" data-chart="<?php echo esc_attr($dash_data_json); ?>"></canvas>
+				<br></br>
 			</div>
 			<a href="<?php echo esc_url($entries_url); ?>" class="button button-secondary iftp-dash-view-all">
 				<?php esc_html_e('View all entries', 'ifthenpay-payments-for-contactform7'); ?>

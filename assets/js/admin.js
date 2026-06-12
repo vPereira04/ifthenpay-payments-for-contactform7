@@ -255,14 +255,16 @@
 		if (count > 0) {
 			const label =
 				'Selected ' + count + ' item' + (count === 1 ? '' : 's');
-			if (!$dn.data('orig')) {
+			if ($dn.data('orig') === undefined) {
 				$dn.data('orig', $dn.html());
 			}
-			$dn.html('<strong>' + label + '</strong>');
+			$dn.html(
+				'<strong>' + label + '</strong>' +
+				' <a href="#" id="iftp-clear-selection" style="margin-left:6px;">Clear</a>'
+			);
 		} else {
-			const orig = $dn.data('orig');
-			if (orig) {
-				$dn.html(orig);
+			if ($dn.data('orig') !== undefined) {
+				$dn.html($dn.data('orig'));
 			}
 		}
 
@@ -299,6 +301,12 @@
 		} else {
 			iftpSelRemove($(this).val());
 		}
+		iftpSelUpdateUI();
+	});
+
+	$(document).on('click', '#iftp-clear-selection', function (e) {
+		e.preventDefault();
+		iftpSelClear();
 		iftpSelUpdateUI();
 	});
 
@@ -540,34 +548,30 @@
 	});
 
 
-	function iftpInitDashChart() {
-		const canvas = document.getElementById('iftp-cf7-dash-chart');
-		if (!canvas || typeof Chart === 'undefined') {
+	function iftpInitDashWidget() {
+		const elRevenue = document.getElementById('iftp-cf7-dash-revenue');
+		const elRevSub = document.getElementById('iftp-cf7-dash-rev-sub');
+		const elPending = document.getElementById('iftp-cf7-dash-count-pending');
+		const elCompleted = document.getElementById('iftp-cf7-dash-count-completed');
+		const elFailed = document.getElementById('iftp-cf7-dash-count-failed');
+		const elCancelled = document.getElementById('iftp-cf7-dash-count-cancelled');
+
+		if (!elRevenue) {
+			return;
+		}
+
+		const dataEl = document.getElementById('iftp-cf7-dash-data');
+		if (!dataEl) {
 			return;
 		}
 
 		let allData;
 		try {
-			allData = JSON.parse(canvas.dataset.chart || '{}');
+			allData = JSON.parse(dataEl.dataset.chart || '{}');
 		} catch (_e) {
 			allData = {};
 		}
 
-		let currentPeriod = String(canvas.dataset.period || '7');
-		let chartInst = null;
-
-		const elRevenue = document.getElementById('iftp-cf7-dash-revenue');
-		const elRevSub = document.getElementById('iftp-cf7-dash-rev-sub');
-		const elPending = document.getElementById(
-			'iftp-cf7-dash-count-pending'
-		);
-		const elCompleted = document.getElementById(
-			'iftp-cf7-dash-count-completed'
-		);
-		const elFailed = document.getElementById('iftp-cf7-dash-count-failed');
-		const elCancelled = document.getElementById(
-			'iftp-cf7-dash-count-cancelled'
-		);
 		const paidTpl =
 			(elRevSub && elRevSub.dataset.template) ||
 			'from %d paid transactions';
@@ -583,248 +587,35 @@
 			if (!d) {
 				return;
 			}
-
 			iftpOdometer(elRevenue, formatRevenue(d.revenue || 0));
 			if (elRevSub) {
-				elRevSub.textContent = paidTpl.replace(
-					'%d',
-					d.counts.completed || 0
-				);
+				elRevSub.textContent = paidTpl.replace('%d', d.counts.completed || 0);
 			}
 			iftpCountSlide(elCompleted, d.counts.completed || 0, 0);
 			iftpCountSlide(elPending, d.counts.pending || 0, 60);
 			iftpCountSlide(elFailed, d.counts.failed || 0, 120);
 			iftpCountSlide(elCancelled, d.counts.cancelled || 0, 180);
-
-			const chart = d.chart || {};
-			if (!chart.labels || !chart.labels.length) {
-				return;
-			}
-
-			if (chartInst) {
-				chartInst.data.labels = chart.labels;
-				chartInst.data.datasets[0].data = chart.counts;
-				chartInst.update();
-				return;
-			}
-
-			chartInst = new Chart(canvas, {
-				type: 'line',
-				data: {
-					labels: chart.labels,
-					datasets: [
-						{
-							data: chart.counts,
-							fill: true,
-							tension: 0.4,
-							borderColor: '#00609c',
-							backgroundColor: 'rgba(0,96,156,.08)',
-							pointRadius: 2,
-							pointHoverRadius: 4,
-							pointBackgroundColor: '#00609c',
-							borderWidth: 1.5,
-						},
-					],
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					plugins: {
-						legend: { display: false },
-						tooltip: {
-							callbacks: {
-								label(ctx) {
-									const n = Number(ctx.raw);
-									return (
-										' ' +
-										n +
-										' payment' +
-										(n === 1 ? '' : 's')
-									);
-								},
-							},
-						},
-					},
-					scales: {
-						x: {
-							grid: { display: false },
-							border: { display: false },
-							ticks: {
-								color: '#8c8f94',
-								font: { size: 10 },
-								maxTicksLimit: 10,
-							},
-						},
-						y: {
-							display: false,
-							beginAtZero: true,
-						},
-					},
-				},
-			});
 		}
 
+		let currentPeriod = String(dataEl.dataset.period || '1');
 		applyPeriod(currentPeriod);
 
-		const widgetBody = canvas.closest('.iftp-metabox-body');
+		const widgetBody = dataEl.closest('.iftp-metabox-body');
 		if (widgetBody) {
 			widgetBody
 				.querySelectorAll('.iftp-dash-period-tabs .iftp-period-tab')
 				.forEach(function (btn) {
 					btn.addEventListener('click', function () {
-						currentPeriod = String(this.dataset.period || '7');
+						currentPeriod = String(this.dataset.period || '1');
 						widgetBody
-							.querySelectorAll(
-								'.iftp-dash-period-tabs .iftp-period-tab'
-							)
+							.querySelectorAll('.iftp-dash-period-tabs .iftp-period-tab')
 							.forEach(function (b) {
-								b.classList.toggle(
-									'active',
-									b.dataset.period === currentPeriod
-								);
+								b.classList.toggle('active', b.dataset.period === currentPeriod);
 							});
 						applyPeriod(currentPeriod);
 					});
 				});
 		}
-	}
-
-
-	function iftpInitChart() {
-		const canvas = document.getElementById('iftp-cf7-chart');
-		if (!canvas || typeof Chart === 'undefined') {
-			return;
-		}
-
-		let raw;
-		try {
-			raw = JSON.parse(canvas.dataset.chart || '{}');
-		} catch (_e) {
-			raw = {};
-		}
-		if (!raw.labels || !raw.labels.length) {
-			return;
-		}
-
-		let currentMode = 'count';
-		let chartInst = null;
-
-		function getConfig(mode) {
-			const isRev = mode === 'revenue';
-			const data = isRev ? raw.amounts || [] : raw.counts || [];
-			const color = isRev ? '#00a32a' : '#00609c';
-			const bgColor = isRev ? 'rgba(0,163,42,.07)' : 'rgba(0,96,156,.07)';
-			const ptR = raw.labels.length > 15 ? 2 : 3;
-
-			return {
-				color,
-				bgColor,
-				ptR,
-				data,
-				yTick: isRev
-					? function (v) {
-							return '€ ' + v.toFixed(0);
-						}
-					: function (v) {
-							return v;
-						},
-				tooltip: isRev
-					? function (ctx) {
-							return ' € ' + Number(ctx.raw).toFixed(2);
-						}
-					: function (ctx) {
-							return (
-								' ' +
-								ctx.raw +
-								' payment' +
-								(ctx.raw === 1 ? '' : 's')
-							);
-						},
-			};
-		}
-
-		function buildChart(mode) {
-			const cfg = getConfig(mode);
-
-			if (chartInst) {
-				const ds = chartInst.data.datasets[0];
-				ds.data = cfg.data;
-				ds.borderColor = cfg.color;
-				ds.backgroundColor = cfg.bgColor;
-				ds.pointBackgroundColor = cfg.color;
-				chartInst.options.scales.y.ticks.callback = cfg.yTick;
-				chartInst.options.plugins.tooltip.callbacks.label = cfg.tooltip;
-				chartInst.update();
-				return;
-			}
-
-			chartInst = new Chart(canvas, {
-				type: 'line',
-				data: {
-					labels: raw.labels,
-					datasets: [
-						{
-							label: '',
-							data: cfg.data,
-							fill: true,
-							tension: 0.4,
-							borderColor: cfg.color,
-							backgroundColor: cfg.bgColor,
-							pointBackgroundColor: cfg.color,
-							pointRadius: cfg.ptR,
-							pointHoverRadius: 5,
-						},
-					],
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					interaction: { mode: 'index', intersect: false },
-					plugins: {
-						legend: { display: false },
-						tooltip: {
-							callbacks: { label: cfg.tooltip },
-						},
-					},
-					scales: {
-						x: {
-							grid: { color: 'rgba(0,0,0,.05)' },
-							ticks: {
-								color: '#646970',
-								font: { size: 11 },
-								maxTicksLimit: 12,
-							},
-						},
-						y: {
-							beginAtZero: true,
-							grid: { color: 'rgba(0,0,0,.05)' },
-							ticks: {
-								color: '#646970',
-								font: { size: 11 },
-								callback: cfg.yTick,
-							},
-						},
-					},
-				},
-			});
-		}
-
-		buildChart(currentMode);
-
-		document.querySelectorAll('.iftp-chart-mode').forEach(function (btn) {
-			btn.addEventListener('click', function () {
-				currentMode = this.dataset.mode;
-				document
-					.querySelectorAll('.iftp-chart-mode')
-					.forEach(function (b) {
-						b.classList.toggle(
-							'active',
-							b.dataset.mode === currentMode
-						);
-					});
-				buildChart(currentMode);
-			});
-		});
 	}
 
 
@@ -848,21 +639,30 @@
 		}
 
 
-		$(document).on('click', '.iftp-density-btn', function () {
-			const density = String($(this).data('density') || 'normal');
-			$('.iftp-density-btn')
-				.removeClass('iftp-density-btn--active')
-				.attr('aria-pressed', 'false');
-			$(this)
-				.addClass('iftp-density-btn--active')
-				.attr('aria-pressed', 'true');
-			$wrap
-				.removeClass(
-					'iftp-density-compact iftp-density-normal iftp-density-large'
-				)
-				.addClass('iftp-density-' + density)
-				.attr('data-density', density);
-			savePrefs({ row_density: density });
+		$(document).on('change', '.iftp-per-page-select', function () {
+			const val = parseInt($(this).val(), 10) || 25;
+			savePrefs({ per_page: val });
+			const url = new URL(window.location.href);
+			url.searchParams.set('per_page', String(val));
+			url.searchParams.set('paged', '1');
+			url.searchParams.delete('cursor');
+			url.searchParams.delete('dir');
+			window.location.href = url.toString();
+		});
+
+
+		$(document).on('keydown', '.iftp-pagination-links .current-page', function (e) {
+			if (e.key !== 'Enter') return;
+			e.preventDefault();
+			const page = parseInt($(this).val(), 10);
+			const baseUrl = $(this).data('jump-url');
+			if (!isNaN(page) && page >= 1 && baseUrl) {
+				const url = new URL(baseUrl, window.location.origin);
+				url.searchParams.set('paged', String(page));
+				url.searchParams.delete('cursor');
+				url.searchParams.delete('dir');
+				window.location.href = url.toString();
+			}
 		});
 
 
@@ -984,14 +784,34 @@
 		}
 
 
+		function toggleTableCol(colKey, visible) {
+			$table.find('[data-col="' + colKey + '"]').css('display', visible ? '' : 'none');
+		}
+
+
+		$list.on('change', '.iftp-col-visibility-cb', function (e) {
+			e.stopPropagation();
+			const col = String($(this).closest('.iftp-col-item').data('col'));
+			toggleTableCol(col, $(this).is(':checked'));
+		});
+
+
 		$('#iftp-col-customize-save').on('click', function () {
 			const newOrder = [];
+			const visibleCols = [];
 			$list.find('.iftp-col-item').each(function () {
-				newOrder.push(String($(this).data('col')));
+				const col = String($(this).data('col'));
+				newOrder.push(col);
+				if ($(this).find('.iftp-col-visibility-cb').is(':checked')) {
+					visibleCols.push(col);
+				}
 			});
 			reorderTableCols(newOrder);
 			$wrap.attr('data-col-order', JSON.stringify(newOrder));
-			savePrefs({ column_positions: newOrder });
+			$wrap.attr('data-hidden-cols', JSON.stringify(
+				newOrder.filter(function (c) { return visibleCols.indexOf(c) === -1; })
+			));
+			savePrefs({ column_positions: newOrder, visible_columns: visibleCols });
 			closePopover();
 		});
 
@@ -1010,9 +830,15 @@
 					$list.append($item);
 				}
 			});
+
+			$list.find('.iftp-col-visibility-cb').prop('checked', true);
+			$.each(defaults, function (i, colKey) {
+				toggleTableCol(colKey, true);
+			});
 			reorderTableCols(defaults);
 			$wrap.attr('data-col-order', JSON.stringify(defaults));
-			savePrefs({ column_positions: defaults });
+			$wrap.attr('data-hidden-cols', '[]');
+			savePrefs({ column_positions: defaults, visible_columns: defaults });
 			closePopover();
 		});
 	}
@@ -1052,8 +878,7 @@
 			iftpOdometer(revAmountEl, revAmountEl.textContent.trim());
 		}
 
-		iftpInitChart();
-		iftpInitDashChart();
+		iftpInitDashWidget();
 		iftpInitEntriesPrefs();
 	});
 })(jQuery);

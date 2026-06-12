@@ -11,7 +11,7 @@ if (! defined('ABSPATH')) {
 final class Activation
 {
 
-	private const DB_VERSION     = '1.5';
+	private const DB_VERSION     = '1.8';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
 	public static function activate(): void
@@ -27,8 +27,30 @@ final class Activation
 	public static function maybe_upgrade(): void
 	{
 		if (get_option(self::DB_VERSION_KEY) !== self::DB_VERSION) {
+			self::drop_superseded_indexes();
 			self::create_table();
 			update_option(self::DB_VERSION_KEY, self::DB_VERSION, false);
+		}
+	}
+
+	/** Drop single-column indexes superseded by the v1.8 composite index. dbDelta() never drops, so we do it explicitly. */
+	private static function drop_superseded_indexes(): void
+	{
+		global $wpdb;
+		$table = $wpdb->prefix . IFTP_CF7_TABLE;
+		foreach (array('idx_payment_status', 'idx_created_at', 'idx_updated_at') as $idx) {
+			$exists = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema migration; one-time upgrade check.
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = %s AND index_name = %s',
+					$table,
+					$idx
+				)
+			);
+			if ($exists) {
+				$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Schema migration; ALTER TABLE DROP INDEX is a one-time upgrade operation.
+					"ALTER TABLE `{$table}` DROP INDEX `{$idx}`" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $table is $wpdb->prefix . constant; $idx is from a hardcoded array.
+				);
+			}
 		}
 	}
 
@@ -57,9 +79,11 @@ final class Activation
 			created_at   DATETIME        NOT NULL,
 			updated_at   DATETIME        NOT NULL,
 			PRIMARY KEY  (id),
-			KEY          idx_form_id       (form_id),
-			KEY          idx_transaction_id (transaction_id(20)),
-			KEY          idx_payment_status (payment_status)
+			KEY          idx_form_id               (form_id),
+			KEY          idx_transaction_id        (transaction_id(20)),
+			KEY          idx_status_amount         (payment_status, amount),
+			KEY          idx_status_id             (payment_status, id),
+			KEY          idx_updated_status_amount (updated_at, payment_status, amount)
 		) {$charset};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

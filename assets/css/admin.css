@@ -157,66 +157,6 @@
 .iftp-stat-label--cancelled { color: #646970; }
 .iftp-stat-val--cancelled   { color: #646970; }
 
-/* ── Payments chart card ── */
-.iftp-chart-card {
-	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-radius: 8px;
-	padding: 16px 20px 20px;
-	margin-bottom: 16px;
-	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
-}
-
-.iftp-chart-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 16px;
-}
-
-.iftp-chart-title {
-	font-size: 13px;
-	font-weight: 600;
-	color: #1d2327;
-}
-
-.iftp-chart-modes {
-	display: flex;
-	gap: 0;
-	background: #f6f7f7;
-	border: 1px solid #c3c4c7;
-	border-radius: 99px;
-	padding: 2px;
-}
-
-.iftp-chart-mode {
-	padding: 3px 14px;
-	border-radius: 99px;
-	font-size: 12px;
-	font-weight: 500;
-	color: #646970;
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	transition: background .12s, color .12s;
-	line-height: 1.5;
-}
-
-.iftp-chart-mode:hover {
-	color: #1d2327;
-}
-
-.iftp-chart-mode.active {
-	background: #00609c;
-	color: #fff;
-}
-
-.iftp-chart-canvas-wrap {
-	position: relative;
-	height: 220px;
-}
-
 /* ── Info box (bottom of list) ── */
 .iftp-info-box {
 	display: flex;
@@ -374,16 +314,16 @@
 
 .iftp-milestone-badge--first-badge {
 	background: #0e5686;
+  background-image: linear-gradient(90deg, #00609c 0%, #0c71af 50%, #0e5686 100%);
 	color: #fff;
-	font-weight: 700;
-	text-shadow: none;
-	animation: none;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 20%);
 }
 
 .iftp-milestone-badge--second {
   background: #f1c40f; /* Cor base dourada/amarela corporativa */
   background-image: linear-gradient(135deg, #f39c12 0%, #f1c40f 50%, #e67e22 100%);
-  color: #fff;
+  color: #63360d;
   font-weight: 700;
   text-shadow: 0 1px 2px rgb(0 0 0 / 20%);
 }
@@ -950,13 +890,6 @@ button.iftp-period-tab:focus-visible {
 	outline-offset: 1px;
 }
 
-/* ── Dashboard widget mini chart ── */
-.iftp-dash-chart-wrap {
-	height: 80px;
-	margin: 12px -14px 0;
-	overflow: hidden;
-}
-
 .iftp-dash-view-all {
 	display: block;
 	margin-top: 12px;
@@ -990,11 +923,40 @@ button.iftp-period-tab:focus-visible {
 	line-height: 28px;
 }
 
-/* Pagination prev / next / first / last buttons */
-.iftp-cf7-entries-main .pagination-links .button,
-.iftp-cf7-entries-main .pagination-links a.button,
-.iftp-cf7-entries-main .pagination-links span.button {
-	border-radius: 10px !important;
+/* Circular prev / next page buttons */
+.iftp-page-circle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	color: #3c434a;
+	text-decoration: none;
+	box-shadow: 0 1px 1px rgb(0 0 0 / 6%);
+	transition: background .12s, border-color .12s, color .12s;
+	flex-shrink: 0;
+	vertical-align: middle;
+}
+
+.iftp-page-circle:hover {
+	background: #00609c;
+	border-color: #00609c;
+	color: #fff;
+}
+
+.iftp-page-circle.disabled {
+	opacity: .35;
+	pointer-events: none;
+	cursor: default;
+}
+
+.iftp-pagination-links {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
 }
 
 /* ── Table scroll wrapper ── */
@@ -1948,9 +1910,6 @@ table.iftp-submitted tbody td:last-child {
 .iftp-stats-row .iftp-stat-card:nth-child(4) { animation-delay: .14s; }
 .iftp-stats-row .iftp-stat-card:nth-child(5) { animation-delay: .18s; }
 
-/* Chart card entrance */
-.iftp-chart-card { animation: iftp-fade-up .32s .10s ease both; }
-
 /* Entries panel entrance */
 .iftp-cf7-entries-main { animation: iftp-fade-up .32s .18s ease both; }
 
@@ -2029,7 +1988,6 @@ table.iftp-submitted tbody td:last-child {
 /* Respect reduced-motion */
 @media (prefers-reduced-motion: reduce) {
 	.iftp-stats-row .iftp-stat-card,
-	.iftp-chart-card,
 	.iftp-cf7-entries-main,
 	.iftp-cf7-entries-table tbody tr { animation: none !important; }
 
@@ -2039,26 +1997,19 @@ table.iftp-submitted tbody td:last-child {
 	.iftp-count-entering { animation: none !important; }
 }
 
-/* ── Row density variants ── */
-.iftp-entries-table-wrap.iftp-density-compact .iftp-cf7-entries-table td,
-.iftp-entries-table-wrap.iftp-density-compact .iftp-cf7-entries-table th {
+/* ── Compact row density (always active) ── */
+.iftp-entries-table-wrap .iftp-cf7-entries-table td,
+.iftp-entries-table-wrap .iftp-cf7-entries-table th {
 	padding-top: 4px;
 	padding-bottom: 4px;
 	line-height: 1.3;
 }
 
-.iftp-entries-table-wrap.iftp-density-compact .iftp-cf7-entries-table td {
+.iftp-entries-table-wrap .iftp-cf7-entries-table td {
 	font-size: 12px;
 }
 
-.iftp-entries-table-wrap.iftp-density-large .iftp-cf7-entries-table td,
-.iftp-entries-table-wrap.iftp-density-large .iftp-cf7-entries-table th {
-	padding-top: 14px;
-	padding-bottom: 14px;
-	line-height: 1.6;
-}
-
-/* ── Tablenav view controls (density + columns) ── */
+/* ── Tablenav view controls ── */
 .iftp-view-controls {
 	display: flex;
 	align-items: center;
@@ -2066,38 +2017,25 @@ table.iftp-submitted tbody td:last-child {
 	margin: 1px 0;
 }
 
-.iftp-density-toggle {
-	display: flex;
-	align-items: center;
+/* ── Sort arrows in column headers ── */
+.iftp-sort-arrows {
+	display: inline-flex;
+	flex-direction: column;
+	line-height: 1;
+	gap: 0;
+	margin-left: 3px;
+	vertical-align: middle;
 }
 
-.iftp-density-toggle .iftp-density-btn {
-	border-radius: 0;
-	margin: 0;
-	margin-left: -1px;
-	position: relative;
-	z-index: 1;
+.iftp-sort-arrow {
+	font-size: 9px;
+	line-height: 1;
+	color: #c3c4c7;
+	display: block;
 }
 
-.iftp-density-toggle .iftp-density-btn:first-child {
-	border-radius: 3px 0 0 3px;
-	margin-left: 0;
-}
-
-.iftp-density-toggle .iftp-density-btn:last-child {
-	border-radius: 0 3px 3px 0;
-}
-
-.iftp-density-toggle .iftp-density-btn--active {
-	background: #2271b1;
-	border-color: #2271b1;
-	color: #fff;
-	z-index: 2;
-}
-
-.iftp-density-toggle .iftp-density-btn--active:hover {
-	background: #135e96;
-	border-color: #135e96;
+.iftp-sort-active {
+	color: #1d2327;
 }
 
 .iftp-col-customize-btn {
@@ -2173,6 +2111,19 @@ table.iftp-submitted tbody td:last-child {
 	user-select: none;
 	color: #1d2327;
 	transition: background .1s;
+}
+
+.iftp-col-visibility-cb {
+	margin: 0;
+	flex-shrink: 0;
+	cursor: pointer;
+}
+
+.iftp-col-item-label {
+	flex: 1;
+	cursor: pointer;
+	font-weight: normal;
+	margin: 0;
 }
 
 .iftp-col-item:hover {

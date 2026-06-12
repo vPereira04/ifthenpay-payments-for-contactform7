@@ -292,9 +292,41 @@
 					);
 					actionUrl.searchParams.delete('iftp_cf7_pay');
 					actionUrl.searchParams.delete('iftp_cf7_entry');
+					actionUrl.hash = '';
 					formEl.action = actionUrl.toString();
 				}
 			} catch (_e) {}
+
+
+			(function () {
+				const formEl = $form[0];
+				if (!formEl) {
+					return;
+				}
+				function clearHashOnSent(ev) {
+					if (ev && ev.detail && ev.detail.status === 'sent') {
+						formEl.removeEventListener(
+							'wpcf7statuschanged',
+							clearHashOnSent
+						);
+						setTimeout(function () {
+							try {
+								const u = new URL(window.location.href);
+								u.hash = '';
+								history.replaceState(
+									{},
+									document.title,
+									u.toString()
+								);
+							} catch (_e) {}
+						}, 0);
+					}
+				}
+				formEl.addEventListener(
+					'wpcf7statuschanged',
+					clearHashOnSent
+				);
+			})();
 
 			if (session && session.form_data) {
 				restoreFormData($form, session.form_data);
@@ -313,7 +345,60 @@
 			}, 200);
 		} else {
 			clearSession();
-			showFieldMessage($field, status, paymentUrl);
+
+
+			const formEl = $form[0];
+			if (formEl) {
+				formEl.classList.remove('init', 'sent', 'resetting', 'submitting');
+				formEl.classList.add('failed');
+				if (formEl.setAttribute) {
+					formEl.setAttribute('data-status', 'failed');
+				}
+			}
+
+			const $output = $form.closest('.wpcf7').find('.wpcf7-response-output');
+			if ($output.length) {
+				const isCancelType = status === 'cancel';
+				const $p = $('<p class="iftp-msg">').addClass(
+					isCancelType ? 'iftp-msg-cancel' : 'iftp-msg-error'
+				);
+
+				if (paymentUrl) {
+					$p.append(
+						$('<a>')
+							.attr('href', paymentUrl)
+							.text(cfg.msg_retry || 'Retry')
+					);
+					$p.append(
+						document.createTextNode(
+							' ' + (cfg.msg_or || 'or') + ' '
+						)
+					);
+					$p.append(
+						$('<a href="#">')
+							.addClass('iftp-new-payment')
+							.text(cfg.msg_new_payment || 'New Payment')
+					);
+				} else {
+					$p.append(
+						$('<a href="#">')
+							.addClass('iftp-new-payment')
+							.text(cfg.msg_retry || 'Retry')
+					);
+					$p.append(
+						document.createTextNode(
+							' ' + (cfg.msg_or || 'or') + ' '
+						)
+					);
+					$p.append(
+						$('<a href="#">')
+							.addClass('iftp-new-payment')
+							.text(cfg.msg_new_payment || 'New Payment')
+					);
+				}
+
+				$output.empty().append($p);
+			}
 		}
 	}
 

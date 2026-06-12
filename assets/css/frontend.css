@@ -1,5 +1,16 @@
 /* ifthenpay | Payments for Contact Form 7 — Frontend Styles */
 
+@font-face {
+	font-family: ifthenpay-icons;
+	src: url('../fonts/ifthenpay-icons.woff2') format('woff2'),
+	     url('../fonts/ifthenpay-icons.woff') format('woff'),
+	     url('../fonts/ifthenpay-icons.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+
+
 /* Payment field container */
 .iftp-cf7-payment-field {
 	display: flex;
@@ -196,4 +207,3 @@
 .iftp-cf7-is-misconfigured .iftp-cf7-pay-button {
 	display: none;
 }
-

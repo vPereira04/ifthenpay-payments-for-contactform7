@@ -14,7 +14,7 @@ use Ifthenpay\CF7\Repository\DTO\EntryDto;
 final class EntriesPage
 {
 
-	private const PER_PAGE = 20;
+	private const VALID_PER_PAGE = array(25, 50, 100);
 
 	/**
 	 * Hooked to load-{page} so headers are not yet sent — safe to redirect.
@@ -72,40 +72,104 @@ final class EntriesPage
 		$search_op    = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
 
 
-		$status_in_url  = isset($_GET['status']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$period_in_url  = isset($_GET['period']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$orderby_in_url = isset($_GET['orderby']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$order_in_url   = isset($_GET['order']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$status_in_url   = isset($_GET['status']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$period_in_url   = isset($_GET['period']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$orderby_in_url  = isset($_GET['orderby']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$order_in_url    = isset($_GET['order']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$per_page_in_url = isset($_GET['per_page']); // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
-		$status_raw  = $status_in_url  ? sanitize_key(wp_unslash((string) $_GET['status']))  : $prefs['status']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$period_raw  = $period_in_url  ? sanitize_key(wp_unslash((string) $_GET['period']))  : $prefs['time_range']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$orderby_raw = $orderby_in_url ? sanitize_key(wp_unslash((string) $_GET['orderby'])) : $prefs['orderby']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
-		$order_raw   = $order_in_url   ? sanitize_key(wp_unslash((string) $_GET['order']))   : $prefs['order']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$status_raw   = $status_in_url   ? sanitize_key(wp_unslash((string) $_GET['status']))   : $prefs['status']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$period_raw   = $period_in_url   ? sanitize_key(wp_unslash((string) $_GET['period']))   : $prefs['time_range']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$orderby_raw  = $orderby_in_url  ? sanitize_key(wp_unslash((string) $_GET['orderby']))  : $prefs['orderby']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$order_raw    = $order_in_url    ? sanitize_key(wp_unslash((string) $_GET['order']))    : $prefs['order']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
+		$per_page_raw = $per_page_in_url ? absint(wp_unslash((string) $_GET['per_page']))       : $prefs['per_page']; // placeholderphpcs:ignore(try fixing) WordPress.Security.NonceVerification.Recommended
 
 		$sort_cols = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
 		$status    = in_array($status_raw,  array('', 'pending', 'completed', 'failed', 'cancelled'), true) ? $status_raw  : '';
 		$period    = in_array($period_raw,  array('all', 'year', 'month', 'week', 'day'), true)              ? $period_raw  : 'all';
 		$orderby   = in_array($orderby_raw, $sort_cols, true)                                                   ? $orderby_raw : 'id';
 		$order     = in_array($order_raw,   array('asc', 'desc'), true)                                       ? $order_raw   : 'desc';
+		$per_page  = in_array((int) $per_page_raw, self::VALID_PER_PAGE, true)                                  ? (int) $per_page_raw : 25;
 
 
-		if ($user_id && ($status_in_url || $period_in_url || $orderby_in_url || $order_in_url)) {
+		if ($user_id && ($status_in_url || $period_in_url || $orderby_in_url || $order_in_url || $per_page_in_url)) {
 			$to_save = array();
-			if ($status_in_url)  $to_save['status']     = $status;
-			if ($period_in_url)  $to_save['time_range'] = $period;
-			if ($orderby_in_url) $to_save['orderby']    = $orderby;
-			if ($order_in_url)   $to_save['order']      = $order;
+			if ($status_in_url)   $to_save['status']     = $status;
+			if ($period_in_url)   $to_save['time_range'] = $period;
+			if ($orderby_in_url)  $to_save['orderby']    = $orderby;
+			if ($order_in_url)    $to_save['order']      = $order;
+			if ($per_page_in_url) $to_save['per_page']   = $per_page;
 			UserPreferences::merge($user_id, $to_save);
 		}
 
 		$db_status = in_array($status, array('pending', 'completed', 'failed', 'cancelled'), true) ? $status : '';
 
-		$total        = $repo->count_all($db_status, $search_field, $search_op, $search_query, $period);
-		$total_amount = $repo->sum_amount($db_status, $search_field, $search_op, $search_query, $period);
-		$entries      = $repo->get_all($current_page, self::PER_PAGE, $db_status, $search_field, $search_op, $search_query, $period, $orderby, $order);
-		$total_pages  = max(1, (int) ceil($total / self::PER_PAGE));
 
-		$this->render_list($repo, $entries, $current_page, $total_pages, $total, $total_amount, $status, $search_field, $search_op, $search_query, $period, $orderby, $order, $prefs);
+		$cursor = ($current_page > 1 && isset($_GET['cursor'])) ? absint($_GET['cursor']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$dir_raw = isset($_GET['dir']) ? sanitize_key(wp_unslash((string) $_GET['dir'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$dir     = in_array($dir_raw, array('prev', 'last'), true) ? $dir_raw : 'next';
+
+
+		if ($dir === 'last') {
+			[$total_for_last] = $repo->count_and_sum($db_status, $search_field, $search_op, $search_query, $period);
+			$current_page     = max(1, (int) ceil($total_for_last / $per_page));
+			$cursor           = 0;
+			$dir              = 'next';
+		}
+
+
+		$entries_raw = $repo->get_all($current_page, $per_page, $db_status, $search_field, $search_op, $search_query, $period, $orderby, $order, $cursor, $dir);
+
+		$has_more = count($entries_raw) > $per_page;
+		$entries  = $has_more ? array_slice($entries_raw, 0, $per_page) : $entries_raw;
+
+
+		if ($orderby === 'id' && $dir === 'prev') {
+			$entries   = array_reverse($entries);
+			$has_prev  = $has_more;
+			$has_next  = $current_page > 1;
+		} else {
+			$has_prev  = $current_page > 1;
+			$has_next  = $has_more;
+		}
+
+		$first_id = ! empty($entries) ? $entries[0]->id : 0;
+		$last_id  = ! empty($entries) ? $entries[ count($entries) - 1 ]->id : 0;
+
+
+		$base_args = array('page' => 'ifthenpay-cf7-entries');
+		if ($status !== '')       $base_args['status']       = $status;
+		if ($period !== 'all')    $base_args['period']       = $period;
+		if ($orderby !== 'id')    $base_args['orderby']      = $orderby;
+		if ($order !== 'desc')    $base_args['order']        = $order;
+		if ($per_page !== 25)     $base_args['per_page']     = $per_page;
+		if ($search_query !== '') {
+			$base_args['search_field'] = $search_field;
+			$base_args['search_op']    = $search_op;
+			$base_args['search_query'] = $search_query;
+		}
+
+		if ($orderby === 'id') {
+
+			$next_url = $has_next ? add_query_arg(array_merge($base_args, array('paged' => $current_page + 1, 'cursor' => $last_id, 'dir' => 'next')), admin_url('admin.php')) : '';
+			if (! $has_prev) {
+				$prev_url = '';
+			} elseif ($current_page === 2) {
+				$prev_url = add_query_arg($base_args, admin_url('admin.php'));
+			} else {
+				$prev_url = add_query_arg(array_merge($base_args, array('paged' => $current_page - 1, 'cursor' => $first_id, 'dir' => 'prev')), admin_url('admin.php'));
+			}
+		} else {
+
+			$next_url = $has_next ? add_query_arg(array_merge($base_args, array('paged' => $current_page + 1)), admin_url('admin.php')) : '';
+			$prev_url = $has_prev ? add_query_arg(array_merge($base_args, array('paged' => max(1, $current_page - 1))), admin_url('admin.php')) : '';
+		}
+
+
+		$first_page_url = add_query_arg($base_args, admin_url('admin.php'));
+		$last_page_url  = add_query_arg(array_merge($base_args, array('dir' => 'last')), admin_url('admin.php'));
+
+		$this->render_list($repo, $entries, $current_page, $has_prev, $has_next, $prev_url, $next_url, $first_page_url, $last_page_url, $status, $search_field, $search_op, $search_query, $period, $orderby, $order, $prefs);
 	}
 
 
@@ -273,9 +337,17 @@ final class EntriesPage
 						);
 					}
 					break;
-				case 'row_density':
-					if (in_array($v, array('compact', 'normal', 'large'), true)) {
-						$clean['row_density'] = $v;
+				case 'visible_columns':
+					if (is_array($v)) {
+						$filtered = array_values(array_filter($v, fn($c) => in_array($c, $allowed_cols, true)));
+						if (! empty($filtered)) {
+							$clean['visible_columns'] = $filtered;
+						}
+					}
+					break;
+				case 'per_page':
+					if (in_array((int) $v, array(25, 50, 100, 250, 500, 1000), true)) {
+						$clean['per_page'] = (int) $v;
 					}
 					break;
 			}
@@ -497,9 +569,12 @@ final class EntriesPage
 		EntryRepository $repo,
 		array $entries,
 		int $current_page,
-		int $total_pages,
-		int $total,
-		float $total_amount,
+		bool $has_prev,
+		bool $has_next,
+		string $prev_url,
+		string $next_url,
+		string $first_page_url,
+		string $last_page_url,
 		string $current_tab,
 		string $search_field = 'customer_name',
 		string $search_op = 'contains',
@@ -509,26 +584,23 @@ final class EntriesPage
 		string $order = 'desc',
 		array $prefs = array()
 	): void {
-		$counts        = array(
-			''          => $repo->count_period('', $period, true),
-			'pending'   => $repo->count_period('pending', $period, true),
-			'completed' => $repo->count_period('completed', $period, true),
-			'failed'    => $repo->count_period('failed', $period, true),
-			'cancelled' => $repo->count_period('cancelled', $period, true),
+
+		$stats   = $repo->get_period_stats($period);
+		$counts  = array(
+			''          => $stats['completed_any'] + $stats['pending_any'] + $stats['failed_any'] + $stats['cancelled_any'],
+			'pending'   => $stats['pending_any'],
+			'completed' => $stats['completed_any'],
+			'failed'    => $stats['failed_any'],
+			'cancelled' => $stats['cancelled_any'],
 		);
 
 		$validated_tab   = in_array($current_tab, array('pending', 'completed', 'failed', 'cancelled'), true) ? $current_tab : '';
 		$revenue_status  = $validated_tab !== '' ? $validated_tab : 'completed';
-		$sidebar_revenue = $repo->sum_amount_period($revenue_status, $period);
-		$sidebar_count   = $repo->count_period($revenue_status, $period);
+		$sidebar_revenue = (float) ($stats[$revenue_status . '_amount'] ?? 0.0);
+		$sidebar_count   = (int)   ($stats[$revenue_status . '_count']  ?? 0);
 
-		$chart_raw           = $repo->get_chart_data($validated_tab, $period);
-		$chart_series        = $this->build_chart_series($chart_raw, $period);
-		$chart_json          = (string) wp_json_encode($chart_series);
-
-		$all_time_paid   = $repo->sum_amount_period('completed', 'all');
+		$all_time_paid   = $repo->get_all_time_paid();
 		$milestone_badge = $this->get_milestone_badge($all_time_paid);
-		$show_revenue_toggle = $current_tab === 'completed';
 		$method_catalog_raw  = get_option('iftp_cf7_method_catalog', array());
 		$method_logos        = array();
 		$method_logos_alt    = array();
@@ -592,13 +664,22 @@ final class EntriesPage
 		$missing_cols = array_diff($all_col_keys, $ordered_cols);
 		$ordered_cols = array_merge($ordered_cols, array_values($missing_cols));
 
-		$row_density = in_array($prefs['row_density'] ?? '', array('compact', 'normal', 'large'), true)
-			? $prefs['row_density']
-			: 'normal';
+		$per_page = in_array((int) ($prefs['per_page'] ?? 25), self::VALID_PER_PAGE, true)
+			? (int) $prefs['per_page']
+			: 25;
 
 		$col_labels_json = (string) wp_json_encode(
 			array_map(fn(array $d) => $d['label'], $col_defs)
 		);
+
+		$visible_cols = ! empty($prefs['visible_columns']) && is_array($prefs['visible_columns'])
+			? array_values(array_filter($prefs['visible_columns'], fn($k) => isset($col_defs[$k])))
+			: $all_col_keys;
+		if (empty($visible_cols)) {
+			$visible_cols = $all_col_keys;
+		}
+		$visible_set  = array_flip($visible_cols);
+		$hidden_cols  = array_values(array_diff($all_col_keys, $visible_cols));
 ?>
 		<div class="wrap iftp-cf7-entries-wrap">
 			<div class="iftp-page-header">
@@ -728,28 +809,6 @@ final class EntriesPage
 				</div>
 			</div>
 
-			<?php /* ── Chart ── */ ?>
-			<div class="iftp-chart-card">
-				<div class="iftp-chart-header">
-					<span class="iftp-chart-title">
-						<?php esc_html_e('Payments over time', 'ifthenpay-payments-for-contactform7'); ?>
-					</span>
-					<div class="iftp-chart-modes">
-						<button type="button" class="iftp-chart-mode active" data-mode="count">
-							<?php esc_html_e('Payments', 'ifthenpay-payments-for-contactform7'); ?>
-						</button>
-						<?php if ($show_revenue_toggle) : ?>
-							<button type="button" class="iftp-chart-mode" data-mode="revenue">
-								<?php esc_html_e('Revenue', 'ifthenpay-payments-for-contactform7'); ?>
-							</button>
-						<?php endif; ?>
-					</div>
-				</div>
-				<div class="iftp-chart-canvas-wrap">
-					<canvas id="iftp-cf7-chart" data-chart="<?php echo esc_attr($chart_json); ?>"></canvas>
-				</div>
-			</div>
-
 			<?php /* ── Main table ── */ ?>
 			<div class="iftp-cf7-entries-main">
 
@@ -808,12 +867,19 @@ final class EntriesPage
 							<input type="hidden" name="status" value="<?php echo esc_attr($current_tab); ?>" />
 						<?php endif; ?>
 
-						<?php $this->render_tablenav_top($current_page, $total_pages, $total, $total_amount, $row_density); ?>
+						<?php $this->render_tablenav_top($current_page, $has_prev, $has_next, $prev_url, $next_url, $per_page, $first_page_url, $last_page_url); ?>
 
-						<div class="iftp-entries-table-wrap iftp-density-<?php echo esc_attr($row_density); ?>"
-							data-density="<?php echo esc_attr($row_density); ?>"
+						<?php if (! empty($hidden_cols)) : ?>
+							<style>
+								<?php foreach ($hidden_cols as $hk) : ?>
+									.iftp-cf7-entries-table [data-col="<?php echo esc_attr($hk); ?>"] { display: none !important; }
+								<?php endforeach; ?>
+							</style>
+						<?php endif; ?>
+						<div class="iftp-entries-table-wrap iftp-density-compact"
 							data-col-labels="<?php echo esc_attr($col_labels_json); ?>"
-							data-col-order="<?php echo esc_attr((string) wp_json_encode($ordered_cols)); ?>">
+							data-col-order="<?php echo esc_attr((string) wp_json_encode($ordered_cols)); ?>"
+							data-hidden-cols="<?php echo esc_attr((string) wp_json_encode($hidden_cols)); ?>">
 							<table class="wp-list-table widefat fixed striped iftp-cf7-entries-table">
 								<thead>
 									<tr>
@@ -980,7 +1046,7 @@ final class EntriesPage
 							</table>
 						</div><!-- .iftp-entries-table-wrap -->
 
-						<?php $this->render_tablenav_bottom($current_page, $total_pages); ?>
+						<?php $this->render_tablenav_bottom($current_page, $has_prev, $has_next, $prev_url, $next_url, $first_page_url, $last_page_url); ?>
 					</form>
 
 					<?php /* Column-order customize popover (rendered outside <form> to avoid accidental submit) */ ?>
@@ -997,7 +1063,7 @@ final class EntriesPage
 								</svg>
 							</button>
 						</div>
-						<p class="iftp-col-customize-hint"><?php esc_html_e('Drag to reorder columns.', 'ifthenpay-payments-for-contactform7'); ?></p>
+						<p class="iftp-col-customize-hint"><?php esc_html_e('Drag to reorder · check to show/hide.', 'ifthenpay-payments-for-contactform7'); ?></p>
 						<ul class="iftp-col-list" id="iftp-col-list" role="listbox" aria-label="<?php esc_attr_e('Column order', 'ifthenpay-payments-for-contactform7'); ?>">
 							<?php foreach ($ordered_cols as $col_key) : ?>
 								<li class="iftp-col-item" data-col="<?php echo esc_attr($col_key); ?>" draggable="true" role="option" tabindex="0">
@@ -1011,7 +1077,13 @@ final class EntriesPage
 											<circle cx="15" cy="19" r="1" fill="currentColor" />
 										</svg>
 									</span>
-									<?php echo esc_html($col_defs[$col_key]['label']); ?>
+									<input type="checkbox"
+										class="iftp-col-visibility-cb"
+										id="iftp-colvis-<?php echo esc_attr($col_key); ?>"
+										<?php checked(isset($visible_set[$col_key])); ?> />
+									<label for="iftp-colvis-<?php echo esc_attr($col_key); ?>" class="iftp-col-item-label">
+										<?php echo esc_html($col_defs[$col_key]['label']); ?>
+									</label>
 								</li>
 							<?php endforeach; ?>
 						</ul>
@@ -1101,18 +1173,18 @@ final class EntriesPage
 							<div class="iftp-modal-row">
 								<div class="iftp-modal-field">
 									<label for="ap_payment_method"><?php esc_html_e('Payment Method', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
-									<input type="text" id="ap_payment_method" name="ap_payment_method" class="regular-text" maxlength="20"
-										list="iftp-method-suggestions" placeholder="e.g. MBWAY, MULTIBANCO, CARD" />
-									<datalist id="iftp-method-suggestions">
-										<option value="MBWAY"></option>
-										<option value="MULTIBANCO"></option>
-										<option value="CARD"></option>
-										<option value="PAYSHOP"></option>
-										<option value="COFIDIS"></option>
-										<option value="APPLE"></option>
-										<option value="GOOGLE"></option>
-										<option value="DINHEIRO"></option>
-									</datalist>
+									<select id="ap_payment_method" name="ap_payment_method">
+										<option value=""><?php esc_html_e('— Select method —', 'ifthenpay-payments-for-contactform7'); ?></option>
+										<option value="MBWAY">MBWAY</option>
+										<option value="MULTIBANCO">MULTIBANCO</option>
+										<option value="CARD">CARD</option>
+										<option value="PAYSHOP">PAYSHOP</option>
+										<option value="PIX">PIX</option>
+										<option value="COFIDIS">COFIDIS</option>
+										<option value="APPLE">APPLE</option>
+										<option value="GOOGLE">GOOGLE</option>
+										<option value="DINHEIRO">DINHEIRO</option>
+									</select>
 								</div>
 								<div class="iftp-modal-field">
 									<label for="ap_form_title"><?php esc_html_e('Form / Reference', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
@@ -1153,13 +1225,23 @@ final class EntriesPage
 							</div>
 							<div class="iftp-modal-row">
 								<div class="iftp-modal-field">
-									<label for="ap_cx_payment_method"><?php esc_html_e('Payment Method', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
-									<input type="text" id="ap_cx_payment_method" name="ap_cx_payment_method" class="regular-text" maxlength="20"
-										list="iftp-method-suggestions" placeholder="e.g. MBWAY, MULTIBANCO, CARD" />
+									<label for="ap_payment_method"><?php esc_html_e('Payment Method', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
+									<select id="ap_payment_method" name="ap_payment_method">
+										<option value=""><?php esc_html_e('— Select method —', 'ifthenpay-payments-for-contactform7'); ?></option>
+										<option value="MBWAY">MBWAY</option>
+										<option value="MULTIBANCO">MULTIBANCO</option>
+										<option value="CARD">CARD</option>
+										<option value="PAYSHOP">PAYSHOP</option>
+										<option value="PIX">PIX</option>
+										<option value="COFIDIS">COFIDIS</option>
+										<option value="APPLE">APPLE</option>
+										<option value="GOOGLE">GOOGLE</option>
+										<option value="DINHEIRO">DINHEIRO</option>
+									</select>
 								</div>
 								<div class="iftp-modal-field">
-									<label for="ap_cx_form_title"><?php esc_html_e('Form / Reference', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
-									<input type="text" id="ap_cx_form_title" name="ap_cx_form_title" class="regular-text" maxlength="255" />
+									<label for="ap_form_title"><?php esc_html_e('Form / Reference', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
+									<input type="text" id="ap_form_title" name="ap_form_title" class="regular-text" maxlength="255" />
 								</div>
 							</div>
 
@@ -1410,13 +1492,8 @@ final class EntriesPage
 	<?php
 	}
 
-	private function render_tablenav_top(int $current_page, int $total_pages, int $total, float $total_amount, string $row_density = 'normal'): void
+	private function render_tablenav_top(int $current_page, bool $has_prev, bool $has_next, string $prev_url, string $next_url, int $per_page = 25, string $first_page_url = '', string $last_page_url = ''): void
 	{
-		$densities = array(
-			'compact' => __('Compact', 'ifthenpay-payments-for-contactform7'),
-			'normal'  => __('Normal', 'ifthenpay-payments-for-contactform7'),
-			'large'   => __('Large', 'ifthenpay-payments-for-contactform7'),
-		);
 	?>
 		<div class="tablenav top">
 			<div class="alignleft actions bulkactions">
@@ -1433,16 +1510,12 @@ final class EntriesPage
 				<input type="submit" class="button action" value="<?php esc_attr_e('Apply', 'ifthenpay-payments-for-contactform7'); ?>" />
 			</div>
 			<div class="alignright iftp-view-controls">
-				<div class="iftp-density-toggle" role="group" aria-label="<?php esc_attr_e('Row density', 'ifthenpay-payments-for-contactform7'); ?>">
-					<?php foreach ($densities as $key => $label) : ?>
-						<button type="button"
-							class="button iftp-density-btn<?php echo $row_density === $key ? ' iftp-density-btn--active' : ''; ?>"
-							data-density="<?php echo esc_attr($key); ?>"
-							aria-pressed="<?php echo $row_density === $key ? 'true' : 'false'; ?>">
-							<?php echo esc_html($label); ?>
-						</button>
+				<label for="iftp-per-page" class="screen-reader-text"><?php esc_html_e('Items per page', 'ifthenpay-payments-for-contactform7'); ?></label>
+				<select id="iftp-per-page" class="iftp-per-page-select">
+					<?php foreach (self::VALID_PER_PAGE as $opt) : ?>
+						<option value="<?php echo esc_attr((string) $opt); ?>"<?php selected($per_page, $opt); ?>><?php echo esc_html((string) $opt); ?></option>
 					<?php endforeach; ?>
-				</div>
+				</select>
 				<button type="button" class="button iftp-col-customize-btn" id="iftp-col-customize-btn"
 					aria-haspopup="true" aria-expanded="false" aria-controls="iftp-col-customize-popover">
 					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1456,13 +1529,13 @@ final class EntriesPage
 					<?php esc_html_e('Columns', 'ifthenpay-payments-for-contactform7'); ?>
 				</button>
 			</div>
-			<?php $this->pagination($current_page, $total_pages, $total, $total_amount); ?>
+			<?php $this->pagination($current_page, $has_prev, $has_next, $prev_url, $next_url, $first_page_url, $last_page_url); ?>
 			<br class="clear" />
 		</div>
 	<?php
 	}
 
-	private function render_tablenav_bottom(int $current_page, int $total_pages): void
+	private function render_tablenav_bottom(int $current_page, bool $has_prev, bool $has_next, string $prev_url, string $next_url, string $first_page_url = '', string $last_page_url = ''): void
 	{
 	?>
 		<div class="tablenav bottom">
@@ -1479,129 +1552,71 @@ final class EntriesPage
 				</select>
 				<input type="submit" class="button action" value="<?php esc_attr_e('Apply', 'ifthenpay-payments-for-contactform7'); ?>" />
 			</div>
-			<?php $this->pagination($current_page, $total_pages); ?>
+			<?php $this->pagination($current_page, $has_prev, $has_next, $prev_url, $next_url, $first_page_url, $last_page_url); ?>
 			<br class="clear" />
 		</div>
 	<?php
 	}
 
-	private function pagination(int $current_page, int $total_pages, int $total = 0, float $total_amount = 0.0): void
+	private function pagination(int $current_page, bool $has_prev, bool $has_next, string $prev_url, string $next_url, string $first_page_url = '', string $last_page_url = ''): void
 	{
 
-		if ($total > 0 || $total_amount > 0.0) {
-			$count_text = sprintf(
-				/* translators: %d: number of entries */
-				esc_html(_n('%d item', '%d items', $total, 'ifthenpay-payments-for-contactform7')),
-				$total
-			);
-			if ($total_amount > 0.0) {
-				$count_text .= ' &mdash; ' . esc_html(number_format($total_amount, 2, '.', ',')) . ' &euro;';
-			}
-			echo '<span class="displaying-num">' . wp_kses_post($count_text) . '</span>';
-		}
+		echo '<span class="displaying-num"></span>';
 
-		if ($total_pages <= 1) {
+		if (! $has_prev && ! $has_next && $first_page_url === '') {
 			return;
 		}
-
-		$first_url = esc_url(add_query_arg('paged', 1));
-		$prev_url  = esc_url(add_query_arg('paged', max(1, $current_page - 1)));
-		$next_url  = esc_url(add_query_arg('paged', min($total_pages, $current_page + 1)));
-		$last_url  = esc_url(add_query_arg('paged', $total_pages));
 	?>
-		<span class="pagination-links">
-			<?php if ($current_page > 1) : ?>
-				<a class="first-page button" href="<?php echo esc_url($first_url); ?>"><span aria-hidden="true">&laquo;</span><span class="screen-reader-text"><?php esc_html_e('First page', 'ifthenpay-payments-for-contactform7'); ?></span></a>
-				<a class="prev-page button" href="<?php echo esc_url($prev_url); ?>"><span aria-hidden="true">&lsaquo;</span><span class="screen-reader-text"><?php esc_html_e('Previous page', 'ifthenpay-payments-for-contactform7'); ?></span></a>
+		<span class="pagination-links iftp-pagination-links">
+			<?php if ($first_page_url !== '' && $has_prev) : ?>
+				<a class="iftp-page-circle first-page" href="<?php echo esc_url($first_page_url); ?>" aria-label="<?php esc_attr_e('First page', 'ifthenpay-payments-for-contactform7'); ?>">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"/><polyline points="17 17 12 12 17 7"/></svg>
+				</a>
+			<?php elseif ($first_page_url !== '') : ?>
+				<span class="iftp-page-circle first-page disabled" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"/><polyline points="17 17 12 12 17 7"/></svg>
+				</span>
+			<?php endif; ?>
+
+			<?php if ($has_prev) : ?>
+				<a class="iftp-page-circle prev-page" href="<?php echo esc_url($prev_url); ?>" aria-label="<?php esc_attr_e('Previous page', 'ifthenpay-payments-for-contactform7'); ?>">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+				</a>
 			<?php else : ?>
-				<span class="first-page button disabled" aria-hidden="true">&laquo;</span>
-				<span class="prev-page button disabled" aria-hidden="true">&lsaquo;</span>
+				<span class="iftp-page-circle prev-page disabled" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+				</span>
 			<?php endif; ?>
 
 			<span class="paging-input">
-				<label class="screen-reader-text" for="iftp-paged-input"><?php esc_html_e('Current page', 'ifthenpay-payments-for-contactform7'); ?></label>
-				<input class="current-page" id="iftp-paged-input" type="text" value="<?php echo (int) $current_page; ?>" size="2"
-					data-total="<?php echo (int) $total_pages; ?>" />
-				<span class="tablenav-paging-text"> <?php esc_html_e('of', 'ifthenpay-payments-for-contactform7'); ?>
-					<span class="total-pages"><?php echo (int) $total_pages; ?></span>
-				</span>
+				<label class="screen-reader-text" for="iftp-paged-input"><?php esc_attr_e('Current page', 'ifthenpay-payments-for-contactform7'); ?></label>
+				<input class="current-page" id="iftp-paged-input" type="text" inputmode="numeric" pattern="[0-9]*"
+					value="<?php echo (int) $current_page > 0 ? (int) $current_page : ''; ?>"
+					size="4" aria-label="<?php esc_attr_e('Current page', 'ifthenpay-payments-for-contactform7'); ?>"
+					data-jump-url="<?php echo esc_url($first_page_url); ?>" />
 			</span>
 
-			<?php if ($current_page < $total_pages) : ?>
-				<a class="next-page button" href="<?php echo esc_url($next_url); ?>"><span aria-hidden="true">&rsaquo;</span><span class="screen-reader-text"><?php esc_html_e('Next page', 'ifthenpay-payments-for-contactform7'); ?></span></a>
-				<a class="last-page button" href="<?php echo esc_url($last_url); ?>"><span aria-hidden="true">&raquo;</span><span class="screen-reader-text"><?php esc_html_e('Last page', 'ifthenpay-payments-for-contactform7'); ?></span></a>
+			<?php if ($has_next) : ?>
+				<a class="iftp-page-circle next-page" href="<?php echo esc_url($next_url); ?>" aria-label="<?php esc_attr_e('Next page', 'ifthenpay-payments-for-contactform7'); ?>">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+				</a>
 			<?php else : ?>
-				<span class="next-page button disabled" aria-hidden="true">&rsaquo;</span>
-				<span class="last-page button disabled" aria-hidden="true">&raquo;</span>
+				<span class="iftp-page-circle next-page disabled" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+				</span>
+			<?php endif; ?>
+
+			<?php if ($last_page_url !== '' && $has_next) : ?>
+				<a class="iftp-page-circle last-page" href="<?php echo esc_url($last_page_url); ?>" aria-label="<?php esc_attr_e('Last page', 'ifthenpay-payments-for-contactform7'); ?>">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="7 17 12 12 7 7"/><polyline points="13 17 18 12 13 7"/></svg>
+				</a>
+			<?php elseif ($last_page_url !== '') : ?>
+				<span class="iftp-page-circle last-page disabled" aria-hidden="true">
+					<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="7 17 12 12 7 7"/><polyline points="13 17 18 12 13 7"/></svg>
+				</span>
 			<?php endif; ?>
 		</span>
 	<?php
-	}
-
-
-
-	/**
-	 * Fill chart DB rows into a complete label/count/amount series for every bucket.
-	 *
-	 * @param array<int, array{bucket: string, cnt: string, total: string}> $rows
-	 * @return array{labels: string[], counts: int[], amounts: float[]}
-	 */
-	private function build_chart_series(array $rows, string $period): array
-	{
-		$map_cnt   = [];
-		$map_total = [];
-		foreach ($rows as $row) {
-			$map_cnt[(string) $row['bucket']]   = (int) $row['cnt'];
-			$map_total[(string) $row['bucket']] = (float) $row['total'];
-		}
-
-		$labels  = [];
-		$counts  = [];
-		$amounts = [];
-		$now     = current_time('timestamp');
-
-		if ($period === 'day') {
-			for ($h = 0; $h < 24; $h++) {
-				$labels[]  = sprintf('%02d:00', $h);
-				$counts[]  = $map_cnt[(string) $h] ?? 0;
-				$amounts[] = round((float) ($map_total[(string) $h] ?? 0.0), 2);
-			}
-		} elseif ($period === 'year') {
-			$year = (int) gmdate('Y', $now);
-			for ($m = 1; $m <= 12; $m++) {
-				$key       = $year . '-' . sprintf('%02d', $m);
-				$labels[]  = gmdate('M', mktime(0, 0, 0, $m, 1, $year));
-				$counts[]  = $map_cnt[$key] ?? 0;
-				$amounts[] = round((float) ($map_total[$key] ?? 0.0), 2);
-			}
-		} elseif ($period === 'month') {
-			$days = (int) gmdate('t', $now);
-			$ym   = gmdate('Y-m-', $now);
-			for ($d = 1; $d <= $days; $d++) {
-				$key       = $ym . sprintf('%02d', $d);
-				$labels[]  = (string) $d;
-				$counts[]  = $map_cnt[$key] ?? 0;
-				$amounts[] = round((float) ($map_total[$key] ?? 0.0), 2);
-			}
-		} elseif ($period === 'week') {
-			for ($i = 6; $i >= 0; $i--) {
-				$ts        = $now - $i * DAY_IN_SECONDS;
-				$key       = gmdate('Y-m-d', $ts);
-				$labels[]  = gmdate('d/m', $ts);
-				$counts[]  = $map_cnt[$key] ?? 0;
-				$amounts[] = round((float) ($map_total[$key] ?? 0.0), 2);
-			}
-		} else {
-			for ($i = 29; $i >= 0; $i--) {
-				$ts        = $now - $i * DAY_IN_SECONDS;
-				$key       = gmdate('Y-m-d', $ts);
-				$labels[]  = gmdate('d/m', $ts);
-				$counts[]  = $map_cnt[$key] ?? 0;
-				$amounts[] = round((float) ($map_total[$key] ?? 0.0), 2);
-			}
-		}
-
-		return compact('labels', 'counts', 'amounts');
 	}
 
 
@@ -1662,12 +1677,16 @@ final class EntriesPage
 				$args['search_op']    = $sort['search_op'];
 				$args['search_query'] = $sort['search_query'];
 			}
+			$up_class   = ($is_active && $sort['order'] === 'asc')  ? 'iftp-sort-arrow iftp-sort-up iftp-sort-active' : 'iftp-sort-arrow iftp-sort-up';
+			$down_class = ($is_active && $sort['order'] === 'desc') ? 'iftp-sort-arrow iftp-sort-down iftp-sort-active' : 'iftp-sort-arrow iftp-sort-down';
 			printf(
-				'<th class="%s" data-col="%s"><a href="%s"><span>%s</span><span class="sorting-indicator" aria-hidden="true"></span></a></th>',
+				'<th class="%s" data-col="%s"><a href="%s"><span>%s</span><span class="iftp-sort-arrows" aria-hidden="true"><span class="%s">&#x2191;</span><span class="%s">&#x2193;</span></span></a></th>',
 				esc_attr($th_class),
 				esc_attr($col_key),
 				esc_url(add_query_arg($args, admin_url('admin.php'))),
-				esc_html($col_def['label'])
+				esc_html($col_def['label']),
+				esc_attr($up_class),
+				esc_attr($down_class)
 			);
 		} else {
 			printf(
