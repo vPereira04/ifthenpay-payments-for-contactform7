@@ -140,6 +140,7 @@ final class FormPanel
 	{
 		$form_id = $contact_form->id();
 
+
 		$nonce = isset($_POST['iftp_cf7_form_nonce'])
 			? sanitize_text_field(wp_unslash((string) $_POST['iftp_cf7_form_nonce']))
 			: '';

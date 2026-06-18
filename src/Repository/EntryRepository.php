@@ -312,7 +312,7 @@ final class EntryRepository
 	 * @param string $dir          'next' (id < cursor DESC) or 'prev' (id > cursor ASC).
 	 * @return EntryDto[]
 	 */
-	public function get_all(int $page = 1, int $per_page = 20, string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all', string $orderby = 'id', string $order = 'desc', int $cursor = 0, string $dir = 'next'): array
+	public function get_all(int $page = 1, int $per_page = 20, string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all', string $orderby = 'id', string $order = 'desc', int $cursor = 0, string $dir = 'next', int $form_id = 0): array
 	{
 		global $wpdb;
 
@@ -323,9 +323,10 @@ final class EntryRepository
 		$cursor       = absint($cursor);
 		$dir          = $dir === 'prev' ? 'prev' : 'next';
 		$per_page     = absint($per_page);
+		$form_id      = absint($form_id);
 		$fetch        = $per_page + 1;
 
-		[$where_tpl, $w_args] = $this->build_where($status, $search_field, $search_op, $search_query);
+		[$where_tpl, $w_args] = $this->build_where($status, $search_field, $search_op, $search_query, $form_id);
 
 		$period_sql = $this->period_condition($period, $status, true);
 		if ($period_sql !== '') {
@@ -405,15 +406,16 @@ final class EntryRepository
 	 * @param string $search_query Search term.
 	 * @return int Total number of matching entries.
 	 */
-	public function count_all(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all'): int
+	public function count_all(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all', int $form_id = 0): int
 	{
 		global $wpdb;
 		$status 				 = sanitize_key($status);
 		$search_field 			 = sanitize_key($search_field);
 		$search_op 			 	 = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
 		$search_query			 = sanitize_text_field($search_query);
+		$form_id                 = absint($form_id);
 
-		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query);
+		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query, $form_id);
 
 		$period_sql = $this->period_condition($period, $status, true);
 		if ($period_sql !== '') {
@@ -585,16 +587,17 @@ final class EntryRepository
 	 *
 	 * @return array{int, float} [$count, $sum]
 	 */
-	public function count_and_sum(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all'): array
+	public function count_and_sum(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all', int $form_id = 0): array
 	{
 		global $wpdb;
 		$status       = sanitize_key($status);
 		$search_field = sanitize_key($search_field);
 		$search_op    = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
 		$search_query = sanitize_text_field($search_query);
+		$form_id      = absint($form_id);
 
 
-		if ($period === 'all' && $search_query === '') {
+		if ($period === 'all' && $search_query === '' && $form_id === 0) {
 			$stats = $this->get_period_stats('all');
 			if ($status === '') {
 				return [
@@ -607,7 +610,7 @@ final class EntryRepository
 			}
 		}
 
-		[$where_tpl, $w_args] = $this->build_where($status, $search_field, $search_op, $search_query);
+		[$where_tpl, $w_args] = $this->build_where($status, $search_field, $search_op, $search_query, $form_id);
 
 		$period_sql = $this->period_condition($period, $status, true);
 		if ($period_sql !== '') {
@@ -708,9 +711,9 @@ final class EntryRepository
 			COALESCE(SUM(CASE WHEN payment_status='cancelled'{$cre_sql} THEN amount ELSE 0 END),0) AS cancelled_amount
 			FROM %i{$where}";
 
-		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; intentionally live for accurate counts; all interpolated SQL is hardcoded date conditions with no user-controlled values.
-			$wpdb->prepare( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql built with hardcoded CASE expressions and %i placeholder; all interpolated strings are internal period conditions.
-				$sql,
+		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; intentionally live for accurate counts; all interpolated SQL is hardcoded date conditions with no user-controlled values.
+			$wpdb->prepare(
+				$sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql built above from hardcoded CASE expressions and a %i placeholder; interpolated strings are internal period conditions from period_conditions_triple(), never user input.
 				$this->table
 			),
 			ARRAY_A
@@ -764,33 +767,33 @@ final class EntryRepository
 		global $wpdb;
 
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- All CASE conditions are hardcoded date expressions; no user-controlled values interpolated.
-		$sql = "SELECT
-			COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN amount ELSE 0 END),0) AS d1_revenue,
-			SUM(CASE WHEN payment_status='completed' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_completed,
-			SUM(CASE WHEN payment_status='pending'   AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_pending,
-			SUM(CASE WHEN payment_status='failed'    AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_failed,
-			SUM(CASE WHEN payment_status='cancelled' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_cancelled,
-			COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN amount ELSE 0 END),0) AS d7_revenue,
-			SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_completed,
-			SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_pending,
-			SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_failed,
-			SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_cancelled,
-			COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN amount ELSE 0 END),0) AS d15_revenue,
-			SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_completed,
-			SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_pending,
-			SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_failed,
-			SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_cancelled,
-			COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN amount ELSE 0 END),0) AS d30_revenue,
-			SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_completed,
-			SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_pending,
-			SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_failed,
-			SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_cancelled
-			FROM %i
-			WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-
 		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; intentionally live for accurate counts; all CASE expressions are hardcoded date conditions with no user-controlled values.
-			$wpdb->prepare($sql, $this->table),
+			$wpdb->prepare(
+				"SELECT
+				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN amount ELSE 0 END),0) AS d1_revenue,
+				SUM(CASE WHEN payment_status='completed' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_completed,
+				SUM(CASE WHEN payment_status='pending'   AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_pending,
+				SUM(CASE WHEN payment_status='failed'    AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_failed,
+				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_cancelled,
+				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN amount ELSE 0 END),0) AS d7_revenue,
+				SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_completed,
+				SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_pending,
+				SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_failed,
+				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_cancelled,
+				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN amount ELSE 0 END),0) AS d15_revenue,
+				SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_completed,
+				SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_pending,
+				SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_failed,
+				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_cancelled,
+				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN amount ELSE 0 END),0) AS d30_revenue,
+				SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_completed,
+				SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_pending,
+				SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_failed,
+				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_cancelled
+				FROM %i
+				WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+				$this->table
+			),
 			ARRAY_A
 		);
 
@@ -901,7 +904,7 @@ final class EntryRepository
 	 * @param string $search_query Search term.
 	 * @return array{string, array<int, mixed>} [clause_template, params]
 	 */
-	private function build_where(string $status, string $search_field = '', string $search_op = 'contains', string $search_query = ''): array
+	private function build_where(string $status, string $search_field = '', string $search_op = 'contains', string $search_query = '', int $form_id = 0): array
 	{
 		global $wpdb;
 		$conditions = array();
@@ -910,6 +913,11 @@ final class EntryRepository
 		if ('' !== $status) {
 			$conditions[] = 'payment_status = %s';
 			$params[]     = sanitize_key($status);
+		}
+
+		if ($form_id > 0) {
+			$conditions[] = 'form_id = %d';
+			$params[]     = $form_id;
 		}
 
 		$allowed_fields = array(
@@ -940,5 +948,50 @@ final class EntryRepository
 			' WHERE ' . implode(' AND ', $conditions),
 			$params,
 		);
+	}
+
+	/**
+	 * Mark as 'failed' any pending entries that have no payment URL and are older than
+	 * $threshold_hours hours. These are orphaned rows created when the AJAX payment-creation
+	 * request was interrupted before the ifthenpay API responded.
+	 *
+	 * @param int $threshold_hours Minimum age in hours before a stale entry is cleaned up.
+	 * @return int Number of rows updated.
+	 */
+	public function mark_stale_pending(int $threshold_hours = 1): int
+	{
+		global $wpdb;
+		$interval = max(1, (int) $threshold_hours);
+		$rows     = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Scheduled hourly cleanup; intentionally live.
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $interval is an internal integer constant, never user input.
+				"UPDATE %i SET payment_status = 'failed', updated_at = NOW() WHERE payment_status = 'pending' AND payment_url = '' AND created_at < DATE_SUB(NOW(), INTERVAL {$interval} HOUR)",
+				$this->table
+			)
+		);
+		if (false !== $rows && $rows > 0) {
+			$this->flush_stats_cache();
+		}
+		return (int) $rows;
+	}
+
+	/**
+	 * Return all distinct form_ids that have at least one entry.
+	 *
+	 * Pure covering-index scan on idx_form_id — no heap reads even on large tables.
+	 *
+	 * @return int[]
+	 */
+	public function get_entry_form_ids(): array
+	{
+		global $wpdb;
+		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; intentionally live.
+			$wpdb->prepare(
+				'SELECT DISTINCT form_id FROM %i WHERE form_id > 0 ORDER BY form_id ASC',
+				$this->table
+			),
+			ARRAY_A
+		);
+		return array_map('intval', array_column(is_array($rows) ? $rows : array(), 'form_id'));
 	}
 }

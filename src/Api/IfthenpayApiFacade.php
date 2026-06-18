@@ -27,6 +27,83 @@ final class IfthenpayApiFacade
 
 
 	/**
+	 * Verify the Backoffice Key with a single API call and persist the gateway catalog.
+	 *
+	 * Intentionally does NOT fetch the method catalog — that happens on page load
+	 * (Scenarios 2 & 3) so connect_backoffice stays at exactly 1 outbound request.
+	 *
+	 * API calls made here (exactly 1):
+	 *   • GET /gateway/get?boKey=… — verifies the key and returns the gateway list
+	 *
+	 * @return array{ok:bool, gateways:array, error:string}
+	 */
+	public static function verify_and_save_gateway(string $backoffice_key): array
+	{
+		$backoffice_key = trim(sanitize_text_field($backoffice_key));
+		if ($backoffice_key === '') {
+			return array(
+				'ok'       => false,
+				'gateways' => array(),
+				'error'    => 'empty_key',
+			);
+		}
+
+		try {
+			$client = new IfthenpayClient($backoffice_key);
+			$rows   = $client->get_gateway_keys(defined('IFTP_CF7_GATEWAY_TYPE') ? IFTP_CF7_GATEWAY_TYPE : '');
+
+			if (empty($rows)) {
+				return array(
+					'ok'       => false,
+					'gateways' => array(),
+					'error'    => 'no_gateways',
+				);
+			}
+
+			$catalog = array();
+			foreach ($rows as $row) {
+				if (empty($row['GatewayKey'])) {
+					continue;
+				}
+				$key = sanitize_text_field((string) $row['GatewayKey']);
+				if ($key === '') {
+					continue;
+				}
+				$alias         = sanitize_text_field((string) ($row['Alias'] ?? ''));
+				$catalog[$key] = array(
+					'gateway_key' => $key,
+					'alias'       => $alias,
+					'label'       => $alias !== '' ? $alias : $key,
+					'methods'     => array(),
+				);
+			}
+
+			if (empty($catalog)) {
+				return array(
+					'ok'       => false,
+					'gateways' => array(),
+					'error'    => 'no_gateways',
+				);
+			}
+
+			update_option(self::OPTION_GATEWAY_CATALOG, $catalog, false);
+			return array(
+				'ok'       => true,
+				'gateways' => $catalog,
+				'error'    => '',
+			);
+		} catch (\Throwable $e) {
+			return array(
+				'ok'       => false,
+				'gateways' => array(),
+				'error'    => $e->getMessage(),
+			);
+		}
+	}
+
+
+
+	/**
 	 * Validate the Backoffice Key, then fetch and persist both catalogs.
 	 *
 	 * API calls made here (maximum 2):
@@ -114,7 +191,7 @@ final class IfthenpayApiFacade
 	public static function clear_catalogs(): void
 	{
 		delete_option(self::OPTION_GATEWAY_CATALOG);
-		delete_option(self::OPTION_METHOD_CATALOG);
+
 	}
 
 	private function __construct() {}

@@ -30,7 +30,7 @@ define( 'IFTP_CF7_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IFTP_CF7_URL', plugin_dir_url( __FILE__ ) );
 define( 'IFTP_CF7_SLUG', 'iftp_cf7' );
 define( 'IFTP_CF7_TABLE', 'ifthenpay_cf7_entries' );
-define( 'IFTP_CF7_GATEWAY_TYPE', 'GravityForms' );
+define( 'IFTP_CF7_GATEWAY_TYPE', 'ContactForm7' );
 
 $ifthenpay_cf7_autoload = IFTP_CF7_DIR . 'vendor/autoload.php';
 if ( file_exists( $ifthenpay_cf7_autoload ) ) {

@@ -19,8 +19,6 @@ final class Settings
 
 	private const OPTION_KEY = 'iftp_cf7_settings';
 
-
-
 	/** @return array<string, mixed> */
 	public static function get_settings(): array
 	{
@@ -70,8 +68,6 @@ final class Settings
 		return is_array($raw) ? $raw : array();
 	}
 
-
-
 	/** @param array<string, mixed> $changes */
 	public static function update_settings(array $changes): void
 	{
@@ -83,8 +79,6 @@ final class Settings
 	{
 		delete_option(self::OPTION_KEY);
 	}
-
-
 
 	public function ajax_activate_payment_method(): void
 	{

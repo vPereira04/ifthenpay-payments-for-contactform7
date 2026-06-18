@@ -11,7 +11,7 @@ if (! defined('ABSPATH')) {
 final class Activation
 {
 
-	private const DB_VERSION     = '1.8';
+	private const DB_VERSION     = '1.9';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
 	public static function activate(): void
@@ -19,10 +19,21 @@ final class Activation
 		self::create_table();
 		update_option(self::DB_VERSION_KEY, self::DB_VERSION, false);
 
+		if (! wp_next_scheduled('iftp_cf7_cleanup_stale')) {
+			wp_schedule_event(time(), 'hourly', 'iftp_cf7_cleanup_stale');
+		}
+
 		\Ifthenpay\CF7\Payment\GatewayEndpoint::flush();
 	}
 
-	public static function deactivate(): void {}
+	public static function deactivate(): void
+	{
+		$timestamp = wp_next_scheduled('iftp_cf7_cleanup_stale');
+		if ($timestamp) {
+			wp_unschedule_event($timestamp, 'iftp_cf7_cleanup_stale');
+		}
+		flush_rewrite_rules();
+	}
 
 	public static function maybe_upgrade(): void
 	{
@@ -47,9 +58,8 @@ final class Activation
 				)
 			);
 			if ($exists) {
-				$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Schema migration; ALTER TABLE DROP INDEX is a one-time upgrade operation.
-					"ALTER TABLE `{$table}` DROP INDEX `{$idx}`" // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $table is $wpdb->prefix . constant; $idx is from a hardcoded array.
-				);
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- One-time schema migration on plugin upgrade; identifiers escaped via %i.
+				$wpdb->query($wpdb->prepare('ALTER TABLE %i DROP INDEX %i', $table, $idx));
 			}
 		}
 	}
@@ -81,6 +91,8 @@ final class Activation
 			PRIMARY KEY  (id),
 			KEY          idx_form_id               (form_id),
 			KEY          idx_transaction_id        (transaction_id(20)),
+			KEY          idx_customer_name         (customer_name(100)),
+			KEY          idx_customer_email        (customer_email),
 			KEY          idx_status_amount         (payment_status, amount),
 			KEY          idx_status_id             (payment_status, id),
 			KEY          idx_updated_status_amount (updated_at, payment_status, amount)

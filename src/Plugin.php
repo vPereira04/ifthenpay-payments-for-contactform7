@@ -46,6 +46,10 @@ final class Plugin
 
 		Activation::maybe_upgrade();
 
+		add_action('iftp_cf7_cleanup_stale', function (): void {
+			(new \Ifthenpay\CF7\Repository\EntryRepository())->mark_stale_pending();
+		});
+
 		add_action('wpcf7_admin_init', array($this, 'register_service'));
 
 		$process = new Process();
@@ -74,6 +78,7 @@ final class Plugin
 			$entries_ajax = new EntriesPage();
 			add_action('wp_ajax_iftp_cf7_add_payment', array($entries_ajax, 'ajax_add_payment'));
 			add_action('wp_ajax_iftp_cf7_save_entries_prefs', array($entries_ajax, 'ajax_save_preferences'));
+			add_action('wp_ajax_iftp_cf7_dismiss_ap_notice', array($entries_ajax, 'ajax_dismiss_add_payment_notice'));
 
 			add_action('admin_menu', array($this, 'register_admin_menus'));
 			add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
@@ -84,6 +89,53 @@ final class Plugin
 		}
 
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
+
+		add_action('admin_bar_menu', array($this, 'add_admin_bar_entries_node'), 100);
+		add_action('wp_enqueue_scripts', array($this, 'enqueue_admin_bar_styles'));
+		add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_bar_styles'));
+	}
+
+
+
+	public function add_admin_bar_entries_node(\WP_Admin_Bar $wp_admin_bar): void
+	{
+		if (! current_user_can('manage_options')) {
+			return;
+		}
+
+		$wp_admin_bar->add_node(array(
+			'id'    => 'ifthenpay-cf7-entries',
+			'title' => '<span class="iftp-ab-icon" aria-hidden="true">&#xE000;</span>'
+				. '<span class="ab-label">' . esc_html__('Entries', 'ifthenpay-payments-for-contactform7') . '</span>',
+			'href'  => admin_url('admin.php?page=ifthenpay-cf7-entries'),
+			'meta'  => array('class' => 'ifthenpay-cf7-ab-node'),
+		));
+	}
+
+
+
+	public function enqueue_admin_bar_styles(): void
+	{
+		if (! is_admin_bar_showing() || ! current_user_can('manage_options')) {
+			return;
+		}
+
+		$woff2 = esc_url(IFTP_CF7_URL . 'assets/fonts/ifthenpay-icons.woff2');
+		$woff  = esc_url(IFTP_CF7_URL . 'assets/fonts/ifthenpay-icons.woff');
+
+		wp_add_inline_style('admin-bar',
+			'@font-face{font-family:ifthenpay-icons-ab;'
+			. 'src:url(' . $woff2 . ') format("woff2"),url(' . $woff . ') format("woff");'
+			. 'font-display:block}'
+			. '#wp-admin-bar-ifthenpay-cf7-entries > .ab-item{display:flex;align-items:center;gap:5px}'
+			. '#wp-admin-bar-ifthenpay-cf7-entries .iftp-ab-icon{'
+			. 'font-family:ifthenpay-icons-ab;speak:never;font-style:normal;font-weight:400;'
+			. 'font-size:17px;line-height:1;display:inline-flex;align-items:center;flex-shrink:0;'
+			. 'margin-top:5px;'
+			. 'color:rgba(240,245,250,.65);transition:color .12s}'
+			. '#wp-admin-bar-ifthenpay-cf7-entries:hover .iftp-ab-icon,'
+			. '#wp-admin-bar-ifthenpay-cf7-entries.hover .iftp-ab-icon{color:#fff}'
+		);
 	}
 
 
@@ -214,6 +266,14 @@ final class Plugin
 			$this->asset_version('assets/css/admin.css')
 		);
 
+		$method_cat      = get_option('iftp_cf7_method_catalog', array());
+		$method_logos_js = array();
+		foreach (is_array($method_cat) ? $method_cat : array() as $m) {
+			if (! empty($m['entity']) && ! empty($m['logo'])) {
+				$method_logos_js[ strtoupper((string) $m['entity']) ] = (string) $m['logo'];
+			}
+		}
+
 		wp_localize_script(
 			'ifthenpay-cf7-admin',
 			'iftpCf7Admin',
@@ -222,9 +282,20 @@ final class Plugin
 				'nonce'                 => wp_create_nonce('iftp_cf7_settings'),
 				'add_payment_nonce'     => wp_create_nonce('iftp_cf7_add_payment'),
 				'prefs_nonce'           => wp_create_nonce('iftp_cf7_entries_prefs'),
+				'dismiss_notice_nonce'  => wp_create_nonce('iftp_cf7_dismiss_ap_notice'),
 				'default_col_order'     => UserPreferences::defaults()['column_positions'],
 				'activate_method_label' => __('Activate Method', 'ifthenpay-payments-for-contactform7'),
 				'saved_methods'         => Settings::get_methods(),
+				'method_logos'          => $method_logos_js,
+				'method_colors'         => array(
+					'MBWAY'         => '#00a550',
+					'MULTIBANCO'    => '#2271b1',
+					'MB'            => '#2271b1',
+					'CARD'          => '#dba617',
+					'PAYSHOP'       => '#e84c3d',
+					'COFIDIS'       => '#003d8f',
+					'IFTHENPAYLINK' => '#f90',
+				),
 			)
 		);
 	}
@@ -259,6 +330,7 @@ final class Plugin
 				data-period="<?php echo esc_attr($default_period); ?>"
 				data-chart="<?php echo esc_attr($dash_data_json); ?>"></span>
 			<div class="iftp-period-tabs iftp-dash-period-tabs" role="group" aria-label="<?php esc_attr_e('Time period', 'ifthenpay-payments-for-contactform7'); ?>">
+				<div class="iftp-period-tabs-icon">e</div>
 				<button type="button" class="iftp-period-tab" data-period="30">30d</button>
 				<button type="button" class="iftp-period-tab" data-period="15">15d</button>
 				<button type="button" class="iftp-period-tab" data-period="7">7d</button>

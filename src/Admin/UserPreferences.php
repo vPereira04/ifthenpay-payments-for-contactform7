@@ -52,7 +52,13 @@ final class UserPreferences
 			)
 		);
 		$missing               = array_values(array_diff($all_cols, $stored));
-		$merged['column_positions'] = array_merge($stored, $missing);
+		$stored_with_missing   = array_merge($stored, $missing);
+
+		$fixed = array('id', 'customer_name');
+		$merged['column_positions'] = array_merge(
+			$fixed,
+			array_values(array_filter($stored_with_missing, fn($c) => ! in_array($c, $fixed, true)))
+		);
 
 
 		if (! isset($merged['visible_columns']) || ! is_array($merged['visible_columns'])) {
@@ -63,6 +69,12 @@ final class UserPreferences
 			);
 			if (empty($merged['visible_columns'])) {
 				$merged['visible_columns'] = $all_cols;
+			}
+		}
+
+		foreach ($fixed as $fc) {
+			if (! in_array($fc, $merged['visible_columns'], true)) {
+				$merged['visible_columns'][] = $fc;
 			}
 		}
 

@@ -216,6 +216,32 @@ final class IfthenpayClient
 		return '';
 	}
 
+	public static function activate_callback(string $gateway_key, string $base_callback_url): bool
+	{
+		$url = self::API_BASE . '/endpoint/callback/activation/?cms=contactform7';
+
+		$payload = array(
+			'apKey' => base64_encode($gateway_key),
+			'chave' => $gateway_key,
+			'urlCb' => $base_callback_url .
+    				   '?ref=[ORDER_ID]&apk=[ANTI_PHISHING_KEY]&val=[AMOUNT]&mtd=[PAYMENT_METHOD]&req=[REQUEST_ID]',
+		);
+
+		try {
+			$res = self::request(
+				'POST',
+				$url,
+				array(
+					'headers' => array('Content-Type' => 'application/json'),
+					'body'    => wp_json_encode($payload),
+				)
+			);
+			return (string) ($res['data'] ?? '') === 'OK';
+		} catch (RuntimeException) {
+			return false;
+		}
+	}
+
 	/**
 	 * @throws RuntimeException
 	 */

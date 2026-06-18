@@ -19,6 +19,9 @@ final class Process
 
 	private EntryRepository $repository;
 
+	/** @var array<int, int> Maps form_id → entry_id within the current HTTP request (avoids transient race conditions). */
+	private array $mail_entry_ids = [];
+
 	public function __construct()
 	{
 		$this->repository = new EntryRepository();
@@ -44,16 +47,10 @@ final class Process
 	}
 
 	/**
-	 * @param \WPCF7_ContactForm $contact_form
-	 * @param bool               $abort
-	 * @param \WPCF7_Submission  $submission
-	 */
-	/**
 	 * Called by CF7 before sending the confirmation mail.
 	 *
 	 * The entry is already created when the user clicked Pay (ajax_create_payment).
-	 * Here we update its status from the hidden fields the JS populated after the
-	 * modal completed, and register the entry ID so mail tags can resolve.
+	 * Here we register the entry ID so mail tags can resolve within the same request.
 	 *
 	 * @param \WPCF7_ContactForm $contact_form
 	 * @param bool               $_abort  By-ref CF7 abort flag (unused — we never abort).
@@ -71,13 +68,11 @@ final class Process
 			return;
 		}
 
-		$entry = $this->repository->get_by_id($entry_id);
-		if ($entry === null) {
+		if ($this->repository->get_by_id($entry_id) === null) {
 			return;
 		}
 
-		$form_id = $contact_form->id();
-		set_transient('iftp_cf7_mail_entry_' . $form_id, $entry_id, MINUTE_IN_SECONDS * 5);
+		$this->mail_entry_ids[(int) $contact_form->id()] = $entry_id;
 	}
 
 	/**
@@ -103,7 +98,7 @@ final class Process
 			}
 		}
 
-		$entry_id = (int) get_transient('iftp_cf7_mail_entry_' . $form_id);
+		$entry_id = $this->mail_entry_ids[$form_id] ?? 0;
 		if ($entry_id <= 0) {
 			return $output;
 		}

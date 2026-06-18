@@ -68,7 +68,7 @@ final readonly class EntryDto
 
 	public function amount_formatted(): string
 	{
-		return number_format($this->amount, 2, '.', '') . ' €';
+		return number_format($this->amount, 2, ',', '.') . ' €';
 	}
 
 	public function is_paid(): bool

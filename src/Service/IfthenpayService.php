@@ -10,6 +10,8 @@ if (! defined('ABSPATH')) {
 
 use Ifthenpay\CF7\Admin\Settings;
 use Ifthenpay\CF7\Api\IfthenpayApiFacade;
+use Ifthenpay\CF7\Api\IfthenpayClient;
+use Ifthenpay\CF7\Payment\GatewayEndpoint;
 
 if (! class_exists('WPCF7_Service')) {
 	return;
@@ -88,6 +90,17 @@ final class IfthenpayService extends \WPCF7_Service
 		}
 
 		if ($sub_action === '') {
+			if ($method === 'GET') {
+				$bk      = Settings::get_backoffice_key();
+				$message = isset($_GET['message']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL param for redirect detection; value restricted to known keys via sanitize_key().
+					? sanitize_key(wp_unslash((string) $_GET['message'])) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					: '';
+
+				$no_refresh = array( 'saved', 'reset' );
+				if ($bk !== '' && ! in_array($message, $no_refresh, true)) {
+					IfthenpayApiFacade::connect($bk);
+				}
+			}
 			return;
 		}
 
@@ -130,10 +143,11 @@ final class IfthenpayService extends \WPCF7_Service
 				exit;
 			}
 
-			$result = IfthenpayApiFacade::connect($key);
 
-			if (! $result['ok'] || empty($result['gateways'])) {
-				$msg = ! $result['ok'] ? 'connect_failed' : 'no_gateways';
+			$result = IfthenpayApiFacade::verify_and_save_gateway($key);
+
+			if (! $result['ok']) {
+				$msg = $result['error'] === 'no_gateways' ? 'no_gateways' : 'connect_failed';
 				wp_safe_redirect($this->setup_url("message={$msg}"));
 				exit;
 			}
@@ -193,6 +207,16 @@ final class IfthenpayService extends \WPCF7_Service
 					'expire_days'    => $expire_days,
 				)
 			);
+
+			if ($gateway_key !== '') {
+				$base_cb = home_url('/' . GatewayEndpoint::SLUG . '/');
+				$cb_ok = IfthenpayClient::activate_callback($gateway_key, $base_cb);
+				if (! $cb_ok) {
+					defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
+						sprintf('[iftp-cf7] activate_callback failed for gateway_key=%s', $gateway_key)
+					);
+				}
+			}
 
 			wp_safe_redirect($this->setup_url('message=saved'));
 			exit;

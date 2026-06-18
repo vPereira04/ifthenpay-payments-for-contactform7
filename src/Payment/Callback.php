@@ -66,17 +66,31 @@ final class Callback
 		}
 
 		$val = sanitize_text_field((string) ($payload['val'] ?? $payload['amount'] ?? ''));
-		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
+		if ($val === '') {
+			return new WP_REST_Response(array('error' => 'missing_amount'), 400);
+		}
+		if (number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
 			return new WP_REST_Response(array('error' => 'amount_mismatch'), 403);
 		}
 
 		if ($is_success) {
-			$method = sanitize_text_field((string) ($payload['PaymentMethod'] ?? $payload['Method'] ?? ''));
-			$repo->update_transaction($entry->id, $method, 'completed');
+
+			if ($entry->payment_status === 'completed') {
+				return new WP_REST_Response(array('status' => 'ok'), 200);
+			}
+
+			$method     = sanitize_text_field((string) ($payload['PaymentMethod'] ?? $payload['Method'] ?? ''));
+			$request_id = sanitize_text_field((string) ($payload['RequestId'] ?? $payload['requestId'] ?? $payload['req'] ?? ''));
+			$repo->update_transaction($entry->id, $method, 'completed', $request_id !== '' ? $request_id : null);
 
 			/** @fires iftp_cf7_payment_confirmed after ifthenpay confirms payment via webhook */
 			do_action('iftp_cf7_payment_confirmed', $entry->id, $method);
 		} else {
+
+			if ($entry->payment_status === 'completed') {
+				return new WP_REST_Response(array('status' => 'ok'), 200);
+			}
+
 			$repo->update_status($entry->id, 'failed');
 			do_action('iftp_cf7_payment_failed', $entry->id);
 		}

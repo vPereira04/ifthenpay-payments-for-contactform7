@@ -12,16 +12,13 @@ use Ifthenpay\CF7\Admin\Settings;
 use Ifthenpay\CF7\Repository\EntryRepository;
 
 /**
- * Handles the /iftp_cf7 endpoint — the unified return + webhook URL.
- *
- * URL pattern (same for all):
- *   https://site.com/iftp_cf7?callback=iftp_cf7&...
+ * Handles the /iftp_callback/{ref} endpoint — the unified return + webhook URL.
  *
  * Success (browser redirect from ifthenpay):
- *   ?callback=iftp_cf7&ref={entry_id}&apk={base64(gateway_key)}&val={amount}&ret={form_url}
+ *   /iftp_callback/{entry_id}/?apk={base64(gateway_key)}&val={amount}&ret={form_url}&mtd=[PAYMENTMETHOD]&req=[REQUESTID]
  *
  * Cancel / Error (browser redirect):
- *   ?callback=iftp_cf7&ref={entry_id}&status={cancel|error}&ret={form_url}
+ *   /iftp_callback/{entry_id}/?status={cancel|error}&ret={form_url}
  *
  * Server webhook (POST from ifthenpay, no browser):
  *   Same params as success — validated by apk, updates entry, returns 200.
@@ -33,9 +30,9 @@ use Ifthenpay\CF7\Repository\EntryRepository;
 final class GatewayEndpoint
 {
 
-	public const QUERY_VAR   = 'iftp_cf7_ep';
-	public const SLUG        = 'iftp_cf7';
-	public const CALLBACK_ID = 'iftp_cf7';
+	public const QUERY_VAR = 'iftp_cf7_ep';
+	public const SLUG      = 'iftp_callback';
+	public const REF_VAR   = 'iftp_cf7_ref';
 
 
 
@@ -48,7 +45,11 @@ final class GatewayEndpoint
 
 	public static function add_rewrite_rule(): void
 	{
-		add_rewrite_rule('^' . self::SLUG . '/?$', 'index.php?' . self::QUERY_VAR . '=1', 'top');
+		add_rewrite_rule(
+			'^' . self::SLUG . '/([^/]+)/?$',
+			'index.php?' . self::QUERY_VAR . '=1&' . self::REF_VAR . '=$matches[1]',
+			'top'
+		);
 	}
 
 	public static function flush(): void
@@ -61,25 +62,20 @@ final class GatewayEndpoint
 	public static function add_query_vars(array $vars): array
 	{
 		$vars[] = self::QUERY_VAR;
+		$vars[] = self::REF_VAR;
 		return $vars;
 	}
-
-
 
 	public static function handle(): void
 	{
 		if (! get_query_var(self::QUERY_VAR)) {
 			return;
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce verification not applicable to server-to-server callbacks validated via APK.
-		if (sanitize_key(wp_unslash($_REQUEST['callback'] ?? '')) !== self::CALLBACK_ID) {
-			return;
-		}
 
-		$request_method   = isset($_SERVER['REQUEST_METHOD']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])) : 'GET';
-		$method           = strtoupper((string) $request_method);
+		$request_method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])) : 'GET';
+		$method         = strtoupper((string) $request_method);
 
-		$entry_id = absint(wp_unslash($_REQUEST['ref'] ?? $_REQUEST['id'] ?? 0)); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
+		$entry_id = absint(get_query_var(self::REF_VAR));
 		$apk      = sanitize_text_field(wp_unslash((string) ($_REQUEST['apk'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
 
 		$val    = sanitize_text_field(wp_unslash((string) ($_REQUEST['val'] ?? $_REQUEST['amount'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
@@ -119,7 +115,7 @@ final class GatewayEndpoint
 		if ($method === 'POST') {
 
 			self::handle_webhook($entry_id, $apk, $mtd, $req);
-			echo 'OK'; // placeholderphpcs:ignore(try fixing) WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo 'OK';
 			exit;
 		}
 
@@ -158,8 +154,6 @@ final class GatewayEndpoint
 		exit;
 	}
 
-
-
 	private static function process_success(int $entry_id, string $apk, string $val = '', string $method = '', string $request_id = ''): void
 	{
 		if ($entry_id <= 0) {
@@ -168,16 +162,33 @@ final class GatewayEndpoint
 
 		$expected = Settings::get_anti_phishing_key();
 		if ($expected !== '' && $apk !== $expected) {
+			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
+				sprintf('[iftp-cf7] process_success: APK mismatch for entry %d. got=%s expected=%s', $entry_id, $apk, $expected)
+			);
 			return;
 		}
 
 		$repo  = new EntryRepository();
 		$entry = $repo->get_by_id($entry_id);
 		if ($entry === null) {
+			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
+				sprintf('[iftp-cf7] process_success: entry %d not found', $entry_id)
+			);
 			return;
 		}
 
-		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
+
+		if ($entry->payment_status === 'completed') {
+			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
+				sprintf('[iftp-cf7] process_success: entry %d already completed, skipping', $entry_id)
+			);
+			return;
+		}
+
+		if ($val === '' || number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
+			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
+				sprintf('[iftp-cf7] process_success: amount mismatch for entry %d. val=%s db_amount=%s', $entry_id, $val, number_format($entry->amount, 2, '.', ''))
+			);
 			return;
 		}
 
@@ -187,6 +198,9 @@ final class GatewayEndpoint
 			'completed',
 			$request_id !== '' ? $request_id : null
 		);
+		defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
+			sprintf('[iftp-cf7] process_success: entry %d marked completed via method=%s', $entry_id, $method)
+		);
 	}
 
 	private static function process_other(int $entry_id, string $status, string $method = '', string $request_id = ''): void
@@ -194,7 +208,12 @@ final class GatewayEndpoint
 		if ($entry_id <= 0) {
 			return;
 		}
-		$repo = new EntryRepository();
+		$repo  = new EntryRepository();
+		$entry = $repo->get_by_id($entry_id);
+
+		if ($entry === null || $entry->payment_status === 'completed') {
+			return;
+		}
 		if ($method !== '' || $request_id !== '') {
 			$repo->update_transaction(
 				$entry_id,
@@ -224,6 +243,11 @@ final class GatewayEndpoint
 			return;
 		}
 
+
+		if ($entry->payment_status === 'completed') {
+			return;
+		}
+
 		$val = sanitize_text_field(wp_unslash((string) ($_REQUEST['val'] ?? $_REQUEST['amount'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Server-side webhook from payment gateway; nonce not applicable.
 		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
 			return;
@@ -242,36 +266,17 @@ final class GatewayEndpoint
 		do_action('iftp_cf7_payment_confirmed', $entry->id, $method);
 	}
 
-
-
-	/**
-	 * Build the callback/return URL for ifthenpay.
-	 *
-	 * @param int    $entry_id    DB entry ID (used as 'ref' param).
-	 * @param float  $amount      Payment amount (used as 'val' param for success URL).
-	 * @param string $gateway_key Gateway key (base64-encoded as 'apk' param).
-	 * @param string $return_url  URL the browser should be sent back to after processing.
-	 */
-	/**
-	 * Success URL — ifthenpay replaces [REQUESTID], [PAYMENTMETHOD] with real values.
-	 *
-	 * Pattern (matching MemberPress):
-	 *   /iftp_cf7?callback=iftp_cf7&ref={id}&apk={base64}&val={amount}
-	 *              &mtd=[PAYMENTMETHOD]&req=[REQUESTID]&ret={form_url}
-	 */
 	public static function build_success_url(int $entry_id, float $amount, string $gateway_key, string $return_url): string
 	{
-		$url = add_query_arg(
+		$base = home_url('/' . self::SLUG . '/' . $entry_id . '/');
+		$url  = add_query_arg(
 			array(
-				'callback' => self::CALLBACK_ID,
-				'ref'      => $entry_id,
-				'apk'      => base64_encode($gateway_key), // placeholderphpcs:ignore(try fixing) WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-				'val'      => number_format($amount, 2, '.', ''),
-				'ret'      => $return_url,
+				'apk' => base64_encode($gateway_key),
+				'val' => number_format($amount, 2, '.', ''),
+				'ret' => $return_url,
 			),
-			home_url('/' . self::SLUG)
+			$base
 		);
-
 		return $url . '&mtd=[PAYMENTMETHOD]&req=[REQUESTID]';
 	}
 
@@ -279,12 +284,10 @@ final class GatewayEndpoint
 	{
 		return add_query_arg(
 			array(
-				'callback' => self::CALLBACK_ID,
-				'ref'      => $entry_id,
-				'status'   => $status,
-				'ret'      => $return_url,
+				'status' => $status,
+				'ret'    => $return_url,
 			),
-			home_url('/' . self::SLUG)
+			home_url('/' . self::SLUG . '/' . $entry_id . '/')
 		);
 	}
 }
