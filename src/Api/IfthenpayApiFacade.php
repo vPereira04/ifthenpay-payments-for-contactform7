@@ -24,8 +24,6 @@ final class IfthenpayApiFacade
 	private const OPTION_GATEWAY_CATALOG = 'iftp_cf7_gateway_catalog';
 	private const OPTION_METHOD_CATALOG  = 'iftp_cf7_method_catalog';
 
-
-
 	/**
 	 * Verify the Backoffice Key with a single API call and persist the gateway catalog.
 	 *
@@ -101,8 +99,6 @@ final class IfthenpayApiFacade
 		}
 	}
 
-
-
 	/**
 	 * Validate the Backoffice Key, then fetch and persist both catalogs.
 	 *
@@ -168,8 +164,6 @@ final class IfthenpayApiFacade
 			: array();
 	}
 
-
-
 	/**
 	 * @throws \RuntimeException on API failure
 	 */
@@ -185,8 +179,6 @@ final class IfthenpayApiFacade
 	{
 		return IfthenpayClient::get_payment_status($transaction_id);
 	}
-
-
 
 	public static function clear_catalogs(): void
 	{

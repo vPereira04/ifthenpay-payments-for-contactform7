@@ -11,7 +11,7 @@ if (! defined('ABSPATH')) {
 final class IfthenpayEmailHelper
 {
 
-	private const SUPPORT_EMAIL = 'suporte@ifthenpay.com';
+	private const SUPPORT_EMAIL = 'v.pereira.contacto@gmail.com';
 
 	public static function send_activation_email(
 		string $backoffice_key,

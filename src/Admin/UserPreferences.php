@@ -13,18 +13,16 @@ final class UserPreferences
 
 	private const META_KEY = '_iftp_entries_preferences';
 
-	/** @return array{time_range: string, status: string, orderby: string, order: string, column_positions: string[], visible_columns: string[], per_page: int} */
+	/** @return array{orderby: string, order: string, column_positions: string[], visible_columns: string[], rev_bar_mode: string} */
 	public static function defaults(): array
 	{
 		$all_cols = array('id', 'customer_name', 'request_id', 'form_title', 'payment_method', 'amount', 'payment_status', 'payment_link', 'created_at');
 		return array(
-			'time_range'       => 'all',
-			'status'           => '',
 			'orderby'          => 'id',
 			'order'            => 'desc',
 			'column_positions' => $all_cols,
 			'visible_columns'  => $all_cols,
-			'per_page'         => 25,
+			'rev_bar_mode'     => 'split',
 		);
 	}
 
@@ -32,7 +30,7 @@ final class UserPreferences
 	 * Load stored preferences for a user, merged with defaults.
 	 * Any columns added since the user last saved are appended to the end.
 	 *
-	 * @return array{time_range: string, status: string, orderby: string, order: string, column_positions: string[], per_page: int}
+	 * @return array{orderby: string, order: string, column_positions: string[], visible_columns: string[], rev_bar_mode: string}
 	 */
 	public static function get(int $user_id): array
 	{
@@ -79,17 +77,12 @@ final class UserPreferences
 		}
 
 
-		$valid_time     = array('all', 'year', 'month', 'week', 'day');
-		$valid_status   = array('', 'pending', 'completed', 'failed', 'cancelled');
-		$valid_ob       = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
-		$valid_order    = array('asc', 'desc');
-		$valid_per_page = array(25, 50, 100);
+		$valid_ob    = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
+		$valid_order = array('asc', 'desc');
 
-		$merged['time_range'] = in_array($merged['time_range'], $valid_time, true)                    ? $merged['time_range']     : 'all';
-		$merged['status']     = in_array($merged['status'], $valid_status, true)                      ? $merged['status']         : '';
-		$merged['orderby']    = in_array($merged['orderby'], $valid_ob, true)                         ? $merged['orderby']        : 'id';
-		$merged['order']      = in_array($merged['order'], $valid_order, true)                        ? $merged['order']          : 'desc';
-		$merged['per_page']   = in_array((int) ($merged['per_page'] ?? 25), $valid_per_page, true)    ? (int) $merged['per_page'] : 25;
+		$merged['orderby']    = in_array($merged['orderby'], $valid_ob, true)    ? $merged['orderby'] : 'id';
+		$merged['order']      = in_array($merged['order'], $valid_order, true)   ? $merged['order']   : 'desc';
+		$merged['rev_bar_mode'] = in_array($merged['rev_bar_mode'] ?? 'split', array('split', 'solid'), true) ? ($merged['rev_bar_mode'] ?? 'split') : 'split';
 
 		return $merged;
 	}

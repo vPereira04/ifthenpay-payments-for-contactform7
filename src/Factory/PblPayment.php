@@ -25,7 +25,7 @@ use Ifthenpay\CF7\Repository\DTO\EntryDto;
  *  4. Persist the payment URL to the entry.
  *  5. Return an immutable PaymentResult.
  */
-final class PblPayment implements Payment
+final class PblPayment
 {
 
 	private EntryRepository $repo;

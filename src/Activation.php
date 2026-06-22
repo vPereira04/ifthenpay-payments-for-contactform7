@@ -11,7 +11,7 @@ if (! defined('ABSPATH')) {
 final class Activation
 {
 
-	private const DB_VERSION     = '1.9';
+	private const DB_VERSION     = '2.0';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
 	public static function activate(): void
@@ -85,9 +85,10 @@ final class Activation
 			payment_url  VARCHAR(500)    NOT NULL DEFAULT '',
 			return_url   VARCHAR(500)    NOT NULL DEFAULT '',
 			form_data    LONGTEXT        NOT NULL,
-			request_id   VARCHAR(100)    DEFAULT NULL,
-			created_at   DATETIME        NOT NULL,
-			updated_at   DATETIME        NOT NULL,
+			request_id        VARCHAR(100)    DEFAULT NULL,
+			created_at        DATETIME        NOT NULL,
+			link_generated_at DATETIME        DEFAULT NULL,
+			updated_at        DATETIME        NOT NULL,
 			PRIMARY KEY  (id),
 			KEY          idx_form_id               (form_id),
 			KEY          idx_transaction_id        (transaction_id(20)),

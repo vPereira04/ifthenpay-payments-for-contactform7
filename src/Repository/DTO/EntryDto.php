@@ -26,6 +26,7 @@ final readonly class EntryDto
 		public string $return_url,
 		public string $form_data,
 		public string $created_at,
+		public ?string $link_generated_at,
 		public string $updated_at,
 	) {}
 
@@ -51,6 +52,9 @@ final readonly class EntryDto
 			return_url: esc_url_raw((string) ($raw['return_url'] ?? '')),
 			form_data: (string) ($raw['form_data'] ?? ''),
 			created_at: sanitize_text_field((string) ($raw['created_at'] ?? '')),
+			link_generated_at: isset($raw['link_generated_at']) && $raw['link_generated_at'] !== null
+				? sanitize_text_field((string) $raw['link_generated_at'])
+				: null,
 			updated_at: sanitize_text_field((string) ($raw['updated_at'] ?? '')),
 		);
 	}

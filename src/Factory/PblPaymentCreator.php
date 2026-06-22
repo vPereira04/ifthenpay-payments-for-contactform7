@@ -9,15 +9,17 @@ if (! defined('ABSPATH')) {
 }
 
 use Ifthenpay\CF7\Factory\DTO\PaymentData;
+use Ifthenpay\CF7\Factory\DTO\PaymentResult;
 
-/**
- * Concrete Creator — creates a PblPayment (Pay-by-Link product).
- */
-final class PblPaymentCreator extends PaymentCreator
+final class PblPaymentCreator
 {
 
-	protected function create_payment(PaymentData $data): Payment
+	public function make(PaymentData $data): PaymentResult
 	{
-		return new PblPayment($data);
+		try {
+			return (new PblPayment($data))->process();
+		} catch (\Throwable $e) {
+			return PaymentResult::failure($e->getMessage());
+		}
 	}
 }

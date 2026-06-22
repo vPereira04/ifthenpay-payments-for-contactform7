@@ -152,11 +152,13 @@ final class EntryRepository
 	public function update_payment_url(int $id, string $payment_url, string $method = ''): bool
 	{
 		global $wpdb;
+		$now     = current_time('mysql');
 		$data    = array(
-			'payment_url' => esc_url_raw($payment_url),
-			'updated_at'  => current_time('mysql'),
+			'payment_url'       => esc_url_raw($payment_url),
+			'link_generated_at' => $now,
+			'updated_at'        => $now,
 		);
-		$formats = array('%s', '%s');
+		$formats = array('%s', '%s', '%s');
 		if ('' !== $method) {
 			$data['payment_method'] = strtoupper(sanitize_text_field($method));
 			$formats[]              = '%s';

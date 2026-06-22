@@ -224,7 +224,7 @@ final class IfthenpayClient
 			'apKey' => base64_encode($gateway_key),
 			'chave' => $gateway_key,
 			'urlCb' => $base_callback_url .
-    				   '?ref=[ORDER_ID]&apk=[ANTI_PHISHING_KEY]&val=[AMOUNT]&mtd=[PAYMENT_METHOD]&req=[REQUEST_ID]',
+			'[ORDER_ID]' . '?apk=[ANTI_PHISHING_KEY]&val=[AMOUNT]&mtd=[PAYMENT_METHOD]&req=[REQUEST_ID]',
 		);
 
 		try {
