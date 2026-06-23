@@ -647,8 +647,8 @@ final class EntriesPage
 			$revenue_css = $validated_tab !== '' ? $validated_tab : 'bluecompleted';
 			$rev_label   = $rev_labels[$revenue_status] ?? $rev_labels['bluecompleted'];
 			$rev_bar_mode     = $prefs['rev_bar_mode'] ?? 'split';
-			$bar_solid_colors = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#718096', 'expired' => '#d69300');
-			$bar_solid_color  = $bar_solid_colors[$current_tab] ?? '#00609c';
+			$bar_solid_colors = array('completed' => '#34a853', 'pending' => '#00609c', 'failed' => '#ea4335', 'cancelled' => '#718096', 'expired' => '#d69300');
+			$bar_solid_color  = $bar_solid_colors[$current_tab] ?? '#2e414e';
 			$period_labels = array(
 				'all'   => __('All time', 'ifthenpay-payments-for-contactform7'),
 				'year'  => __('This year', 'ifthenpay-payments-for-contactform7'),
@@ -779,7 +779,7 @@ final class EntriesPage
 				</a>
 				<a href="<?php echo $_stat_url('expired'); ?>" class="iftp-stat-card iftp-stat-card--expired<?php echo $current_tab === 'expired' ? ' iftp-stat-card--active' : ''; ?>" data-status="expired" draggable="false">
 					<div class="iftp-stat-card-header iftp-stat-label--expired"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M5 19h10M5 1h10M15 1v4l-5 4.5-5-4.5V1M5 19v-4l5-4.5 5 4.5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+								<path d="M5 19h10M5 1h10M15 1v4l-5 5-5-5V1M5 19v-4l5-5 5 5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 							</svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Expired', 'ifthenpay-payments-for-contactform7'); ?></span></div>
 					<div class="iftp-stat-card-val iftp-stat-val--expired"><?php echo esc_html((string) ($counts['expired'] ?? 0)); ?></div>
 					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
@@ -787,7 +787,7 @@ final class EntriesPage
 						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#d69300"></div><?php endif; ?>
 					</div>
 					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M5 19h10M5 1h10M15 1v4l-5 4.5-5-4.5V1M5 19v-4l5-4.5 5 4.5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M5 19h10M5 1h10M15 1v4l-5 5-5-5V1M5 19v-4l5-5 5 5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 						</svg></span>
 				</a>
 			</div>
@@ -1882,7 +1882,7 @@ final class EntriesPage
 
 		$hero_status_styles = array(
 			'completed' => array('bg' => '#e6f4ea', 'color' => '#137333', 'dot' => '#34a853'),
-			'pending'   => array('bg' => '#fef7e0', 'color' => '#b45309', 'dot' => '#f9ab00'),
+			'pending'   => array('bg' => '#ebf7ff', 'color' => '#00609c', 'dot' => '#00609c'),
 			'failed'    => array('bg' => '#fce8e6', 'color' => '#c5221f', 'dot' => '#ea4335'),
 			'cancelled' => array('bg' => '#f1f3f4', 'color' => '#5f6368', 'dot' => '#9aa5b4'),
 			'expired'   => array('bg' => '#fffae9', 'color' => '#a55a00', 'dot' => '#d69300'),
@@ -1894,9 +1894,9 @@ final class EntriesPage
 			'pending'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
 			'failed'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
 			'cancelled' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
-			'expired'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 2v4l-5 4.5L7 6V2M7 22v-4l5-4.5 5 4.5v4"/></svg>',
+			'expired'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 2v4l-5 6L7 6V2M7 22v-4l5-6 5 6v4"/></svg>',
 		);
-		$ghost_color_map = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#9aa5b4', 'expired' => '#d69300');
+		$ghost_color_map = array('completed' => '#34a853', 'pending' => '#00609c', 'failed' => '#ea4335', 'cancelled' => '#9aa5b4', 'expired' => '#d69300');
 		$ghost_svg   = $ghost_svgs[$entry->payment_status] ?? $ghost_svgs['pending'];
 		$ghost_color = $ghost_color_map[$entry->payment_status] ?? '#9aa5b4';
 
@@ -2064,6 +2064,10 @@ final class EntriesPage
 									<svg viewBox="0 0 24 24" aria-hidden="true">
 										<circle cx="12" cy="12" r="10" />
 										<line x1="8" y1="12" x2="16" y2="12" />
+									</svg>
+								<?php elseif ($entry->payment_status === 'expired') : ?>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<path d="M5 22h14M5 2h14M17 2v4l-5 6L7 6V2M7 22v-4l5-6 5 6v4" />
 									</svg>
 								<?php else : ?>
 									<svg viewBox="0 0 24 24" aria-hidden="true">

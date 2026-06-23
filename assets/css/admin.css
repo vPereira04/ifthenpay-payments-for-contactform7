@@ -2046,10 +2046,10 @@ button.iftp-period-tab:focus-visible {
 }
 
 .iftp-hero-accent--completed { background: linear-gradient(90deg, #34a853, #2e9748); }
-.iftp-hero-accent--pending   { background: linear-gradient(90deg, #f9ab00, #e09500); }
+.iftp-hero-accent--pending   { background: linear-gradient(90deg, #00609c, #02446d); }
 .iftp-hero-accent--failed    { background: linear-gradient(90deg, #ea4335, #c5221f); }
 .iftp-hero-accent--cancelled { background: linear-gradient(90deg, #9aa5b4, #788493); }
-.iftp-hero-accent--expired   { background: linear-gradient(90deg, #d69300, #7d5190); }
+.iftp-hero-accent--expired   { background: linear-gradient(90deg, #d69300, #e09500); }
 
 .iftp-hero-ghost {
 	position: absolute;

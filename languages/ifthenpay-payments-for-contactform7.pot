@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ifthenpay-payments-for-contactform7 1.0.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ifthenpay-payments-for-contactform7\n"
-"POT-Creation-Date: 2026-06-23 15:36:44+00:00\n"
+"POT-Creation-Date: 2026-06-23 16:12:26+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -314,7 +314,7 @@ msgstr ""
 msgid "Form / Reference"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1262 src/Admin/EntriesPage.php:2144
+#: src/Admin/EntriesPage.php:1262 src/Admin/EntriesPage.php:2148
 msgid "Submitted Data"
 msgstr ""
 
@@ -440,15 +440,15 @@ msgstr ""
 msgid "ID"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1734 src/Admin/EntriesPage.php:2017 src/Admin/EntriesPage.php:2201
+#: src/Admin/EntriesPage.php:1734 src/Admin/EntriesPage.php:2017 src/Admin/EntriesPage.php:2205
 msgid "Customer"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1735 src/Admin/EntriesPage.php:2102
+#: src/Admin/EntriesPage.php:1735 src/Admin/EntriesPage.php:2106
 msgid "Request ID"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1740 src/Admin/EntriesPage.php:2113
+#: src/Admin/EntriesPage.php:1740 src/Admin/EntriesPage.php:2117
 msgid "Payment Link"
 msgstr ""
 
@@ -480,35 +480,35 @@ msgstr ""
 msgid "Payment journey"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2035 src/Admin/EntriesPage.php:2242
+#: src/Admin/EntriesPage.php:2035 src/Admin/EntriesPage.php:2246
 msgid "Created"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2046 src/Admin/EntriesPage.php:2255
+#: src/Admin/EntriesPage.php:2046 src/Admin/EntriesPage.php:2259
 msgid "Link Generated"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2091
+#: src/Admin/EntriesPage.php:2095
 msgid "Transaction"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2117
+#: src/Admin/EntriesPage.php:2121
 msgid "Open link"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2176 src/Admin/EntriesPage.php:2178
+#: src/Admin/EntriesPage.php:2180 src/Admin/EntriesPage.php:2182
 msgid "Read more"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2177
+#: src/Admin/EntriesPage.php:2181
 msgid "Read less"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2231
+#: src/Admin/EntriesPage.php:2235
 msgid "Timestamps"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2268
+#: src/Admin/EntriesPage.php:2272
 msgid "Updated"
 msgstr ""
 
