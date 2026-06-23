@@ -109,8 +109,6 @@ final class Plugin
 		add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_bar_styles'));
 	}
 
-
-
 	public function add_admin_bar_entries_node(\WP_Admin_Bar $wp_admin_bar): void
 	{
 		if (! current_user_can('manage_options')) {
@@ -125,8 +123,6 @@ final class Plugin
 			'meta'  => array('class' => 'ifthenpay-cf7-ab-node'),
 		));
 	}
-
-
 
 	public function enqueue_admin_bar_styles(): void
 	{
@@ -153,8 +149,6 @@ final class Plugin
 		);
 	}
 
-
-
 	public function register_service(): void
 	{
 		if (! class_exists('WPCF7_Integration') || ! class_exists('WPCF7_Service')) {
@@ -178,8 +172,6 @@ final class Plugin
 		);
 	}
 
-
-
 	public function register_admin_menus(): void
 	{
 		$entries_page = new EntriesPage();
@@ -194,14 +186,10 @@ final class Plugin
 		add_action('load-' . $hook, array($entries_page, 'process_actions'));
 	}
 
-
-
 	public function strip_payment_params_from_action_url(string $url): string
 	{
 		return remove_query_arg(array('iftp_cf7_pay', 'iftp_cf7_entry'), $url);
 	}
-
-
 
 	public function enqueue_frontend_assets(): void
 	{

@@ -647,7 +647,7 @@ final class EntriesPage
 			$revenue_css = $validated_tab !== '' ? $validated_tab : 'bluecompleted';
 			$rev_label   = $rev_labels[$revenue_status] ?? $rev_labels['bluecompleted'];
 			$rev_bar_mode     = $prefs['rev_bar_mode'] ?? 'split';
-			$bar_solid_colors = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#718096', 'expired' => '#9263a4');
+			$bar_solid_colors = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#718096', 'expired' => '#d69300');
 			$bar_solid_color  = $bar_solid_colors[$current_tab] ?? '#00609c';
 			$period_labels = array(
 				'all'   => __('All time', 'ifthenpay-payments-for-contactform7'),
@@ -707,10 +707,10 @@ final class EntriesPage
 						data-rev-bar-mode="<?php echo esc_attr($rev_bar_mode); ?>">
 						<div class="iftp-rev-seg iftp-rev-seg--solid" style="flex:1;background:<?php echo esc_attr($bar_solid_color); ?>"></div>
 						<?php if (($counts['completed'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['completed']; ?>;background:#34a853"></div><?php endif; ?>
-						<?php if (($counts['pending'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#f9ab00"></div><?php endif; ?>
+						<?php if (($counts['pending'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#00609c"></div><?php endif; ?>
 						<?php if (($counts['failed'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['failed']; ?>;background:#ea4335"></div><?php endif; ?>
 						<?php if (($counts['cancelled'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['cancelled']; ?>;background:#718096"></div><?php endif; ?>
-						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#9263a4"></div><?php endif; ?>
+						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#d69300"></div><?php endif; ?>
 					</div>
 					<span class="iftp-stat-card-ghost iftp-stat-card-ghost--revenue" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<polyline points="2,15 7,9 11,12 17,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -740,7 +740,7 @@ final class EntriesPage
 					<div class="iftp-stat-card-val iftp-stat-val--pending"><?php echo esc_html((string) ($counts['pending'] ?? 0)); ?></div>
 					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
 					<div class="iftp-rev-bar">
-						<?php if (($counts['pending'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#f9ab00"></div><?php endif; ?>
+						<?php if (($counts['pending'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#00609c"></div><?php endif; ?>
 					</div>
 					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
@@ -784,7 +784,7 @@ final class EntriesPage
 					<div class="iftp-stat-card-val iftp-stat-val--expired"><?php echo esc_html((string) ($counts['expired'] ?? 0)); ?></div>
 					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
 					<div class="iftp-rev-bar">
-						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#9263a4"></div><?php endif; ?>
+						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#d69300"></div><?php endif; ?>
 					</div>
 					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path d="M5 19h10M5 1h10M15 1v4l-5 4.5-5-4.5V1M5 19v-4l5-4.5 5 4.5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -1192,6 +1192,7 @@ final class EntriesPage
 										<option value="pending"><?php esc_html_e('Pending', 'ifthenpay-payments-for-contactform7'); ?></option>
 										<option value="cancelled"><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></option>
 										<option value="failed"><?php esc_html_e('Failed', 'ifthenpay-payments-for-contactform7'); ?></option>
+										<option value="expired"><?php esc_html_e('Expired', 'ifthenpay-payments-for-contactform7'); ?></option>
 									</select>
 								</div>
 							</div>
@@ -1232,6 +1233,7 @@ final class EntriesPage
 										<option value="pending"><?php esc_html_e('Pending', 'ifthenpay-payments-for-contactform7'); ?></option>
 										<option value="cancelled"><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></option>
 										<option value="failed"><?php esc_html_e('Failed', 'ifthenpay-payments-for-contactform7'); ?></option>
+										<option value="expired"><?php esc_html_e('Expired', 'ifthenpay-payments-for-contactform7'); ?></option>
 									</select>
 								</div>
 							</div>
@@ -1883,7 +1885,7 @@ final class EntriesPage
 			'pending'   => array('bg' => '#fef7e0', 'color' => '#b45309', 'dot' => '#f9ab00'),
 			'failed'    => array('bg' => '#fce8e6', 'color' => '#c5221f', 'dot' => '#ea4335'),
 			'cancelled' => array('bg' => '#f1f3f4', 'color' => '#5f6368', 'dot' => '#9aa5b4'),
-			'expired'   => array('bg' => '#f2e8f7', 'color' => '#6b3585', 'dot' => '#9263a4'),
+			'expired'   => array('bg' => '#fffae9', 'color' => '#a55a00', 'dot' => '#d69300'),
 		);
 		$hero_style = $hero_status_styles[$entry->payment_status] ?? $hero_status_styles['pending'];
 
@@ -1894,7 +1896,7 @@ final class EntriesPage
 			'cancelled' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
 			'expired'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 2v4l-5 4.5L7 6V2M7 22v-4l5-4.5 5 4.5v4"/></svg>',
 		);
-		$ghost_color_map = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#9aa5b4', 'expired' => '#9263a4');
+		$ghost_color_map = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#9aa5b4', 'expired' => '#d69300');
 		$ghost_svg   = $ghost_svgs[$entry->payment_status] ?? $ghost_svgs['pending'];
 		$ghost_color = $ghost_color_map[$entry->payment_status] ?? '#9aa5b4';
 
