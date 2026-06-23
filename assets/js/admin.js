@@ -374,7 +374,7 @@
 		{ value: 'COFIDIS',    label: 'Cofidis' },
 		{ value: 'APPLE',      label: 'Apple Pay' },
 		{ value: 'GOOGLE',     label: 'Google Pay' },
-		{ value: 'DINHEIRO',   label: 'Dinheiro' }
+		{ value: 'CASH',   label: 'Cash' }
 	];
 
 	function iftpCloseAllMethodDropdowns() {
@@ -425,7 +425,7 @@
 		}
 
 		function buildOptIcon($el, value) {
-			if (value === 'DINHEIRO') {
+			if (value === 'CASH') {
 				$el.append($('<span class="iftp-method-select__opt-emoji" aria-hidden="true">💶</span>'));
 				return;
 			}
@@ -507,7 +507,7 @@
 	});
 
 
-	$('#iftp-add-payment-modal select[name="ap_payment_method"]').each(function () {
+	$('#iftp-add-payment-modal select[name="ap_payment_method"], #iftp-add-payment-modal select[name="ap_cx_payment_method"]').each(function () {
 		iftpBuildMethodDropdown($(this));
 	});
 
@@ -626,6 +626,7 @@
 		'mark_cancelled': { type: 'dot', color: '#8c8f94' },
 		'mark_failed':    { type: 'dot', color: '#d63638' },
 		'mark_pending':   { type: 'dot', color: '#dba617' },
+		'mark_expired':   { type: 'dot', color: '#9263a4' },
 		'delete':         { type: 'svg', html: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' }
 	};
 
@@ -1013,11 +1014,11 @@
 				: $panel.find('[name="ap_customer_email"]').val(),
 			customer_ip: '',
 			amount: amountVal,
-			payment_method: $panel.find('[name="ap_payment_method"]').val(),
+			payment_method: $panel.find('[name="ap_cx_payment_method"], [name="ap_payment_method"]').val(),
 			payment_status: $panel
 				.find('[name="ap_cx_payment_status"], [name="ap_payment_status"]')
 				.val(),
-			form_title: $panel.find('[name="ap_form_title"]').val(),
+			form_title: $panel.find('[name="ap_cx_form_title"], [name="ap_form_title"]').val(),
 		};
 
 		if (isComplex) {
@@ -1139,21 +1140,54 @@
 		let currentPeriod = String(dataEl.dataset.period || '7');
 		applyPeriod(currentPeriod);
 
-		const widgetBody = dataEl.closest('.iftp-metabox-body');
-		if (widgetBody) {
-			widgetBody
-				.querySelectorAll('.iftp-dash-period-tabs .iftp-period-tab')
-				.forEach(function (btn) {
-					btn.addEventListener('click', function () {
-						currentPeriod = String(this.dataset.period || '1');
-						widgetBody
-							.querySelectorAll('.iftp-dash-period-tabs .iftp-period-tab')
-							.forEach(function (b) {
-								b.classList.toggle('active', b.dataset.period === currentPeriod);
-							});
-						applyPeriod(currentPeriod);
-					});
+		const trigger = document.getElementById('iftp-dash-period-trigger');
+		const panel   = document.getElementById('iftp-dash-period-panel');
+		const label   = document.getElementById('iftp-dash-period-label');
+
+		if (trigger && panel) {
+			function openDashPanel() {
+				panel.removeAttribute('hidden');
+				trigger.setAttribute('aria-expanded', 'true');
+			}
+			function closeDashPanel() {
+				panel.setAttribute('hidden', '');
+				trigger.setAttribute('aria-expanded', 'false');
+			}
+
+			trigger.addEventListener('click', function (e) {
+				e.stopPropagation();
+				if (panel.hasAttribute('hidden')) {
+					openDashPanel();
+				} else {
+					closeDashPanel();
+				}
+			});
+
+			trigger.addEventListener('keydown', function (e) {
+				if (e.key === 'Escape') { closeDashPanel(); }
+			});
+
+			document.addEventListener('click', function (e) {
+				var dropdown = document.getElementById('iftp-dash-period-dropdown');
+				if (dropdown && !dropdown.contains(e.target)) {
+					closeDashPanel();
+				}
+			});
+
+			panel.addEventListener('click', function (e) {
+				var opt = e.target.closest('.iftp-period-opt[data-period]');
+				if (!opt) { return; }
+
+				currentPeriod = String(opt.dataset.period || '7');
+				if (label) {
+					label.textContent = opt.dataset.label || opt.textContent.trim();
+				}
+				panel.querySelectorAll('.iftp-period-opt').forEach(function (o) {
+					o.classList.toggle('active', o.dataset.period === currentPeriod);
 				});
+				closeDashPanel();
+				applyPeriod(currentPeriod);
+			});
 		}
 	}
 
@@ -1358,7 +1392,7 @@
 
 
 		function toggleTableCol(colKey, visible) {
-			$table.find('[data-col="' + colKey + '"]').css('display', visible ? '' : 'none');
+			$table.find('[data-col="' + colKey + '"]').css('display', visible ? 'table-cell' : 'none');
 		}
 
 
@@ -1816,6 +1850,18 @@
 				else             { sessionStorage.removeItem('iftp_cf7_form_id'); }
 			} catch (e) {}
 		});
+
+
+		(function () {
+			try {
+				var paged = new URL(window.location.href).searchParams.get('paged') || '1';
+				if (paged !== '1') {
+					sessionStorage.setItem('iftp_cf7_paged', paged);
+				} else {
+					sessionStorage.removeItem('iftp_cf7_paged');
+				}
+			} catch (e) {}
+		}());
 	})();
 
 

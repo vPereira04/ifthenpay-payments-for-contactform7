@@ -13,7 +13,7 @@ if (! defined('ABSPATH')) {
  *
  * Only two outbound API calls are ever made:
  *   1. connect()          → GET /gateway/get + GET /gateway/methods/available
- *   2. Payment-time calls → create_payment() and get_payment_status()
+ *   2. Payment-time calls → create_payment()
  *
  * All catalog data (gateways, methods) is fetched once on connect and
  * persisted to wp_options.  The rest of the codebase reads from the DB.
@@ -170,14 +170,6 @@ final class IfthenpayApiFacade
 	public static function create_payment(string $gateway_key, array $payload): array
 	{
 		return IfthenpayClient::create_payment_link($gateway_key, $payload);
-	}
-
-	/**
-	 * @throws \RuntimeException on API failure
-	 */
-	public static function get_payment_status(string $transaction_id): array
-	{
-		return IfthenpayClient::get_payment_status($transaction_id);
 	}
 
 	public static function clear_catalogs(): void

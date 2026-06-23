@@ -170,13 +170,4 @@ final class FormPanel
 		update_option('iftp_cf7_form_config_' . $form_id, $config, false);
 	}
 
-	public function ajax_save_form_config(): void
-	{
-		check_ajax_referer('iftp_cf7_form_config', 'nonce');
-		if (! current_user_can('manage_options')) {
-			wp_send_json_error(array('message' => __('Unauthorized.', 'ifthenpay-payments-for-contactform7')), 403);
-		}
-
-		wp_send_json_success(array('message' => __('Use the form Save button.', 'ifthenpay-payments-for-contactform7')));
-	}
 }

@@ -22,23 +22,6 @@ final class IfthenpayClient
 		$this->backoffice_key = sanitize_text_field($backoffice_key);
 	}
 
-	public static function validate_backoffice_key(string $backoffice_key): bool
-	{
-		$backoffice_key = sanitize_text_field($backoffice_key);
-		if ($backoffice_key === '') {
-			return false;
-		}
-
-		$url = add_query_arg(array('boKey' => $backoffice_key), self::API_BASE . '/gateway/get');
-
-		try {
-			$data = self::request('GET', $url);
-			return ! empty($data);
-		} catch (RuntimeException) {
-			return false;
-		}
-	}
-
 	public static function get_available_methods(): array
 	{
 		return self::request('GET', self::API_BASE . '/gateway/methods/available');
@@ -60,15 +43,6 @@ final class IfthenpayClient
 			);
 		}
 		return $catalog;
-	}
-
-	public static function get_method_catalog(): array
-	{
-		try {
-			return self::build_method_catalog_from_raw(self::get_available_methods());
-		} catch (\Throwable) {
-			return array();
-		}
 	}
 
 	public function get_gateway_keys(string $type = ''): array
@@ -125,15 +99,6 @@ final class IfthenpayClient
 			);
 		}
 		return $catalog;
-	}
-
-	public static function get_payment_status(string $transaction_id): array
-	{
-		$url = add_query_arg(
-			array('transactionId' => $transaction_id),
-			self::API_BASE . '/gateway/transaction/status/get'
-		);
-		return self::request('GET', $url);
 	}
 
 	public static function create_payment_link(string $gateway_key, array $payload): array
@@ -224,7 +189,7 @@ final class IfthenpayClient
 			'apKey' => base64_encode($gateway_key),
 			'chave' => $gateway_key,
 			'urlCb' => $base_callback_url .
-			'[ORDER_ID]' . '?apk=[ANTI_PHISHING_KEY]&val=[AMOUNT]&mtd=[PAYMENT_METHOD]&req=[REQUEST_ID]',
+				'[ORDER_ID]' . '?apk=[ANTI_PHISHING_KEY]&val=[AMOUNT]&mtd=[PAYMENT_METHOD]&req=[REQUEST_ID]',
 		);
 
 		try {

@@ -46,8 +46,19 @@ final class Plugin
 
 		Activation::maybe_upgrade();
 
-		add_action('iftp_cf7_cleanup_stale', function (): void {
-			(new \Ifthenpay\CF7\Repository\EntryRepository())->mark_stale_pending();
+		add_action('iftp_cf7_expire_payments', function (): void {
+			$expire_days = (int) get_option('expire_days', 3);
+			(new \Ifthenpay\CF7\Repository\EntryRepository())->mark_expired_pending(max(1, $expire_days));
+		});
+
+
+		add_action( 'init', function (): void {
+			if ( isset( $_GET['test_ifthenpay'] ) ) {
+
+				do_action('iftp_cf7_expire_payments');
+
+				wp_die( '<h1>Boa! Expire chamadas! Working...</h1>' );
+			}
 		});
 
 		add_action('wpcf7_admin_init', array($this, 'register_service'));
@@ -126,18 +137,19 @@ final class Plugin
 		$woff2 = esc_url(IFTP_CF7_URL . 'assets/fonts/ifthenpay-icons.woff2');
 		$woff  = esc_url(IFTP_CF7_URL . 'assets/fonts/ifthenpay-icons.woff');
 
-		wp_add_inline_style('admin-bar',
+		wp_add_inline_style(
+			'admin-bar',
 			'@font-face{font-family:ifthenpay-icons-ab;'
-			. 'src:url(' . $woff2 . ') format("woff2"),url(' . $woff . ') format("woff");'
-			. 'font-display:block}'
-			. '#wp-admin-bar-ifthenpay-cf7-entries > .ab-item{display:flex;align-items:center;gap:5px}'
-			. '#wp-admin-bar-ifthenpay-cf7-entries .iftp-ab-icon{'
-			. 'font-family:ifthenpay-icons-ab;speak:never;font-style:normal;font-weight:400;'
-			. 'font-size:17px;line-height:1;display:inline-flex;align-items:center;flex-shrink:0;'
-			. 'margin-top:5px;'
-			. 'color:rgba(240,245,250,.65);transition:color .12s}'
-			. '#wp-admin-bar-ifthenpay-cf7-entries:hover .iftp-ab-icon,'
-			. '#wp-admin-bar-ifthenpay-cf7-entries.hover .iftp-ab-icon{color:#fff}'
+				. 'src:url(' . $woff2 . ') format("woff2"),url(' . $woff . ') format("woff");'
+				. 'font-display:block}'
+				. '#wp-admin-bar-ifthenpay-cf7-entries > .ab-item{display:flex;align-items:center;gap:5px}'
+				. '#wp-admin-bar-ifthenpay-cf7-entries .iftp-ab-icon{'
+				. 'font-family:ifthenpay-icons-ab;speak:never;font-style:normal;font-weight:400;'
+				. 'font-size:17px;line-height:1;display:inline-flex;align-items:center;flex-shrink:0;'
+				. 'margin-top:5px;'
+				. 'color:rgba(240,245,250,.65);transition:color .12s}'
+				. '#wp-admin-bar-ifthenpay-cf7-entries:hover .iftp-ab-icon,'
+				. '#wp-admin-bar-ifthenpay-cf7-entries.hover .iftp-ab-icon{color:#fff}'
 		);
 	}
 
@@ -253,7 +265,7 @@ final class Plugin
 				'var t=(document.activeElement||{}).tagName||"";' .
 				'if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT")return;' .
 				'e.preventDefault();window.location.href=' . $url . ';' .
-			'});'
+				'});'
 		);
 	}
 
@@ -290,7 +302,7 @@ final class Plugin
 		$method_logos_js = array();
 		foreach (is_array($method_cat) ? $method_cat : array() as $m) {
 			if (! empty($m['entity']) && ! empty($m['logo'])) {
-				$method_logos_js[ strtoupper((string) $m['entity']) ] = (string) $m['logo'];
+				$method_logos_js[strtoupper((string) $m['entity'])] = (string) $m['logo'];
 			}
 		}
 
@@ -345,51 +357,91 @@ final class Plugin
 		$paid_template = esc_attr(__('from %d paid transactions', 'ifthenpay-payments-for-contactform7'));
 
 		$entries_url = admin_url('admin.php?page=ifthenpay-cf7-entries');
+
+		$period_labels = array(
+			'1'  => __('Last 24 hours', 'ifthenpay-payments-for-contactform7'),
+			'7'  => __('Last 7 days', 'ifthenpay-payments-for-contactform7'),
+			'15' => __('Last 15 days', 'ifthenpay-payments-for-contactform7'),
+			'30' => __('Last 30 days', 'ifthenpay-payments-for-contactform7'),
+		);
 ?>
 		<div class="iftp-metabox-body">
 			<span id="iftp-cf7-dash-data" hidden
 				data-period="<?php echo esc_attr($default_period); ?>"
 				data-chart="<?php echo esc_attr($dash_data_json); ?>"></span>
-			<div class="iftp-period-tabs iftp-dash-period-tabs" role="group" aria-label="<?php esc_attr_e('Time period', 'ifthenpay-payments-for-contactform7'); ?>">
-				<span class="iftp-period-tabs-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-160c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z"/></svg>
-				</span>
-				<button type="button" class="iftp-period-tab" data-period="1">1d</button>
-				<button type="button" class="iftp-period-tab active" data-period="7">7d</button>
-				<button type="button" class="iftp-period-tab" data-period="15">15d</button>
-				<button type="button" class="iftp-period-tab" data-period="30">30d</button>
+
+			<div class="iftp-dash-top-row">
+				<div class="iftp-dash-metric">
+					<div class="iftp-rev-amount" id="iftp-cf7-dash-revenue">€<?php echo esc_html(number_format($default['revenue'], 2, '.', ',')); ?></div>
+					<div class="iftp-rev-sub" id="iftp-cf7-dash-rev-sub" data-template="<?php echo $paid_template; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd above
+																					?>">
+						<?php
+						printf(
+							/* translators: %d: number of paid transactions */
+							esc_html__('from %d paid transactions', 'ifthenpay-payments-for-contactform7'),
+							(int) $default['counts']['completed']
+						);
+						?>
+					</div>
+				</div>
+
+				<div class="iftp-dash-period-dropdown" id="iftp-dash-period-dropdown">
+					<button type="button"
+						class="iftp-action-btn iftp-dash-period-trigger"
+						id="iftp-dash-period-trigger"
+						aria-haspopup="true"
+						aria-expanded="false"
+						aria-controls="iftp-dash-period-panel"
+						aria-label="<?php esc_attr_e('Time period', 'ifthenpay-payments-for-contactform7'); ?>">
+						<span class="iftp-period-cal-icon" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 448 512" fill="currentColor">
+								<path d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-160c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z" />
+							</svg>
+						</span>
+						<span class="iftp-dash-period-label" id="iftp-dash-period-label"><?php echo esc_html($period_labels[$default_period]); ?></span>
+						<svg class="iftp-period-dropdown-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<polyline points="6 9 12 15 18 9" />
+						</svg>
+					</button>
+					<div class="iftp-dash-period-panel" id="iftp-dash-period-panel" hidden role="menu">
+						<?php foreach ($period_labels as $pkey => $plabel) : ?>
+						<button type="button"
+							class="iftp-period-opt<?php echo $pkey === $default_period ? ' active' : ''; ?>"
+							role="menuitem"
+							data-period="<?php echo esc_attr($pkey); ?>"
+							data-label="<?php echo esc_attr($plabel); ?>">
+							<span class="iftp-period-opt-dot" aria-hidden="true"></span>
+							<?php echo esc_html($plabel); ?>
+						</button>
+						<?php endforeach; ?>
+					</div>
+				</div>
 			</div>
-			<div class="iftp-rev-amount" id="iftp-cf7-dash-revenue">€<?php echo esc_html(number_format($default['revenue'], 2, '.', ',')); ?></div>
-			<div class="iftp-rev-sub" id="iftp-cf7-dash-rev-sub" data-template="<?php echo $paid_template; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd above
-																				?>">
-				<?php
-				printf(
-					/* translators: %d: number of paid transactions */
-					esc_html__('from %d paid transactions', 'ifthenpay-payments-for-contactform7'),
-					(int) $default['counts']['completed']
-				);
-				?>
-			</div>
+
 			<hr class="iftp-rev-divider" />
 			<div class="iftp-stats-list">
 				<div class="iftp-stat-row">
-					<span class="iftp-stat-lbl iftp-stat-lbl--pending"><span class="iftp-stat-dot iftp-stat-dot--pending"></span><?php esc_html_e('Pending', 'ifthenpay-payments-for-contactform7'); ?></span>
+					<span class="iftp-stat-lbl"><span class="iftp-stat-dot iftp-stat-dot--pending"></span><?php esc_html_e('Pending', 'ifthenpay-payments-for-contactform7'); ?></span>
 					<span class="iftp-stat-val iftp-stat-val--pending" id="iftp-cf7-dash-count-pending"><?php echo esc_html((string) $default['counts']['pending']); ?></span>
 				</div>
 				<div class="iftp-stat-row">
-					<span class="iftp-stat-lbl iftp-stat-lbl--paid"><span class="iftp-stat-dot iftp-stat-dot--paid"></span><?php esc_html_e('Paid', 'ifthenpay-payments-for-contactform7'); ?></span>
+					<span class="iftp-stat-lbl"><span class="iftp-stat-dot iftp-stat-dot--paid"></span><?php esc_html_e('Paid', 'ifthenpay-payments-for-contactform7'); ?></span>
 					<span class="iftp-stat-val iftp-stat-val--paid" id="iftp-cf7-dash-count-completed"><?php echo esc_html((string) $default['counts']['completed']); ?></span>
 				</div>
 				<div class="iftp-stat-row">
-					<span class="iftp-stat-lbl iftp-stat-lbl--failed"><span class="iftp-stat-dot iftp-stat-dot--failed"></span><?php esc_html_e('Failed', 'ifthenpay-payments-for-contactform7'); ?></span>
+					<span class="iftp-stat-lbl"><span class="iftp-stat-dot iftp-stat-dot--failed"></span><?php esc_html_e('Failed', 'ifthenpay-payments-for-contactform7'); ?></span>
 					<span class="iftp-stat-val iftp-stat-val--failed" id="iftp-cf7-dash-count-failed"><?php echo esc_html((string) $default['counts']['failed']); ?></span>
 				</div>
 				<div class="iftp-stat-row">
-					<span class="iftp-stat-lbl iftp-stat-lbl--cancelled"><span class="iftp-stat-dot iftp-stat-dot--cancelled"></span><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></span>
+					<span class="iftp-stat-lbl"><span class="iftp-stat-dot iftp-stat-dot--cancelled"></span><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></span>
 					<span class="iftp-stat-val iftp-stat-val--cancelled" id="iftp-cf7-dash-count-cancelled"><?php echo esc_html((string) $default['counts']['cancelled']); ?></span>
 				</div>
+				<div class="iftp-stat-row">
+					<span class="iftp-stat-lbl"><span class="iftp-stat-dot iftp-stat-dot--expired"></span><?php esc_html_e('Expired', 'ifthenpay-payments-for-contactform7'); ?></span>
+					<span class="iftp-stat-val iftp-stat-val--expired" id="iftp-cf7-dash-count-expired"><?php echo esc_html((string) ($default['counts']['expired'] ?? 0)); ?></span>
+				</div>
 			</div>
-			<a href="<?php echo esc_url($entries_url); ?>" class="button button-primary iftp-dash-view-all">
+			<a href="<?php echo esc_url($entries_url); ?>" class="iftp-dash-view-all">
 				<?php esc_html_e('View all entries', 'ifthenpay-payments-for-contactform7'); ?>
 			</a>
 		</div>

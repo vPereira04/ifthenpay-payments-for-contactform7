@@ -80,7 +80,7 @@ button.iftp-modal-cancel:focus:not(:focus-visible),
 /* ── Stats row (top) ── */
 .iftp-stats-row {
 	display: grid;
-	grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+	grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
 	gap: 12px;
 	margin-bottom: 16px;
 	align-items: stretch;
@@ -106,6 +106,7 @@ button.iftp-modal-cancel:focus:not(:focus-visible),
 .iftp-stat-card--pending   { border-left-color: #f9ab00; }
 .iftp-stat-card--failed    { border-left-color: #ea4335; }
 .iftp-stat-card--cancelled { border-left-color: #718096; }
+.iftp-stat-card--expired   { border-left-color: #9263a4; }
 .iftp-stat-card--revenue   { border-left-color: #00609c; }
 
 /* Revenue card: reveal the active status colour only when a filter is selected */
@@ -113,6 +114,7 @@ button.iftp-modal-cancel:focus:not(:focus-visible),
 .iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--pending   { border-left-color: #f9ab00; }
 .iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--failed    { border-left-color: #ea4335; }
 .iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--cancelled { border-left-color: #94a3b8; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--expired   { border-left-color: #9263a4; }
 
 /* Revenue card small icon: default blue */
 .iftp-stat-card--revenue .iftp-stat-card-label .iftp-stat-card-icon { color: #00609c; }
@@ -130,6 +132,16 @@ button.iftp-modal-cancel:focus:not(:focus-visible),
 .iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--cancelled .iftp-stat-card-ghost,
 .iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--cancelled .iftp-stat-card-label .iftp-stat-card-icon { color: #475569 !important; }
 
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--expired   .iftp-stat-card-ghost,
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--expired   .iftp-stat-card-label .iftp-stat-card-icon { color: #6b3585 !important; }
+
+/* Revenue card amount: match the active status colour */
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--completed .iftp-stat-card-amount { color: #137333; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--pending   .iftp-stat-card-amount { color: #B06000; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--failed    .iftp-stat-card-amount { color: #ab2522; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--cancelled .iftp-stat-card-amount { color: #475569; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--expired   .iftp-stat-card-amount { color: #6b3585; }
+
 /* Clickable stat cards */
 a.iftp-stat-card,
 a.iftp-stat-card:visited,
@@ -144,6 +156,17 @@ a.iftp-stat-card:active {
 	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	border-radius: 8px;
 }
+
+/* Prevent browser drag from dimming the card; preserve status border-left-colour on click */
+a.iftp-stat-card {
+	-webkit-user-drag: none;
+	user-drag: none;
+}
+a.iftp-stat-card--completed:active { border-left-color: #34a853; }
+a.iftp-stat-card--pending:active   { border-left-color: #f9ab00; }
+a.iftp-stat-card--failed:active    { border-left-color: #ea4335; }
+a.iftp-stat-card--cancelled:active { border-left-color: #718096; }
+a.iftp-stat-card--expired:active   { border-left-color: #6b3585; }
 
 a.iftp-stat-card:focus-visible {
 	border-radius: 8px;
@@ -161,8 +184,13 @@ a.iftp-stat-card:hover {
 }
 
 .iftp-stats-row.has-active .iftp-stat-card[data-status]:not(.iftp-stat-card--active):hover {
-	opacity: 0.72;
+	opacity: 0.72 !important;
 	filter: grayscale(0%);
+}
+
+.iftp-stats-row.has-active .iftp-stat-card[data-status]:not(.iftp-stat-card--active):active {
+	opacity: 1 !important;
+	filter: none !important;
 }
 
 .iftp-stat-card--revenue {
@@ -209,6 +237,7 @@ a.iftp-stat-card:hover {
 .iftp-stat-card--failed    .iftp-stat-card-ghost { color: #ea4335; }
 .iftp-stat-card--cancelled .iftp-stat-card-ghost { color: #94a3b8; }
 .iftp-stat-card--revenue   .iftp-stat-card-ghost { color: #00609c; }
+.iftp-stat-card--expired   .iftp-stat-card-ghost { color: #6b3585; }
 
 
 .iftp-stat-card-label {
@@ -222,16 +251,27 @@ a.iftp-stat-card:hover {
 	color: #718096;
 }
 
-/* Per-status label colors (eyebrow) */
+/* Per-status label colors (eyebrow) — applies to clickable status cards */
 .iftp-stat-card--completed .iftp-stat-card-label { color: #137333; }
 .iftp-stat-card--pending   .iftp-stat-card-label { color: #B06000; }
 .iftp-stat-card--failed    .iftp-stat-card-label { color: #ab2522; }
 .iftp-stat-card--cancelled .iftp-stat-card-label { color: #475569; }
+.iftp-stat-card--expired   .iftp-stat-card-label { color: #6b3585; }
+
+/* Revenue card label: always gray unless a filter is active (must come after per-status rules to win via cascade) */
+.iftp-stat-card--revenue .iftp-stat-card-label { color: #718096; }
+
+/* Revenue card label: reveal status colour only when a filter is selected */
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--completed .iftp-stat-card-label { color: #137333; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--pending   .iftp-stat-card-label { color: #B06000; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--failed    .iftp-stat-card-label { color: #ab2522; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--cancelled .iftp-stat-card-label { color: #475569; }
+.iftp-stats-row.has-active .iftp-stat-card--revenue.iftp-stat-card--expired   .iftp-stat-card-label { color: #6b3585; }
 
 /* Revenue hero number — slightly bigger than the count cards */
 .iftp-stat-card-amount {
 	font-size: 28px;
-	font-weight: 800;
+	font-weight: 750;
 	color: #00609c;
 	letter-spacing: -0.6px;
 	line-height: 1;
@@ -374,7 +414,7 @@ a.iftp-stat-card {
 .iftp-stat-card-val {
 	padding-top: 6px;
 	font-size: 26px;
-	font-weight: 800;
+	font-weight: 750;
 	letter-spacing: -0.4px;
 	line-height: 1;
 	margin-top: 3px;
@@ -388,6 +428,8 @@ a.iftp-stat-card {
 .iftp-stat-val--failed     { color: #ab2522; }
 .iftp-stat-label--cancelled { color: #475569; }
 .iftp-stat-val--cancelled   { color: #475569; }
+.iftp-stat-label--expired   { color: #6b3585; }
+.iftp-stat-val--expired     { color: #6b3585; }
 
 /* ── Info box (bottom of list) ── */
 .iftp-info-box {
@@ -546,26 +588,6 @@ a.iftp-stat-card {
 	display: flex;
 	align-items: center;
 	gap: 6px;
-}
-
-/* "Add Payment" button in the page header — matches period-tabs height */
-.iftp-add-payment-header-btn {
-	display: inline-flex !important;
-	align-items: center;
-	gap: 0;
-	height: auto !important;
-	padding: 4px 10px 4px 8px !important;
-	font-size: 12px !important;
-	line-height: 1.5 !important;
-	border-radius: 8px !important;
-	white-space: nowrap;
-}
-
-.iftp-add-payment-header-btn svg {
-	flex-shrink: 0;
-  width: 19px !important;
-  height: 19px !important;
-  stroke-width: 3.5 !important;
 }
 
 /* Vertical separator between icon and label */
@@ -878,60 +900,6 @@ a.iftp-stat-card {
 	vertical-align: middle;
 }
 
-/* Selection bar (shown when items are selected) */
-.iftp-sel-bar {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	margin-left: 8px;
-	vertical-align: middle;
-}
-
-.iftp-delete-sel-btn {
-	display: inline-flex !important;
-	align-items: center;
-	gap: 5px;
-	color: #d63638 !important;
-	border-color: #f5c0c0 !important;
-	background: #fcf0f1 !important;
-	box-shadow: none !important;
-}
-
-.iftp-delete-sel-btn:hover {
-	background: #d63638 !important;
-	color: #fff !important;
-	border-color: #a71d2a !important;
-}
-
-.iftp-delete-sel-btn svg {
-	flex-shrink: 0;
-}
-
-.iftp-clear-sel-btn {
-	font-size: 12px;
-	color: #718096;
-	text-decoration: underline;
-	cursor: pointer;
-	background: none;
-	border: none;
-	padding: 0;
-}
-
-.iftp-clear-sel-btn:hover {
-	color: #2d3748;
-}
-
-/* PBL link in status column */
-.iftp-cf7-pbl-link {
-	font-size: 13px;
-	text-decoration: none;
-	opacity: 0.7;
-}
-
-.iftp-cf7-pbl-link:hover {
-	opacity: 1;
-}
-
 /* Status badges */
 .iftp-cf7-status-badge {
 	display: inline-flex;
@@ -995,6 +963,16 @@ a.iftp-stat-card {
 .iftp-cf7-status-failed::before {
 	background: #ea4335;
 	box-shadow: 0 0 0 3px rgb(234 67 53 / 18%);
+}
+
+.iftp-cf7-status-expired {
+	background: #f2e8f7;
+	color: #6b3585;
+}
+
+.iftp-cf7-status-expired::before {
+	background: #9263a4;
+	box-shadow: 0 0 0 3px rgb(146 99 164 / 18%);
 }
 
 /* Payment link column */
@@ -1189,25 +1167,80 @@ a.iftp-stat-card {
 	padding: 14px;
 }
 
+/* Zero out the WP postbox .inside padding so .iftp-metabox-body controls all spacing */
+#ifthenpay_cf7_revenue .inside {
+	padding: 0;
+}
+
+/* ── Dashboard top row: metric + period dropdown ── */
+.iftp-dash-top-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.iftp-dash-metric {
+	min-width: 0;
+}
+
 /* ── Revenue block ── */
 .iftp-rev-amount {
-	font-size: 26px;
-	font-weight: 700;
-	color: #4a5568;
+	font-size: 28px;
+	font-weight: 750;
+	color: #00609c;
 	line-height: 1;
-	letter-spacing: -0.5px;
+	letter-spacing: -0.6px;
 	margin-bottom: 4px;
 }
 
 .iftp-rev-sub {
-	font-size: 12px;
+	font-size: 11px;
 	color: #718096;
 }
 
 .iftp-rev-divider {
 	border: none;
-	border-top: 1px solid #e2e8f0;
+	border-top: 1px solid #f4f6f8;
 	margin: 12px 0;
+}
+
+/* ── Dashboard period dropdown ── */
+.iftp-dash-period-dropdown {
+	position: relative;
+	flex-shrink: 0;
+}
+
+.iftp-dash-period-panel {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	background: #fff;
+	border: 1px solid #cbd5e0;
+	border-radius: 10px;
+	box-shadow: 0 4px 20px rgb(0 0 0 / 12%), 0 1px 4px rgb(0 0 0 / 6%);
+	padding: 5px;
+	z-index: 200;
+	min-width: 148px;
+}
+
+.iftp-dash-period-panel[hidden] {
+	display: none;
+}
+
+.iftp-dash-period-panel .iftp-period-opt {
+	appearance: none;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: none;
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.iftp-dash-period-panel .iftp-period-opt:hover {
+	background: #f0f6fc;
+	color: #00609c;
 }
 
 /* ── Stats list ── */
@@ -1220,9 +1253,9 @@ a.iftp-stat-card {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 7px 0;
-	border-bottom: 1px solid #e2e8f0;
-	font-size: 13px;
+	padding: 5px 0;
+	border-bottom: 1px solid #f4f6f8;
+	font-size: 12px;
 }
 
 .iftp-stat-row:last-child {
@@ -1234,18 +1267,19 @@ a.iftp-stat-card {
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	color: #718096;
+	color: #4a5568;
+	font-weight: 500;
 }
 
 .iftp-stat-dot {
-	width: 8px;
-	height: 8px;
+	width: 7px;
+	height: 7px;
 	border-radius: 50%;
 	flex-shrink: 0;
 }
 
 .iftp-stat-val {
-	font-weight: 700;
+	font-weight: 600;
 	color: #4a5568;
 }
 
@@ -1265,11 +1299,7 @@ a.iftp-stat-card {
 	margin-bottom: 0;
 }
 
-/* ── Dashboard widget period tabs (reuses .iftp-period-tab, button reset) ── */
-.iftp-dash-period-tabs {
-	margin-bottom: 14px;
-}
-
+/* ── Dashboard widget: legacy period-tab resets (kept for focus-visible) ── */
 button.iftp-period-tab {
 	appearance: none;
 	background: transparent;
@@ -1290,34 +1320,39 @@ button.iftp-period-tab:focus-visible {
 .iftp-stat-dot--paid      { background: #34a853; }
 .iftp-stat-dot--failed    { background: #ea4335; }
 .iftp-stat-dot--cancelled { background: #94a3b8; }
-
-.iftp-stat-lbl--pending   { color: #B06000; }
-.iftp-stat-lbl--paid      { color: #137333; }
-.iftp-stat-lbl--failed    { color: #ab2522; }
-.iftp-stat-lbl--cancelled { color: #475569; }
+.iftp-stat-dot--expired   { background: #9263a4; }
 
 .iftp-stat-val--pending   { color: #B06000; }
 .iftp-stat-val--paid      { color: #137333; }
 .iftp-stat-val--failed    { color: #ab2522; }
 .iftp-stat-val--cancelled { color: #475569; }
+.iftp-stat-val--expired   { color: #6b3585; }
 
 .iftp-dash-view-all,
 .iftp-dash-view-all:visited {
-	display: block !important;
-	margin-top: 10px !important;
-	text-align: center !important;
-	box-sizing: border-box !important;
-	width: 100% !important;
-	background: #00609c !important;
-	border-color: #00609c !important;
-	color: #fff !important;
-	border-radius: 8px !important;
+	display: block;
+	margin-top: 10px;
+	padding: 6px 12px;
+	text-align: center;
+	box-sizing: border-box;
+	width: 100%;
+	background: #00609c;
+	border: 1px solid #00609c;
+	color: #fff;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	line-height: 1.5;
+	transition: background .15s, border-color .15s;
+	cursor: pointer;
 }
 
 .iftp-dash-view-all:hover {
-	background: #004f80 !important;
-	border-color: #004f80 !important;
-	color: #fff !important;
+	background: #004f80;
+	border-color: #004f80;
+	color: #fff;
+	text-decoration: none;
 }
 
 /* ── Tablenav ── */
@@ -1582,7 +1617,6 @@ button.iftp-period-tab:focus-visible {
 	box-sizing: border-box;
 	transition: border-color .15s, box-shadow .15s;
 	flex-shrink: 0;
-	appearance: none;
 	appearance: textfield;
 }
 
@@ -1724,13 +1758,6 @@ button.iftp-period-tab:focus-visible {
 	.iftp-header-right::-webkit-scrollbar {
 		height: 0;
 		display: none;
-	}
-
-	/* Add Payment button: full width */
-	.iftp-add-payment-header-btn {
-		width: 100%;
-		flex-shrink: 0;
-		justify-content: center;
 	}
 
 	/* Period tabs: own scrollable row, won't overflow viewport */
@@ -2022,6 +2049,7 @@ button.iftp-period-tab:focus-visible {
 .iftp-hero-accent--pending   { background: linear-gradient(90deg, #f9ab00, #e09500); }
 .iftp-hero-accent--failed    { background: linear-gradient(90deg, #ea4335, #c5221f); }
 .iftp-hero-accent--cancelled { background: linear-gradient(90deg, #9aa5b4, #788493); }
+.iftp-hero-accent--expired   { background: linear-gradient(90deg, #9263a4, #7d5190); }
 
 .iftp-hero-ghost {
 	position: absolute;
@@ -2067,7 +2095,7 @@ button.iftp-period-tab:focus-visible {
 
 .iftp-hero-amount {
 	font-size: 30px;
-	font-weight: 800;
+	font-weight: 750;
 	color: #222b36;
 	letter-spacing: -0.5px;
 	line-height: 1;
@@ -2161,7 +2189,7 @@ button.iftp-period-tab:focus-visible {
 	background: #fff;
 	border: 1px solid #cbd5e0;
 	border-radius: 8px;
-	padding: 16px 22px;
+	padding: 12px 16px;
 	box-shadow: 0 1px 1px rgb(0 0 0 / 4%);
 	overflow-x: auto;
 	gap: 0;
@@ -2171,13 +2199,13 @@ button.iftp-period-tab:focus-visible {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 7px;
+	gap: 5px;
 	flex-shrink: 0;
 }
 
 .iftp-step-dot {
-	width: 34px;
-	height: 34px;
+	width: 28px;
+	height: 28px;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -2186,8 +2214,8 @@ button.iftp-period-tab:focus-visible {
 }
 
 .iftp-step-dot svg {
-	width: 16px;
-	height: 16px;
+	width: 13px;
+	height: 13px;
 	fill: none;
 	stroke: currentcolor;
 	stroke-width: 2;
@@ -2219,12 +2247,18 @@ button.iftp-period-tab:focus-visible {
 	color: #5f6368;
 }
 
+.iftp-step-dot--expired {
+	background: #f2e8f7;
+	border-color: #9263a4;
+	color: #6b3585;
+}
+
 .iftp-step-line {
 	flex: 1;
 	height: 2px;
-	min-width: 24px;
-	margin: 0 6px;
-	margin-bottom: 30px;
+	min-width: 20px;
+	margin: 0 5px;
+	margin-bottom: 24px;
 	border-radius: 2px;
 }
 
@@ -2232,6 +2266,7 @@ button.iftp-period-tab:focus-visible {
 .iftp-step-line--pending   { background: #e2e8f0; }
 .iftp-step-line--failed    { background: #ea4335; }
 .iftp-step-line--cancelled { background: #9aa5b4; }
+.iftp-step-line--expired   { background: #9263a4; }
 
 .iftp-step-lbl {
 	font-size: 11px;
@@ -2363,10 +2398,8 @@ button.iftp-period-tab:focus-visible {
 }
 
 .iftp-kcell {
-	background: #fafbfc;
-	border: 1px solid #f0f2f4;
-	border-radius: 8px;
-	padding: 8px 11px;
+	border-bottom: 1px solid #f0f2f4;
+	padding: 5px 8px;
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
@@ -2401,7 +2434,7 @@ button.iftp-period-tab:focus-visible {
 .iftp-kval {
 	font-size: 14px;
 	font-weight: 600;
-	color: #3a4656;
+	color: #617083;
 	word-break: break-word;
 	line-height: 1.4;
 }
@@ -2433,7 +2466,7 @@ button.iftp-period-tab:focus-visible {
 	align-items: center;
 	justify-content: center;
 	font-size: 17px;
-	font-weight: 800;
+	font-weight: 750;
 	color: #fff;
 	flex-shrink: 0;
 	box-shadow: 0 3px 8px rgb(0 96 156 / 25%);
@@ -2458,25 +2491,6 @@ button.iftp-period-tab:focus-visible {
 
 .iftp-cust-email a:hover {
 	text-decoration: underline;
-}
-
-.iftp-cust-ip-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	margin-top: 14px;
-	padding-top: 14px;
-	border-top: 1px solid #f0f2f4;
-}
-
-.iftp-cust-ip-lbl {
-	font-size: 10.5px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
-	text-transform: uppercase;
-	color: #94a3b8;
-	flex-shrink: 0;
 }
 
 /* Timestamps card */
@@ -2543,8 +2557,8 @@ button.iftp-period-tab:focus-visible {
 		grid-template-columns: 1fr;
 	}
 
+	/* Left col (hero + journey + cards) stays first — no order override */
 	.iftp-detail-col--aside {
-		order: -1;
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 	}
@@ -2555,7 +2569,7 @@ button.iftp-period-tab:focus-visible {
 
 	.iftp-hero-meta {
 		flex-direction: row;
-		gap: 20px;
+		gap: 16px;
 	}
 }
 
@@ -2565,12 +2579,12 @@ button.iftp-period-tab:focus-visible {
 	}
 
 	.iftp-hero-inner {
-		gap: 16px;
-		padding: 20px 18px;
+		gap: 12px;
+		padding: 14px 16px;
 	}
 
 	.iftp-hero-amount {
-		font-size: 34px;
+		font-size: 24px;
 	}
 
 	.iftp-kgrid {
@@ -2582,7 +2596,7 @@ button.iftp-period-tab:focus-visible {
 	}
 
 	.iftp-journey {
-		padding: 14px 12px;
+		padding: 10px 12px;
 	}
 
 	.iftp-step-time {
@@ -4327,112 +4341,7 @@ th.sorted .iftp-sort-arrow:not(.iftp-sort-active) {
 }
 
 /* ══════════════════════════════════════════════════
-   ② Mobile overflow button
-══════════════════════════════════════════════════ */
-.iftp-mobile-overflow-btn {
-	display: none;
-	align-items: center;
-	justify-content: center;
-	width: 32px;
-	height: 32px;
-	background: #fff;
-	border: 1px solid #cbd5e0;
-	border-radius: 8px;
-	cursor: pointer;
-	color: #718096;
-	flex-shrink: 0;
-	padding: 0;
-	transition: border-color .15s;
-}
-
-.iftp-mobile-overflow-btn:hover {
-	border-color: #a0aec0;
-}
-
-@media (width <= 600px) {
-	.iftp-mobile-overflow-btn { display: inline-flex; }
-}
-
-/* ══════════════════════════════════════════════════
-   Mobile overflow panel (bottom sheet on small screens)
-══════════════════════════════════════════════════ */
-.iftp-mobile-overflow-panel {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	background: #fff;
-	border-top: 1px solid #e2e8f0;
-	border-radius: 14px 14px 0 0;
-	padding: 12px 0 env(safe-area-inset-bottom, 0);
-	z-index: 100010;
-	box-shadow: 0 -4px 24px rgb(0 0 0 / 15%);
-	transform: translateY(100%);
-	transition: transform .28s cubic-bezier(.34,1.1,.64,1);
-}
-
-.iftp-mobile-overflow-panel:not([hidden]) {
-	transform: translateY(0);
-}
-
-.iftp-mobile-overflow-panel[hidden] {
-	display: block !important; /* keep in DOM for transition */
-	transform: translateY(100%);
-	pointer-events: none;
-}
-
-.iftp-overflow-backdrop {
-	position: fixed;
-	inset: 0;
-	background: rgb(0 0 0 / 30%);
-	z-index: 100009;
-	opacity: 0;
-	transition: opacity .2s ease;
-}
-
-.iftp-overflow-backdrop:not([hidden]) {
-	opacity: 1;
-}
-
-.iftp-overflow-backdrop[hidden] {
-	display: block !important;
-	opacity: 0;
-	pointer-events: none;
-}
-
-.iftp-mob-opt {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	width: 100%;
-	padding: 13px 20px;
-	background: none;
-	border: none;
-	cursor: pointer;
-	font-size: 14px;
-	font-family: inherit;
-	color: #2d3748;
-	text-align: left;
-	transition: background .1s;
-}
-
-.iftp-mob-opt:hover {
-	background: #f0f6fc;
-}
-
-.iftp-mob-opt svg {
-	color: #718096;
-	flex-shrink: 0;
-}
-
-.iftp-mob-divider {
-	height: 1px;
-	background: #e2e8f0;
-	margin: 4px 0;
-}
-
-/* ══════════════════════════════════════════════════
-   ③ Filter tab strip (replaces subsubsub)
+   Filter tab strip (replaces subsubsub)
 ══════════════════════════════════════════════════ */
 .iftp-filter-tabs-bar {
 	display: flex;
@@ -4500,6 +4409,9 @@ th.sorted .iftp-sort-arrow:not(.iftp-sort-active) {
 .iftp-tab--cancelled.active { color: #475569; border-bottom: 2px solid #94a3b8 !important; border-top: 0 !important; border-left: 0 !important;  border-right: 0 !important;}
 .iftp-tab--cancelled.active .iftp-tab-count { background: #ecedef; color: #475569; border-top: 0 !important; border-left: 0 !important;  border-right: 0 !important;}
 
+.iftp-tab--expired.active { color: #6b3585; border-bottom: 2px solid #9263a4 !important; border-top: 0 !important; border-left: 0 !important;  border-right: 0 !important;}
+.iftp-tab--expired.active .iftp-tab-count { background: #f2e8f7; color: #6b3585; border-top: 0 !important; border-left: 0 !important;  border-right: 0 !important;}
+
 /* Bulk actions inside the filter tabs bar (far right) */
 .iftp-tabs-bulk-actions {
 	display: flex;
@@ -4544,8 +4456,6 @@ th.sorted .iftp-sort-arrow:not(.iftp-sort-active) {
 	background: #fff !important;
 }
 
-/* Icon-chip is no longer used in header; keep rule harmless */
-.iftp-icon-chip { display: none !important; }
 
 /* ══════════════════════════════════════════════════
    Responsive — tablenav filter tweaks
