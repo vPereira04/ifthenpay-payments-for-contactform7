@@ -34,8 +34,6 @@ final class GatewayEndpoint
 	public const SLUG      = 'iftp_callback';
 	public const REF_VAR   = 'iftp_cf7_ref';
 
-
-
 	public static function register(): void
 	{
 		add_action('init', array(self::class, 'add_rewrite_rule'));

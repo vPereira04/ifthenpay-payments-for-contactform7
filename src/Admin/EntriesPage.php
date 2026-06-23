@@ -41,8 +41,6 @@ final class EntriesPage
 		$this->handle_bulk_actions($repo);
 	}
 
-
-
 	public function render_page(): void
 	{
 		if (! current_user_can('manage_options')) {
@@ -83,7 +81,7 @@ final class EntriesPage
 		$form_id      = isset($_GET['form_id'])  ? absint(wp_unslash((string) $_GET['form_id']))        : 0;     // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		$sort_cols = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
-		$status    = in_array($status_raw,  array('', 'pending', 'completed', 'failed', 'cancelled'), true) ? $status_raw  : '';
+		$status    = in_array($status_raw,  array('', 'pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $status_raw  : '';
 		$period    = in_array($period_raw,  array('all', 'year', 'month', 'week', 'day'), true)              ? $period_raw  : 'all';
 		$orderby   = in_array($orderby_raw, $sort_cols, true)                                                   ? $orderby_raw : 'id';
 		$order     = in_array($order_raw,   array('asc', 'desc'), true)                                       ? $order_raw   : 'desc';
@@ -98,7 +96,7 @@ final class EntriesPage
 			$prefs = array_merge($prefs, $to_save);
 		}
 
-		$db_status = in_array($status, array('pending', 'completed', 'failed', 'cancelled'), true) ? $status : '';
+		$db_status = in_array($status, array('pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $status : '';
 
 
 		$cursor = ($current_page > 1 && isset($_GET['cursor'])) ? absint($_GET['cursor']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -132,7 +130,7 @@ final class EntriesPage
 		}
 
 		$first_id = ! empty($entries) ? $entries[0]->id : 0;
-		$last_id  = ! empty($entries) ? $entries[ count($entries) - 1 ]->id : 0;
+		$last_id  = ! empty($entries) ? $entries[count($entries) - 1]->id : 0;
 
 		$first_entry = empty($entries) ? 0 : ($current_page - 1) * $per_page + 1;
 		$last_entry  = empty($entries) ? 0 : $first_entry + count($entries) - 1;
@@ -175,8 +173,6 @@ final class EntriesPage
 		$this->render_list($repo, $entries, $current_page, $has_prev, $has_next, $prev_url, $next_url, $first_page_url, $last_page_url, $status, $search_field, $search_op, $search_query, $period, $orderby, $order, $form_id, $forms, $prefs, $per_page, $total_count, $first_entry, $last_entry);
 	}
 
-
-
 	private function handle_bulk_actions(EntryRepository $repo): void
 	{
 		$action = '';
@@ -209,6 +205,7 @@ final class EntriesPage
 			'mark_cancelled' => $repo->bulk_update_status($ids, 'cancelled'),
 			'mark_failed'    => $repo->bulk_update_status($ids, 'failed'),
 			'mark_pending'   => $repo->bulk_update_status($ids, 'pending'),
+			'mark_expired'   => $repo->bulk_update_status($ids, 'expired'),
 			default          => null,
 		};
 
@@ -221,8 +218,6 @@ final class EntriesPage
 		wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
 		exit;
 	}
-
-
 
 	public function ajax_add_payment(): void
 	{
@@ -257,7 +252,7 @@ final class EntriesPage
 			wp_send_json_error(array('message' => __('Amount must be greater than zero.', 'ifthenpay-payments-for-contactform7')));
 		}
 
-		if (! in_array($status, array('pending', 'completed', 'failed', 'cancelled'), true)) {
+		if (! in_array($status, array('pending', 'completed', 'failed', 'cancelled', 'expired'), true)) {
 			$status = 'completed';
 		}
 
@@ -283,8 +278,6 @@ final class EntriesPage
 
 		wp_send_json_success(array('id' => $id));
 	}
-
-
 
 	public function ajax_save_preferences(): void
 	{
@@ -350,8 +343,6 @@ final class EntriesPage
 		wp_send_json_success();
 	}
 
-
-
 	public function ajax_dismiss_add_payment_notice(): void
 	{
 		check_ajax_referer('iftp_cf7_dismiss_ap_notice', 'nonce');
@@ -379,11 +370,6 @@ final class EntriesPage
 		update_user_meta($user_id, 'iftp_cf7_info_box_dismissed', '1');
 		wp_send_json_success();
 	}
-
-
-
-
-
 
 	/**
 	 * @param EntryDto[] $entries
@@ -416,14 +402,15 @@ final class EntriesPage
 
 		$stats   = $repo->get_period_stats($period);
 		$counts  = array(
-			''          => $stats['completed_any'] + $stats['pending_any'] + $stats['failed_any'] + $stats['cancelled_any'],
+			''          => $stats['completed_any'] + $stats['pending_any'] + $stats['failed_any'] + $stats['cancelled_any'] + $stats['expired_any'],
 			'pending'   => $stats['pending_any'],
 			'completed' => $stats['completed_any'],
 			'failed'    => $stats['failed_any'],
 			'cancelled' => $stats['cancelled_any'],
+			'expired'   => $stats['expired_any'],
 		);
 
-		$validated_tab   = in_array($current_tab, array('pending', 'completed', 'failed', 'cancelled'), true) ? $current_tab : '';
+		$validated_tab   = in_array($current_tab, array('pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $current_tab : '';
 		$revenue_status  = $validated_tab !== '' ? $validated_tab : 'completed';
 		$sidebar_revenue = (float) ($stats[$revenue_status . '_amount'] ?? 0.0);
 		$sidebar_count   = (int)   ($stats[$revenue_status . '_count']  ?? 0);
@@ -526,54 +513,60 @@ final class EntriesPage
 		);
 ?>
 		<script>
-		(function () {
-			'use strict';
-			try {
-				var url = new URL(window.location.href);
-				var changed = false;
-				if (!url.searchParams.has('per_page')) {
-					var pp = localStorage.getItem('iftp_cf7_per_page');
-					if (pp && pp !== '20') {
-						url.searchParams.set('per_page', pp);
-						url.searchParams.set('paged', '1');
-						url.searchParams.delete('cursor');
-						url.searchParams.delete('dir');
-						changed = true;
+			(function() {
+				'use strict';
+				try {
+					var url = new URL(window.location.href);
+					var changed = false;
+					if (!url.searchParams.has('per_page')) {
+						var pp = localStorage.getItem('iftp_cf7_per_page');
+						if (pp && pp !== '20') {
+							url.searchParams.set('per_page', pp);
+							url.searchParams.set('paged', '1');
+							url.searchParams.delete('cursor');
+							url.searchParams.delete('dir');
+							changed = true;
+						}
+					} else {
+						localStorage.setItem('iftp_cf7_per_page', url.searchParams.get('per_page'));
 					}
-				} else {
-					localStorage.setItem('iftp_cf7_per_page', url.searchParams.get('per_page'));
-				}
-				if (!url.searchParams.has('period')) {
-					var period = localStorage.getItem('iftp_cf7_period');
-					if (period && period !== 'all') {
-						url.searchParams.set('period', period);
-						changed = true;
+					if (!url.searchParams.has('period')) {
+						var period = localStorage.getItem('iftp_cf7_period');
+						if (period && period !== 'all') {
+							url.searchParams.set('period', period);
+							changed = true;
+						}
+					} else {
+						localStorage.setItem('iftp_cf7_period', url.searchParams.get('period'));
 					}
-				} else {
-					localStorage.setItem('iftp_cf7_period', url.searchParams.get('period'));
-				}
-				if (!url.searchParams.has('status')) {
-					var status = sessionStorage.getItem('iftp_cf7_status');
-					if (status && status !== '') {
-						url.searchParams.set('status', status);
-						changed = true;
+					if (!url.searchParams.has('status')) {
+						var status = sessionStorage.getItem('iftp_cf7_status');
+						if (status && status !== '') {
+							url.searchParams.set('status', status);
+							changed = true;
+						}
+					} else {
+						sessionStorage.setItem('iftp_cf7_status', url.searchParams.get('status'));
 					}
-				} else {
-					sessionStorage.setItem('iftp_cf7_status', url.searchParams.get('status'));
-				}
-				if (!url.searchParams.has('form_id')) {
-					var formId = sessionStorage.getItem('iftp_cf7_form_id');
-					if (formId && formId !== '0') {
-						url.searchParams.set('form_id', formId);
-						changed = true;
+					if (!url.searchParams.has('form_id')) {
+						var formId = sessionStorage.getItem('iftp_cf7_form_id');
+						if (formId && formId !== '0') {
+							url.searchParams.set('form_id', formId);
+							changed = true;
+						}
+					} else {
+						var fid = url.searchParams.get('form_id');
+						if (fid && fid !== '0') {
+							sessionStorage.setItem('iftp_cf7_form_id', fid);
+						} else {
+							sessionStorage.removeItem('iftp_cf7_form_id');
+						}
 					}
-				} else {
-					var fid = url.searchParams.get('form_id');
-					if (fid && fid !== '0') { sessionStorage.setItem('iftp_cf7_form_id', fid); } else { sessionStorage.removeItem('iftp_cf7_form_id'); }
-				}
-				if (changed) { window.location.replace(url.toString()); }
-			} catch (e) {}
-		}());
+					if (changed) {
+						window.location.replace(url.toString());
+					}
+				} catch (e) {}
+			}());
 		</script>
 		<div class="wrap iftp-cf7-entries-wrap">
 			<div class="iftp-page-header">
@@ -587,7 +580,10 @@ final class EntriesPage
 				<div class="iftp-header-right">
 					<!-- Add Payment button -->
 					<button type="button" id="iftp-add-payment-btn" class="iftp-action-btn iftp-action-btn--add">
-						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<line x1="12" y1="5" x2="12" y2="19" />
+							<line x1="5" y1="12" x2="19" y2="12" />
+						</svg>
 						<span class="iftp-btn-sep" aria-hidden="true"></span>
 						<span class="iftp-action-btn-label"><?php esc_html_e('Add Payment', 'ifthenpay-payments-for-contactform7'); ?></span>
 					</button>
@@ -598,10 +594,14 @@ final class EntriesPage
 							aria-haspopup="true" aria-expanded="false" aria-controls="iftp-period-panel"
 							aria-label="<?php esc_attr_e('Time period', 'ifthenpay-payments-for-contactform7'); ?>">
 							<span class="iftp-period-cal-icon" aria-hidden="true">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 448 512" fill="currentColor"><path d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-160c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z"/></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 448 512" fill="currentColor">
+									<path d="M0 464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V192H0v272zm320-160c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32zm-128-96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zm0 96c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16v-32zM400 64h-48V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H160V16c0-8.8-7.2-16-16-16h-32c-8.8 0-16 7.2-16 16v48H48C21.5 64 0 85.5 0 112v48h448v-48c0-26.5-21.5-48-48-48z" />
+								</svg>
 							</span>
 							<span class="iftp-period-dropdown-label" id="iftp-period-label"><?php echo esc_html($period_options[$period]); ?></span>
-							<svg class="iftp-period-dropdown-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+							<svg class="iftp-period-dropdown-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<polyline points="6 9 12 15 18 9" />
+							</svg>
 						</button>
 						<div class="iftp-period-dropdown-panel" id="iftp-period-panel" hidden role="menu">
 							<?php foreach ($period_options as $pkey => $plabel) :
@@ -621,8 +621,8 @@ final class EntriesPage
 								);
 							?>
 								<a href="<?php echo esc_url($purl); ?>"
-								   class="iftp-period-opt<?php echo $period === $pkey ? ' active' : ''; ?>"
-								   role="menuitem">
+									class="iftp-period-opt<?php echo $period === $pkey ? ' active' : ''; ?>"
+									role="menuitem">
 									<span class="iftp-period-opt-dot" aria-hidden="true"></span>
 									<?php echo esc_html($plabel); ?>
 								</a>
@@ -642,12 +642,13 @@ final class EntriesPage
 				'pending'   	 => __('Pending Total', 'ifthenpay-payments-for-contactform7'),
 				'failed'    	 => __('Failed Total', 'ifthenpay-payments-for-contactform7'),
 				'cancelled'	  	 => __('Cancelled Total', 'ifthenpay-payments-for-contactform7'),
+				'expired'   	 => __('Expired Total', 'ifthenpay-payments-for-contactform7'),
 			);
 			$revenue_css = $validated_tab !== '' ? $validated_tab : 'bluecompleted';
 			$rev_label   = $rev_labels[$revenue_status] ?? $rev_labels['bluecompleted'];
 			$rev_bar_mode     = $prefs['rev_bar_mode'] ?? 'split';
-			$bar_solid_colors = array( 'completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#718096' );
-			$bar_solid_color  = $bar_solid_colors[ $current_tab ] ?? '#00609c';
+			$bar_solid_colors = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#718096', 'expired' => '#9263a4');
+			$bar_solid_color  = $bar_solid_colors[$current_tab] ?? '#00609c';
 			$period_labels = array(
 				'all'   => __('All time', 'ifthenpay-payments-for-contactform7'),
 				'year'  => __('This year', 'ifthenpay-payments-for-contactform7'),
@@ -657,29 +658,32 @@ final class EntriesPage
 			);
 
 
-			$_stat_base = array_filter( array(
+			$_stat_base = array_filter(array(
 				'page'    => 'ifthenpay-cf7-entries',
 				'period'  => $period !== 'all' ? $period : null,
 				'form_id' => $form_id > 0 ? $form_id : null,
-			) );
-			$_stat_url  = static function ( string $s ) use ( $current_tab, $_stat_base ): string {
-				return esc_url( add_query_arg( array_merge( $_stat_base, array( 'status' => $current_tab === $s ? '' : $s ) ), admin_url( 'admin.php' ) ) );
+			));
+			$_stat_url  = static function (string $s) use ($current_tab, $_stat_base): string {
+				return esc_url(add_query_arg(array_merge($_stat_base, array('status' => $current_tab === $s ? '' : $s)), admin_url('admin.php')));
 			};
 
-			$_stat_cls = static function ( string $s ) use ( $current_tab ): string {
-				if ( $current_tab === '' ) {
+			$_stat_cls = static function (string $s) use ($current_tab): string {
+				if ($current_tab === '') {
 					return '';
 				}
 				return $current_tab === $s ? ' iftp-stat-card--active' : ' iftp-stat-card--dim';
 			};
 			?>
 			<?php
-			$_period_label = $period_labels[ $period ] ?? $period_labels['all'];
+			$_period_label = $period_labels[$period] ?? $period_labels['all'];
 			?>
 			<?php /* Stats row */ ?>
-			<div class="iftp-stats-row<?php echo $current_tab !== '' ? ' has-active' : ''; ?>" data-active-status="<?php echo esc_attr( $current_tab ); ?>">
-				<div class="iftp-stat-card iftp-stat-card--<?php echo esc_attr( $revenue_css ); ?> iftp-stat-card--revenue" >
-					<div class="iftp-stat-card-label"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="2,15 7,9 11,12 17,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="13,5 17,5 17,9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><?php echo esc_html($rev_label); ?></div>
+			<div class="iftp-stats-row<?php echo $current_tab !== '' ? ' has-active' : ''; ?>" data-active-status="<?php echo esc_attr($current_tab); ?>">
+				<div class="iftp-stat-card iftp-stat-card--<?php echo esc_attr($revenue_css); ?> iftp-stat-card--revenue">
+					<div class="iftp-stat-card-label"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<polyline points="2,15 7,9 11,12 17,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+								<polyline points="13,5 17,5 17,9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg></span><?php echo esc_html($rev_label); ?></div>
 					<div class="iftp-stat-card-amount"><?php echo esc_html(number_format($sidebar_revenue, 2, ',', '.') . ' €'); ?></div>
 					<div class="iftp-stat-card-sub">
 						<?php
@@ -699,51 +703,92 @@ final class EntriesPage
 					</div>
 					<div class="iftp-rev-bar<?php echo $rev_bar_mode === 'solid' ? ' iftp-rev-bar--solid' : ''; ?>"
 						role="button" tabindex="0"
-						aria-label="<?php esc_attr_e( 'Toggle bar view', 'ifthenpay-payments-for-contactform7' ); ?>"
-						data-rev-bar-mode="<?php echo esc_attr( $rev_bar_mode ); ?>">
-						<div class="iftp-rev-seg iftp-rev-seg--solid" style="flex:1;background:<?php echo esc_attr( $bar_solid_color ); ?>"></div>
+						aria-label="<?php esc_attr_e('Toggle bar view', 'ifthenpay-payments-for-contactform7'); ?>"
+						data-rev-bar-mode="<?php echo esc_attr($rev_bar_mode); ?>">
+						<div class="iftp-rev-seg iftp-rev-seg--solid" style="flex:1;background:<?php echo esc_attr($bar_solid_color); ?>"></div>
 						<?php if (($counts['completed'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['completed']; ?>;background:#34a853"></div><?php endif; ?>
 						<?php if (($counts['pending'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#f9ab00"></div><?php endif; ?>
 						<?php if (($counts['failed'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['failed']; ?>;background:#ea4335"></div><?php endif; ?>
 						<?php if (($counts['cancelled'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['cancelled']; ?>;background:#718096"></div><?php endif; ?>
+						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#9263a4"></div><?php endif; ?>
 					</div>
-					<span class="iftp-stat-card-ghost iftp-stat-card-ghost--revenue" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="2,15 7,9 11,12 17,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="13,5 17,5 17,9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+					<span class="iftp-stat-card-ghost iftp-stat-card-ghost--revenue" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<polyline points="2,15 7,9 11,12 17,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							<polyline points="13,5 17,5 17,9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg></span>
 				</div>
-				<a href="<?php echo $_stat_url( 'completed' ); ?>" class="iftp-stat-card iftp-stat-card--completed<?php echo $current_tab === 'completed' ? ' iftp-stat-card--active' : ''; ?>" data-status="completed">
-					<div class="iftp-stat-card-header iftp-stat-label--paid"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 10.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Paid', 'ifthenpay-payments-for-contactform7'); ?></span></div>
+				<a href="<?php echo $_stat_url('completed'); ?>" class="iftp-stat-card iftp-stat-card--completed<?php echo $current_tab === 'completed' ? ' iftp-stat-card--active' : ''; ?>" data-status="completed" draggable="false">
+					<div class="iftp-stat-card-header iftp-stat-label--paid"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+								<path d="M6.5 10.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Paid', 'ifthenpay-payments-for-contactform7'); ?></span></div>
 					<div class="iftp-stat-card-val iftp-stat-val--paid"><?php echo esc_html((string) ($counts['completed'] ?? 0)); ?></div>
-					<div class="iftp-stat-card-sub"><?php echo esc_html( $_period_label ); ?></div>
+					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
 					<div class="iftp-rev-bar">
 						<?php if (($counts['completed'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['completed']; ?>;background:#34a853"></div><?php endif; ?>
 					</div>
-					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 10.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+							<path d="M6.5 10.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg></span>
 				</a>
-				<a href="<?php echo $_stat_url( 'pending' ); ?>" class="iftp-stat-card iftp-stat-card--pending<?php echo $current_tab === 'pending' ? ' iftp-stat-card--active' : ''; ?>" data-status="pending">
-					<div class="iftp-stat-card-header iftp-stat-label--pending"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4l2.5 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Pending', 'ifthenpay-payments-for-contactform7'); ?></span></div>
+				<a href="<?php echo $_stat_url('pending'); ?>" class="iftp-stat-card iftp-stat-card--pending<?php echo $current_tab === 'pending' ? ' iftp-stat-card--active' : ''; ?>" data-status="pending" draggable="false">
+					<div class="iftp-stat-card-header iftp-stat-label--pending"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+								<path d="M10 6v4l2.5 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Pending', 'ifthenpay-payments-for-contactform7'); ?></span></div>
 					<div class="iftp-stat-card-val iftp-stat-val--pending"><?php echo esc_html((string) ($counts['pending'] ?? 0)); ?></div>
-					<div class="iftp-stat-card-sub"><?php echo esc_html( $_period_label ); ?></div>
+					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
 					<div class="iftp-rev-bar">
 						<?php if (($counts['pending'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['pending']; ?>;background:#f9ab00"></div><?php endif; ?>
 					</div>
-					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4l2.5 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+							<path d="M10 6v4l2.5 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg></span>
 				</a>
-				<a href="<?php echo $_stat_url( 'failed' ); ?>" class="iftp-stat-card iftp-stat-card--failed<?php echo $current_tab === 'failed' ? ' iftp-stat-card--active' : ''; ?>" data-status="failed">
-					<div class="iftp-stat-card-header iftp-stat-label--failed"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Failed', 'ifthenpay-payments-for-contactform7'); ?></span></div>
+				<a href="<?php echo $_stat_url('failed'); ?>" class="iftp-stat-card iftp-stat-card--failed<?php echo $current_tab === 'failed' ? ' iftp-stat-card--active' : ''; ?>" data-status="failed" draggable="false">
+					<div class="iftp-stat-card-header iftp-stat-label--failed"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+								<path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							</svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Failed', 'ifthenpay-payments-for-contactform7'); ?></span></div>
 					<div class="iftp-stat-card-val iftp-stat-val--failed"><?php echo esc_html((string) ($counts['failed'] ?? 0)); ?></div>
-					<div class="iftp-stat-card-sub"><?php echo esc_html( $_period_label ); ?></div>
+					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
 					<div class="iftp-rev-bar">
 						<?php if (($counts['failed'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['failed']; ?>;background:#ea4335"></div><?php endif; ?>
 					</div>
-					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+							<path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						</svg></span>
 				</a>
-				<a href="<?php echo $_stat_url( 'cancelled' ); ?>" class="iftp-stat-card iftp-stat-card--cancelled<?php echo $current_tab === 'cancelled' ? ' iftp-stat-card--active' : ''; ?>" data-status="cancelled">
-					<div class="iftp-stat-card-header iftp-stat-label--cancelled"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></span></div>
+				<a href="<?php echo $_stat_url('cancelled'); ?>" class="iftp-stat-card iftp-stat-card--cancelled<?php echo $current_tab === 'cancelled' ? ' iftp-stat-card--active' : ''; ?>" data-status="cancelled" draggable="false">
+					<div class="iftp-stat-card-header iftp-stat-label--cancelled"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+								<path d="M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							</svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Cancelled', 'ifthenpay-payments-for-contactform7'); ?></span></div>
 					<div class="iftp-stat-card-val iftp-stat-val--cancelled"><?php echo esc_html((string) ($counts['cancelled'] ?? 0)); ?></div>
-					<div class="iftp-stat-card-sub"><?php echo esc_html( $_period_label ); ?></div>
+					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
 					<div class="iftp-rev-bar">
 						<?php if (($counts['cancelled'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['cancelled']; ?>;background:#718096"></div><?php endif; ?>
 					</div>
-					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5" />
+							<path d="M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+						</svg></span>
+				</a>
+				<a href="<?php echo $_stat_url('expired'); ?>" class="iftp-stat-card iftp-stat-card--expired<?php echo $current_tab === 'expired' ? ' iftp-stat-card--active' : ''; ?>" data-status="expired" draggable="false">
+					<div class="iftp-stat-card-header iftp-stat-label--expired"><span class="iftp-stat-card-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M5 19h10M5 1h10M15 1v4l-5 4.5-5-4.5V1M5 19v-4l5-4.5 5 4.5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg></span><span class="iftp-stat-card-label"><?php esc_html_e('Expired', 'ifthenpay-payments-for-contactform7'); ?></span></div>
+					<div class="iftp-stat-card-val iftp-stat-val--expired"><?php echo esc_html((string) ($counts['expired'] ?? 0)); ?></div>
+					<div class="iftp-stat-card-sub"><?php echo esc_html($_period_label); ?></div>
+					<div class="iftp-rev-bar">
+						<?php if (($counts['expired'] ?? 0) > 0) : ?><div class="iftp-rev-seg" style="flex:<?php echo (int) $counts['expired']; ?>;background:#9263a4"></div><?php endif; ?>
+					</div>
+					<span class="iftp-stat-card-ghost" aria-hidden="true"><svg width="64" height="64" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M5 19h10M5 1h10M15 1v4l-5 4.5-5-4.5V1M5 19v-4l5-4.5 5 4.5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						</svg></span>
 				</a>
 			</div>
 
@@ -759,6 +804,7 @@ final class EntriesPage
 						'pending'   => __('Pending', 'ifthenpay-payments-for-contactform7'),
 						'failed'    => __('Failed', 'ifthenpay-payments-for-contactform7'),
 						'cancelled' => __('Cancelled', 'ifthenpay-payments-for-contactform7'),
+						'expired'   => __('Expired', 'ifthenpay-payments-for-contactform7'),
 					);
 					$tab_slug = array(
 						''          => 'all',
@@ -766,6 +812,7 @@ final class EntriesPage
 						'pending'   => 'pending',
 						'failed'    => 'failed',
 						'cancelled' => 'cancelled',
+						'expired'   => 'expired',
 					);
 					foreach ($tabs as $key => $label) :
 						$tab_args = array(
@@ -782,25 +829,26 @@ final class EntriesPage
 						$slug    = $tab_slug[$key];
 					?>
 						<a href="<?php echo esc_url($url); ?>"
-						   class="iftp-tab iftp-tab--<?php echo esc_attr($slug); ?><?php echo $is_curr ? ' active' : ''; ?>"
-						   role="tab"
-						   aria-selected="<?php echo $is_curr ? 'true' : 'false'; ?>">
+							class="iftp-tab iftp-tab--<?php echo esc_attr($slug); ?><?php echo $is_curr ? ' active' : ''; ?>"
+							role="tab"
+							aria-selected="<?php echo $is_curr ? 'true' : 'false'; ?>">
 							<?php echo esc_html($label); ?>
 							<span class="iftp-tab-count"><?php echo esc_html((string) $cnt); ?></span>
 						</a>
 					<?php endforeach; ?>
 					<?php if (! empty($entries)) : ?>
-					<div class="iftp-tabs-bulk-actions">
-						<select name="action" form="iftp-bulk-form" aria-label="<?php esc_attr_e('Bulk Actions', 'ifthenpay-payments-for-contactform7'); ?>">
-							<option value="-1"><?php esc_html_e('Bulk Actions', 'ifthenpay-payments-for-contactform7'); ?></option>
-							<option value="mark_paid"><?php esc_html_e('Mark as Paid', 'ifthenpay-payments-for-contactform7'); ?></option>
-							<option value="mark_cancelled"><?php esc_html_e('Mark as Cancelled', 'ifthenpay-payments-for-contactform7'); ?></option>
-							<option value="mark_failed"><?php esc_html_e('Mark as Failed', 'ifthenpay-payments-for-contactform7'); ?></option>
-							<option value="mark_pending"><?php esc_html_e('Mark as Pending', 'ifthenpay-payments-for-contactform7'); ?></option>
-							<option value="delete"><?php esc_html_e('Delete', 'ifthenpay-payments-for-contactform7'); ?></option>
-						</select>
-						<input type="submit" form="iftp-bulk-form" class="iftp-action-btn" value="<?php esc_attr_e('Apply', 'ifthenpay-payments-for-contactform7'); ?>" />
-					</div>
+						<div class="iftp-tabs-bulk-actions">
+							<select name="action" form="iftp-bulk-form" aria-label="<?php esc_attr_e('Bulk Actions', 'ifthenpay-payments-for-contactform7'); ?>">
+								<option value="-1"><?php esc_html_e('Bulk Actions', 'ifthenpay-payments-for-contactform7'); ?></option>
+								<option value="mark_paid"><?php esc_html_e('Mark as Paid', 'ifthenpay-payments-for-contactform7'); ?></option>
+								<option value="mark_cancelled"><?php esc_html_e('Mark as Cancelled', 'ifthenpay-payments-for-contactform7'); ?></option>
+								<option value="mark_failed"><?php esc_html_e('Mark as Failed', 'ifthenpay-payments-for-contactform7'); ?></option>
+								<option value="mark_pending"><?php esc_html_e('Mark as Pending', 'ifthenpay-payments-for-contactform7'); ?></option>
+								<option value="mark_expired"><?php esc_html_e('Mark as Expired', 'ifthenpay-payments-for-contactform7'); ?></option>
+								<option value="delete"><?php esc_html_e('Delete', 'ifthenpay-payments-for-contactform7'); ?></option>
+							</select>
+							<input type="submit" form="iftp-bulk-form" class="iftp-action-btn" value="<?php esc_attr_e('Apply', 'ifthenpay-payments-for-contactform7'); ?>" />
+						</div>
 					<?php endif; ?>
 				</div>
 
@@ -829,8 +877,10 @@ final class EntriesPage
 
 						<?php if (! empty($hidden_cols)) : ?>
 							<style>
-								<?php foreach ($hidden_cols as $hk) : ?>
-									.iftp-cf7-entries-table [data-col="<?php echo esc_attr($hk); ?>"] { display: none !important; }
+								<?php foreach ($hidden_cols as $hk) : ?>.iftp-cf7-entries-table [data-col="<?php echo esc_attr($hk); ?>"] {
+									display: none;
+								}
+
 								<?php endforeach; ?>
 							</style>
 						<?php endif; ?>
@@ -862,7 +912,7 @@ final class EntriesPage
 										'cofidis'       => '#003d8f',
 										'cofidisinst'   => '#003d8f',
 										'ifthenpaylink' => '#f90',
-										'dinheiro'      => '#0f6b2f',
+										'cash'      => '#0f6b2f',
 									);
 
 
@@ -904,7 +954,7 @@ final class EntriesPage
 											$key       = preg_replace('/[^a-z0-9]/', '', strtolower($e->payment_method));
 											$dot_color = $method_colors[$key] ?? '#8c8f94';
 											$logo_url  = $get_logo($e->payment_method);
-											$is_cash   = $key === 'dinheiro';
+											$is_cash   = $key === 'cash';
 											$is_test   = $key === 'teste';
 									?>
 										<td class="column-method" data-col="payment_method">
@@ -915,8 +965,6 @@ final class EntriesPage
 														<span class="iftp-method-dot" style="background:<?php echo esc_attr($dot_color); ?>;display:none"></span>
 													<?php elseif ($is_cash) : ?>
 														<span class="iftp-method-icon-emoji" aria-hidden="true">💶</span>
-													<?php elseif ($is_test) : ?>
-														<span class="iftp-method-icon-emoji" aria-hidden="true">📝</span>
 													<?php else : ?>
 														<span class="iftp-method-dot" style="background:<?php echo esc_attr($dot_color); ?>"></span>
 													<?php endif; ?>
@@ -1061,38 +1109,37 @@ final class EntriesPage
 
 			<?php /* Info box at bottom — hidden once user dismisses */ ?>
 			<?php if (! get_user_meta(get_current_user_id(), 'iftp_cf7_info_box_dismissed', true)) : ?>
-			<div class="iftp-info-box" id="iftp-info-box">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<circle cx="12" cy="12" r="10" />
-					<line x1="12" y1="8" x2="12" y2="12" />
-					<line x1="12" y1="16" x2="12.01" y2="16" />
-				</svg>
-				<div class="iftp-info-box-content">
-					<p><strong><?php esc_html_e('How entries work:', 'ifthenpay-payments-for-contactform7'); ?></strong>
-						<?php esc_html_e('An entry is created every time a visitor clicks Pay on one of your Contact Form 7 forms. Entries start as Pending until payment is confirmed via callback.', 'ifthenpay-payments-for-contactform7'); ?></p>
-					<p><?php esc_html_e('IDs are never reused — deleting entries does not reset the counter.', 'ifthenpay-payments-for-contactform7'); ?></p>
-				</div>
-				<button type="button" class="iftp-info-box-dismiss" id="iftp-info-box-dismiss"
-					aria-label="<?php esc_attr_e('Dismiss', 'ifthenpay-payments-for-contactform7'); ?>"
-					data-nonce="<?php echo esc_attr(wp_create_nonce('iftp_cf7_dismiss_info_box')); ?>">
-					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<line x1="18" y1="6" x2="6" y2="18"/>
-						<line x1="6" y1="6" x2="18" y2="18"/>
+				<div class="iftp-info-box" id="iftp-info-box">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<circle cx="12" cy="12" r="10" />
+						<line x1="12" y1="8" x2="12" y2="12" />
+						<line x1="12" y1="16" x2="12.01" y2="16" />
 					</svg>
-				</button>
-			</div>
+					<div class="iftp-info-box-content">
+						<p><strong><?php esc_html_e('How entries work:', 'ifthenpay-payments-for-contactform7'); ?></strong>
+							<?php esc_html_e('An entry is created every time a visitor clicks Pay on one of your Contact Form 7 forms. Entries start as Pending until payment is confirmed via callback.', 'ifthenpay-payments-for-contactform7'); ?></p>
+						<p><?php esc_html_e('IDs are never reused — deleting entries does not reset the counter.', 'ifthenpay-payments-for-contactform7'); ?></p>
+					</div>
+					<button type="button" class="iftp-info-box-dismiss" id="iftp-info-box-dismiss"
+						aria-label="<?php esc_attr_e('Dismiss', 'ifthenpay-payments-for-contactform7'); ?>"
+						data-nonce="<?php echo esc_attr(wp_create_nonce('iftp_cf7_dismiss_info_box')); ?>">
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<line x1="18" y1="6" x2="6" y2="18" />
+							<line x1="6" y1="6" x2="18" y2="18" />
+						</svg>
+					</button>
+				</div>
 			<?php endif; ?>
 
 			<button type="button" id="iftp-scroll-btn" class="iftp-scroll-btn" data-per-page="<?php echo esc_attr((string) $per_page); ?>" aria-label="<?php esc_attr_e('Scroll to top', 'ifthenpay-payments-for-contactform7'); ?>">
 				<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<line x1="12" y1="19" x2="12" y2="6"/>
-					<polyline points="6 12 12 6 18 12"/>
+					<line x1="12" y1="19" x2="12" y2="6" />
+					<polyline points="6 12 12 6 18 12" />
 				</svg>
-				<?php esc_html_e('Top', 'ifthenpay-payments-for-contactform7'); ?>
+				<?php esc_html_e('', 'ifthenpay-payments-for-contactform7'); ?>
 			</button>
 		</div><!-- .wrap -->
 
-		<style>.iftp-modal-cancel:hover,.iftp-modal-cancel:focus{background:#f8f8f8!important;border-color:#8c8f94!important;color:#323e4e!important;box-shadow:none!important;outline:none!important}</style>
 		<!-- Add Payment modal -->
 		<div id="iftp-add-payment-modal" class="iftp-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="iftp-modal-title">
 			<div class="iftp-modal-overlay"></div>
@@ -1125,7 +1172,7 @@ final class EntriesPage
 						<div class="iftp-mode-panel iftp-mode-panel--simple">
 							<div class="iftp-modal-row">
 								<div class="iftp-modal-field">
-									<label for="ap_customer_name" ><?php esc_html_e('Customer Name', 'ifthenpay-payments-for-contactform7'); ?></label>
+									<label for="ap_customer_name"><?php esc_html_e('Customer Name', 'ifthenpay-payments-for-contactform7'); ?></label>
 									<input type="text" id="ap_customer_name" placeholder="e.g.: John Smith" name="ap_customer_name" class="regular-text" maxlength="255" />
 								</div>
 								<div class="iftp-modal-field">
@@ -1161,7 +1208,7 @@ final class EntriesPage
 										<option value="COFIDIS">COFIDIS</option>
 										<option value="APPLE">APPLE</option>
 										<option value="GOOGLE">GOOGLE</option>
-										<option value="DINHEIRO">DINHEIRO</option>
+										<option value="CASH">CASH</option>
 									</select>
 								</div>
 								<div class="iftp-modal-field">
@@ -1190,8 +1237,8 @@ final class EntriesPage
 							</div>
 							<div class="iftp-modal-row">
 								<div class="iftp-modal-field">
-									<label for="ap_payment_method"><?php esc_html_e('Payment Method', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
-									<select id="ap_payment_method" name="ap_payment_method">
+									<label for="ap_cx_payment_method"><?php esc_html_e('Payment Method', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
+									<select id="ap_cx_payment_method" name="ap_cx_payment_method">
 										<option value=""><?php esc_html_e('— Select method —', 'ifthenpay-payments-for-contactform7'); ?></option>
 										<option value="MBWAY">MBWAY</option>
 										<option value="MULTIBANCO">MULTIBANCO</option>
@@ -1201,12 +1248,12 @@ final class EntriesPage
 										<option value="COFIDIS">COFIDIS</option>
 										<option value="APPLE">APPLE</option>
 										<option value="GOOGLE">GOOGLE</option>
-										<option value="DINHEIRO">DINHEIRO</option>
+										<option value="CASH">CASH</option>
 									</select>
 								</div>
 								<div class="iftp-modal-field">
-									<label for="ap_form_title"><?php esc_html_e('Form / Reference', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
-									<input type="text" id="ap_form_title" placeholder="(can be fictional)  e.g.: Real Life Payment" name="ap_form_title" class="regular-text" maxlength="255" />
+									<label for="ap_cx_form_title"><?php esc_html_e('Form / Reference', 'ifthenpay-payments-for-contactform7'); ?> <span class="iftp-optional"><?php esc_html_e('(optional)', 'ifthenpay-payments-for-contactform7'); ?></span></label>
+									<input type="text" id="ap_cx_form_title" placeholder="(can be fictional)  e.g.: Real Life Payment" name="ap_cx_form_title" class="regular-text" maxlength="255" />
 								</div>
 							</div>
 
@@ -1255,15 +1302,15 @@ final class EntriesPage
 				</form>
 			</div>
 			<?php if (! get_user_meta(get_current_user_id(), 'iftp_cf7_add_payment_notice_dismissed', true)) : ?>
-			<div class="iftp-ap-toast" id="iftp-ap-toast">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<circle cx="12" cy="12" r="10" />
-					<line x1="12" y1="8" x2="12" y2="12" />
-					<line x1="12" y1="16" x2="12.01" y2="16" />
-				</svg>
-				<p><?php esc_html_e('Adding payments here is optional — you are not required to do so. This simply lets you manually record real-world payments in your list for organizational purposes.', 'ifthenpay-payments-for-contactform7'); ?></p>
-				<button type="button" class="iftp-ap-toast-close" aria-label="<?php esc_attr_e('Dismiss', 'ifthenpay-payments-for-contactform7'); ?>">&#215;</button>
-			</div>
+				<div class="iftp-ap-toast" id="iftp-ap-toast">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<circle cx="12" cy="12" r="10" />
+						<line x1="12" y1="8" x2="12" y2="12" />
+						<line x1="12" y1="16" x2="12.01" y2="16" />
+					</svg>
+					<p><?php esc_html_e('Adding payments here is optional — you are not required to do so. This simply lets you manually record real-world payments in your list for organizational purposes.', 'ifthenpay-payments-for-contactform7'); ?></p>
+					<button type="button" class="iftp-ap-toast-close" aria-label="<?php esc_attr_e('Dismiss', 'ifthenpay-payments-for-contactform7'); ?>">&#215;</button>
+				</div>
 			<?php endif; ?>
 		</div>
 
@@ -1409,8 +1456,6 @@ final class EntriesPage
 	<?php
 	}
 
-
-
 	/**
 	 * Build the form-filter dropdown list from live CF7 posts + orphaned form IDs.
 	 *
@@ -1476,6 +1521,9 @@ final class EntriesPage
 			'amount'         => __('Amount', 'ifthenpay-payments-for-contactform7'),
 		);
 		$clear_args  = array('page' => 'ifthenpay-cf7-entries', 'status' => $current_tab, 'period' => $period);
+		if ($form_id > 0) {
+			$clear_args['form_id'] = 0;
+		}
 		$clear_url   = add_query_arg($clear_args, admin_url('admin.php'));
 		$has_filters = $search_query !== '' || $form_id > 0;
 	?>
@@ -1492,7 +1540,7 @@ final class EntriesPage
 					<select name="form_id" id="iftp-form-filter" aria-label="<?php esc_attr_e('Filter by form', 'ifthenpay-payments-for-contactform7'); ?>" onchange="this.form.submit()">
 						<option value="0"><?php esc_html_e('All Forms', 'ifthenpay-payments-for-contactform7'); ?></option>
 						<?php foreach ($forms as $f) : ?>
-							<option value="<?php echo esc_attr((string) $f['form_id']); ?>"<?php selected($form_id, $f['form_id']); ?>><?php echo esc_html($f['form_title']); ?></option>
+							<option value="<?php echo esc_attr((string) $f['form_id']); ?>" <?php selected($form_id, $f['form_id']); ?>><?php echo esc_html($f['form_title']); ?></option>
 						<?php endforeach; ?>
 					</select>
 				<?php endif; ?>
@@ -1507,29 +1555,36 @@ final class EntriesPage
 				</select>
 				<input type="text" name="search_query" value="<?php echo esc_attr($search_query); ?>"
 					class="iftp-search-input" placeholder="<?php esc_attr_e('Search…', 'ifthenpay-payments-for-contactform7'); ?>" />
-				<button type="submit" class="iftp-action-btn iftp-action-btn--icon" aria-label="<?php esc_attr_e('Search', 'ifthenpay-payments-for-contactform7'); ?>"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+				<button type="submit" class="iftp-action-btn iftp-action-btn--icon" aria-label="<?php esc_attr_e('Search', 'ifthenpay-payments-for-contactform7'); ?>"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<circle cx="11" cy="11" r="8" />
+						<line x1="21" y1="21" x2="16.65" y2="16.65" />
+					</svg></button>
 				<?php if ($has_filters) : ?>
 					<a href="<?php echo esc_url($clear_url); ?>" class="iftp-action-btn iftp-action-btn--ghost"><?php esc_html_e('Clear', 'ifthenpay-payments-for-contactform7'); ?></a>
 				<?php endif; ?>
 			</form>
 
 			<?php if ($has_entries) : ?>
-			<div class="iftp-tablenav-right">
-				<label for="iftp-per-page" class="screen-reader-text"><?php esc_html_e('Items per page', 'ifthenpay-payments-for-contactform7'); ?></label>
-				<select id="iftp-per-page" class="iftp-per-page-select" data-current="<?php echo esc_attr((string) $per_page); ?>">
-					<?php foreach (self::VALID_PER_PAGE as $opt) : ?>
-						<option value="<?php echo esc_attr((string) $opt); ?>"<?php selected($per_page, $opt); ?>>Page/<?php echo esc_html((string) $opt); ?></option>
-					<?php endforeach; ?>
-				</select>
-				<button type="button" class="iftp-action-btn iftp-col-customize-btn" id="iftp-col-customize-btn"
-					aria-haspopup="true" aria-expanded="false" aria-controls="iftp-col-customize-popover">
-					<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-						<line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
-					</svg>
-					<?php esc_html_e('Columns', 'ifthenpay-payments-for-contactform7'); ?>
-				</button>
-			</div>
+				<div class="iftp-tablenav-right">
+					<label for="iftp-per-page" class="screen-reader-text"><?php esc_html_e('Items per page', 'ifthenpay-payments-for-contactform7'); ?></label>
+					<select id="iftp-per-page" class="iftp-per-page-select" data-current="<?php echo esc_attr((string) $per_page); ?>">
+						<?php foreach (self::VALID_PER_PAGE as $opt) : ?>
+							<option value="<?php echo esc_attr((string) $opt); ?>" <?php selected($per_page, $opt); ?>>Page/<?php echo esc_html((string) $opt); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<button type="button" class="iftp-action-btn iftp-col-customize-btn" id="iftp-col-customize-btn"
+						aria-haspopup="true" aria-expanded="false" aria-controls="iftp-col-customize-popover">
+						<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<line x1="8" y1="6" x2="21" y2="6" />
+							<line x1="8" y1="12" x2="21" y2="12" />
+							<line x1="8" y1="18" x2="21" y2="18" />
+							<line x1="3" y1="6" x2="3.01" y2="6" />
+							<line x1="3" y1="12" x2="3.01" y2="12" />
+							<line x1="3" y1="18" x2="3.01" y2="18" />
+						</svg>
+						<?php esc_html_e('Columns', 'ifthenpay-payments-for-contactform7'); ?>
+					</button>
+				</div>
 			<?php endif; ?>
 		</div>
 	<?php
@@ -1558,10 +1613,27 @@ final class EntriesPage
 		}
 
 
-		$window_start  = max(1, $current_page);
-		$window_end    = $total_pages > 0 ? min($current_page + 3, $total_pages) : ($has_next ? $current_page + 3 : $current_page);
-		$show_last     = $total_pages > 0 && $window_end < $total_pages;
-		$show_ellipsis = $show_last && ($window_end < $total_pages - 1);
+		$window_start = max(1, $current_page - 1);
+		$window_end   = $total_pages > 0 ? min($current_page + 2, $total_pages) : ($has_next ? $current_page + 2 : $current_page);
+
+
+		if ($total_pages > 0 && ($window_end - $window_start) < 3) {
+			$window_end = min($window_start + 3, $total_pages);
+			if (($window_end - $window_start) < 3) {
+				$window_start = max(1, $window_end - 3);
+			}
+		}
+
+
+		$show_page_one       = $window_start > 1;
+
+		$show_left_ellipsis  = $window_start > 2;
+
+		$show_last           = $total_pages > 0 && $window_end < $total_pages;
+
+		$show_right_ellipsis = $show_last && ($window_end < $total_pages - 1);
+
+		$mid_page            = $show_right_ellipsis ? (int) round(($window_end + $total_pages) / 2) : 0;
 
 		$page_url = static function (int $n) use ($first_page_url): string {
 			if ($n <= 1) {
@@ -1574,17 +1646,29 @@ final class EntriesPage
 
 			<?php if ($has_prev) : ?>
 				<a class="iftp-pag-btn iftp-pag-nav" href="<?php echo esc_url($prev_url); ?>" aria-label="<?php esc_attr_e('Previous page', 'ifthenpay-payments-for-contactform7'); ?>">
-					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-					<?php esc_html_e('Back', 'ifthenpay-payments-for-contactform7'); ?>
+					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polyline points="15 18 9 12 15 6" />
+					</svg>
+					<?php esc_html_e('', 'ifthenpay-payments-for-contactform7'); ?>
 				</a>
 			<?php else : ?>
 				<span class="iftp-pag-btn iftp-pag-nav disabled" aria-hidden="true">
-					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-					<?php esc_html_e('Back', 'ifthenpay-payments-for-contactform7'); ?>
+					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polyline points="15 18 9 12 15 6" />
+					</svg>
+					<?php esc_html_e('', 'ifthenpay-payments-for-contactform7'); ?>
 				</span>
 			<?php endif; ?>
 
 			<span class="iftp-pag-pages">
+				<?php if ($show_page_one) : ?>
+					<a class="iftp-pag-page" href="<?php echo esc_url($page_url(1)); ?>" aria-label="<?php esc_attr_e('Page 1', 'ifthenpay-payments-for-contactform7'); ?>">1</a>
+				<?php endif; ?>
+
+				<?php if ($show_left_ellipsis) : ?>
+					<span class="iftp-pag-ellipsis" aria-hidden="true" style="color:#718096;padding:0 2px;">...</span>
+				<?php endif; ?>
+
 				<?php for ($p = $window_start; $p <= $window_end; $p++) : ?>
 					<?php if ($p === $current_page) : ?>
 						<span class="iftp-pag-page iftp-pag-page-active" aria-current="page"><?php echo esc_html((string) $p); ?></span>
@@ -1593,18 +1677,17 @@ final class EntriesPage
 					<?php endif; ?>
 				<?php endfor; ?>
 
-				<?php if ($show_ellipsis) : ?>
+				<?php if ($show_right_ellipsis) : ?>
 					<input
 						type="text"
 						inputmode="numeric"
 						pattern="[0-9]*"
 						class="iftp-pag-input"
 						data-total="<?php echo esc_attr((string) $total_pages); ?>"
-						placeholder="…"
+						placeholder="..."
 						data-base-url="<?php echo esc_url($first_page_url); ?>"
 						title="<?php esc_attr_e('Type a page number and press Enter', 'ifthenpay-payments-for-contactform7'); ?>"
-						autocomplete="off"
-					/>
+						autocomplete="off" />
 				<?php endif; ?>
 
 				<?php if ($show_last) : ?>
@@ -1614,21 +1697,23 @@ final class EntriesPage
 
 			<?php if ($has_next) : ?>
 				<a class="iftp-pag-btn iftp-pag-nav" href="<?php echo esc_url($next_url); ?>" aria-label="<?php esc_attr_e('Next page', 'ifthenpay-payments-for-contactform7'); ?>">
-					<?php esc_html_e('Next', 'ifthenpay-payments-for-contactform7'); ?>
-					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+					<?php esc_html_e('', 'ifthenpay-payments-for-contactform7'); ?>
+					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polyline points="9 18 15 12 9 6" />
+					</svg>
 				</a>
 			<?php else : ?>
 				<span class="iftp-pag-btn iftp-pag-nav disabled" aria-hidden="true">
-					<?php esc_html_e('Next', 'ifthenpay-payments-for-contactform7'); ?>
-					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+					<?php esc_html_e('', 'ifthenpay-payments-for-contactform7'); ?>
+					<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polyline points="9 18 15 12 9 6" />
+					</svg>
 				</span>
 			<?php endif; ?>
 
 		</span>
 	<?php
 	}
-
-
 
 	private function format_field_label(string $key): string
 	{
@@ -1638,8 +1723,6 @@ final class EntriesPage
 		$label = str_replace(array('-', '_'), ' ', $label);
 		return ucwords($label);
 	}
-
-
 
 	/** @return array<string, array{label: string, css: string, sortable: bool, db_col?: string, default_dir?: string}> */
 	private function get_col_defs(): array
@@ -1709,8 +1792,6 @@ final class EntriesPage
 			);
 		}
 	}
-
-
 
 	private function render_single_entry(EntryDto $entry): void
 	{
@@ -1802,6 +1883,7 @@ final class EntriesPage
 			'pending'   => array('bg' => '#fef7e0', 'color' => '#b45309', 'dot' => '#f9ab00'),
 			'failed'    => array('bg' => '#fce8e6', 'color' => '#c5221f', 'dot' => '#ea4335'),
 			'cancelled' => array('bg' => '#f1f3f4', 'color' => '#5f6368', 'dot' => '#9aa5b4'),
+			'expired'   => array('bg' => '#f2e8f7', 'color' => '#6b3585', 'dot' => '#9263a4'),
 		);
 		$hero_style = $hero_status_styles[$entry->payment_status] ?? $hero_status_styles['pending'];
 
@@ -1810,19 +1892,21 @@ final class EntriesPage
 			'pending'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
 			'failed'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
 			'cancelled' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+			'expired'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 22h14M5 2h14M17 2v4l-5 4.5L7 6V2M7 22v-4l5-4.5 5 4.5v4"/></svg>',
 		);
-		$ghost_color_map = array( 'completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#9aa5b4' );
+		$ghost_color_map = array('completed' => '#34a853', 'pending' => '#f9ab00', 'failed' => '#ea4335', 'cancelled' => '#9aa5b4', 'expired' => '#9263a4');
 		$ghost_svg   = $ghost_svgs[$entry->payment_status] ?? $ghost_svgs['pending'];
 		$ghost_color = $ghost_color_map[$entry->payment_status] ?? '#9aa5b4';
 
 
 		$link_done = $entry->link_generated_at !== null || $entry->payment_url !== '';
-		$is_done   = in_array($entry->payment_status, array('completed', 'failed', 'cancelled'), true);
+		$is_done   = in_array($entry->payment_status, array('completed', 'failed', 'cancelled', 'expired'), true);
 
 		$step3_label = match ($entry->payment_status) {
 			'completed' => __('Paid', 'ifthenpay-payments-for-contactform7'),
 			'failed'    => __('Failed', 'ifthenpay-payments-for-contactform7'),
 			'cancelled' => __('Cancelled', 'ifthenpay-payments-for-contactform7'),
+			'expired'   => __('Expired', 'ifthenpay-payments-for-contactform7'),
 			default     => __('Payment', 'ifthenpay-payments-for-contactform7'),
 		};
 		$step2_dot_class = $link_done ? 'iftp-step-dot--done' : 'iftp-step-dot--pending';
@@ -1831,6 +1915,7 @@ final class EntriesPage
 			'completed' => 'iftp-step-dot--done',
 			'failed'    => 'iftp-step-dot--failed',
 			'cancelled' => 'iftp-step-dot--cancelled',
+			'expired'   => 'iftp-step-dot--expired',
 			default     => 'iftp-step-dot--pending',
 		};
 		$step3_lbl_muted = $is_done ? '' : ' iftp-step-lbl--muted';
@@ -1839,6 +1924,7 @@ final class EntriesPage
 			'completed' => 'iftp-step-line--done',
 			'failed'    => 'iftp-step-line--failed',
 			'cancelled' => 'iftp-step-line--cancelled',
+			'expired'   => 'iftp-step-line--expired',
 			default     => 'iftp-step-line--pending',
 		};
 
@@ -1851,7 +1937,9 @@ final class EntriesPage
 			<div class="iftp-page-header">
 				<div class="iftp-header-left">
 					<a href="<?php echo esc_url($back_url); ?>" class="iftp-back-link">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<polyline points="15 18 9 12 15 6" />
+						</svg>
 						<?php esc_html_e('Entries', 'ifthenpay-payments-for-contactform7'); ?>
 					</a>
 					<div class="iftp-entry-chip">
@@ -1863,10 +1951,10 @@ final class EntriesPage
 				<a href="<?php echo esc_url($del_url); ?>" class="iftp-delete-btn"
 					onclick="return confirm('<?php esc_attr_e('Delete this entry permanently?', 'ifthenpay-payments-for-contactform7'); ?>');">
 					<svg viewBox="0 0 24 24" aria-hidden="true">
-						<polyline points="3 6 5 6 21 6"/>
-						<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-						<path d="M10 11v6M14 11v6"/>
-						<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+						<polyline points="3 6 5 6 21 6" />
+						<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+						<path d="M10 11v6M14 11v6" />
+						<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
 					</svg>
 					<?php esc_html_e('Delete Entry', 'ifthenpay-payments-for-contactform7'); ?>
 				</a>
@@ -1876,115 +1964,159 @@ final class EntriesPage
 			<!-- ── Detail grid ── -->
 			<div class="iftp-detail-grid">
 
-			<!-- Left column -->
-			<div class="iftp-detail-col">
+				<!-- Left column -->
+				<div class="iftp-detail-col">
 
-			<!-- ── Hero band ── -->
-			<div class="iftp-detail-hero">
-				<div class="iftp-hero-accent iftp-hero-accent--<?php echo esc_attr($entry->payment_status); ?>"></div>
-				<div class="iftp-hero-ghost" style="color:<?php echo esc_attr($ghost_color); ?>"><?php echo $ghost_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG strings, no user data. ?></div>
-				<div class="iftp-hero-inner">
-					<div class="iftp-hero-amount-wrap">
-						<span class="iftp-hero-eyebrow"><?php echo esc_html('Entry #' . $entry->id . ' · ' . $form_label); ?></span>
-						<span class="iftp-hero-amount"><?php echo esc_html($entry->amount_formatted()); ?></span>
-						<span class="iftp-hero-status-badge" style="background:<?php echo esc_attr($hero_style['bg']); ?>;color:<?php echo esc_attr($hero_style['color']); ?>">
-							<span class="iftp-hero-status-dot" style="background:<?php echo esc_attr($hero_style['dot']); ?>;box-shadow:0 0 0 4px <?php echo esc_attr($hero_style['dot']); ?>29"></span>
-							<?php echo esc_html($entry->status_label()); ?>
-						</span>
-					</div>
-					<div class="iftp-hero-divider"></div>
-					<div class="iftp-hero-meta">
-						<div class="iftp-hero-mrow">
-							<div class="iftp-hero-micon">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+					<!-- ── Hero band ── -->
+					<div class="iftp-detail-hero">
+						<div class="iftp-hero-accent iftp-hero-accent--<?php echo esc_attr($entry->payment_status); ?>"></div>
+						<div class="iftp-hero-ghost" style="color:<?php echo esc_attr($ghost_color); ?>"><?php echo $ghost_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG strings, no user data.
+																											?></div>
+						<div class="iftp-hero-inner">
+							<div class="iftp-hero-amount-wrap">
+								<span class="iftp-hero-eyebrow"><?php echo esc_html('Entry #' . $entry->id . ' · ' . $form_label); ?></span>
+								<span class="iftp-hero-amount"><?php echo esc_html($entry->amount_formatted()); ?></span>
+								<span class="iftp-hero-status-badge" style="background:<?php echo esc_attr($hero_style['bg']); ?>;color:<?php echo esc_attr($hero_style['color']); ?>">
+									<span class="iftp-hero-status-dot" style="background:<?php echo esc_attr($hero_style['dot']); ?>;box-shadow:0 0 0 4px <?php echo esc_attr($hero_style['dot']); ?>29"></span>
+									<?php echo esc_html($entry->status_label()); ?>
+								</span>
 							</div>
-							<div>
-								<div class="iftp-hero-mlbl"><?php esc_html_e('Method', 'ifthenpay-payments-for-contactform7'); ?></div>
-								<div class="iftp-hero-mval">
-									<?php if ($entry->payment_method !== '') : ?>
-										<?php if ($detail_logo_url !== '') : ?>
-											<img class="iftp-method-logo-img" src="<?php echo esc_url($detail_logo_url); ?>" alt="" style="height:16px;max-width:40px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />
-										<?php else : ?>
-											<span style="width:8px;height:8px;border-radius:50%;background:<?php echo esc_attr($dot_color); ?>;display:inline-block;margin-right:5px;flex-shrink:0"></span>
-										<?php endif; ?>
-										<?php echo esc_html($entry->payment_method); ?>
-									<?php else : ?>—<?php endif; ?>
+							<div class="iftp-hero-divider"></div>
+							<div class="iftp-hero-meta">
+								<div class="iftp-hero-mrow">
+									<div class="iftp-hero-micon">
+										<svg viewBox="0 0 24 24" aria-hidden="true">
+											<rect x="1" y="4" width="22" height="16" rx="2" />
+											<line x1="1" y1="10" x2="23" y2="10" />
+										</svg>
+									</div>
+									<div>
+										<div class="iftp-hero-mlbl"><?php esc_html_e('Method', 'ifthenpay-payments-for-contactform7'); ?></div>
+										<div class="iftp-hero-mval">
+											<?php if ($entry->payment_method !== '') : ?>
+												<?php if ($detail_logo_url !== '') : ?>
+													<img class="iftp-method-logo-img" src="<?php echo esc_url($detail_logo_url); ?>" alt="" style="height:16px;max-width:40px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'" />
+												<?php else : ?>
+													<span style="width:8px;height:8px;border-radius:50%;background:<?php echo esc_attr($dot_color); ?>;display:inline-block;margin-right:5px;flex-shrink:0"></span>
+												<?php endif; ?>
+												<?php echo esc_html($entry->payment_method); ?>
+												<?php else : ?>—<?php endif; ?>
+										</div>
+									</div>
+								</div>
+								<div class="iftp-hero-mrow">
+									<div class="iftp-hero-micon">
+										<svg viewBox="0 0 24 24" aria-hidden="true">
+											<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+											<circle cx="12" cy="7" r="4" />
+										</svg>
+									</div>
+									<div>
+										<div class="iftp-hero-mlbl"><?php esc_html_e('Customer', 'ifthenpay-payments-for-contactform7'); ?></div>
+										<div class="iftp-hero-mval"><?php echo esc_html($entry->customer_name ?: '—'); ?></div>
+									</div>
 								</div>
 							</div>
 						</div>
-						<div class="iftp-hero-mrow">
-							<div class="iftp-hero-micon">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+					</div>
+
+					<!-- ── Journey strip ── -->
+					<div class="iftp-journey" role="list" aria-label="<?php esc_attr_e('Payment journey', 'ifthenpay-payments-for-contactform7'); ?>">
+						<div class="iftp-step" role="listitem">
+							<div class="iftp-step-dot iftp-step-dot--done">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+									<line x1="12" y1="11" x2="12" y2="17" />
+									<line x1="9" y1="14" x2="15" y2="14" />
+								</svg>
 							</div>
-							<div>
-								<div class="iftp-hero-mlbl"><?php esc_html_e('Customer', 'ifthenpay-payments-for-contactform7'); ?></div>
-								<div class="iftp-hero-mval"><?php echo esc_html($entry->customer_name ?: '—'); ?></div>
-							</div>
+							<div class="iftp-step-lbl"><?php esc_html_e('Created', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-time"><?php echo esc_html($entry->created_at); ?></div>
 						</div>
-					</div>
-				</div>
-			</div>
+						<div class="iftp-step-line <?php echo esc_attr($line1_class); ?>" aria-hidden="true"></div>
+						<div class="iftp-step" role="listitem">
+							<div class="iftp-step-dot <?php echo esc_attr($step2_dot_class); ?>">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+									<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+								</svg>
+							</div>
+							<div class="iftp-step-lbl<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Link Generated', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-time"><?php echo esc_html($step2_time); ?></div>
+						</div>
+						<div class="iftp-step-line <?php echo esc_attr($line2_class); ?>" aria-hidden="true"></div>
+						<div class="iftp-step" role="listitem">
+							<div class="iftp-step-dot <?php echo esc_attr($step3_dot_class); ?>">
+								<?php if ($entry->payment_status === 'completed') : ?>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+										<polyline points="22 4 12 14.01 9 11.01" />
+									</svg>
+								<?php elseif ($entry->payment_status === 'failed') : ?>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<circle cx="12" cy="12" r="10" />
+										<line x1="15" y1="9" x2="9" y2="15" />
+										<line x1="9" y1="9" x2="15" y2="15" />
+									</svg>
+								<?php elseif ($entry->payment_status === 'cancelled') : ?>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<circle cx="12" cy="12" r="10" />
+										<line x1="8" y1="12" x2="16" y2="12" />
+									</svg>
+								<?php else : ?>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<circle cx="12" cy="12" r="10" />
+										<polyline points="12 6 12 12 16 14" />
+									</svg>
+								<?php endif; ?>
+							</div>
+							<div class="iftp-step-lbl<?php echo esc_attr($step3_lbl_muted); ?>"><?php echo esc_html($step3_label); ?></div>
+							<div class="iftp-step-time"><?php echo esc_html($step3_time); ?></div>
+						</div>
+					</div><!-- .iftp-journey -->
 
-			<!-- ── Journey strip ── -->
-			<div class="iftp-journey" role="list" aria-label="<?php esc_attr_e('Payment journey', 'ifthenpay-payments-for-contactform7'); ?>">
-				<div class="iftp-step" role="listitem">
-					<div class="iftp-step-dot iftp-step-dot--done">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-					</div>
-					<div class="iftp-step-lbl"><?php esc_html_e('Created', 'ifthenpay-payments-for-contactform7'); ?></div>
-					<div class="iftp-step-time"><?php echo esc_html($entry->created_at); ?></div>
-				</div>
-				<div class="iftp-step-line <?php echo esc_attr($line1_class); ?>" aria-hidden="true"></div>
-				<div class="iftp-step" role="listitem">
-					<div class="iftp-step-dot <?php echo esc_attr($step2_dot_class); ?>">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-					</div>
-					<div class="iftp-step-lbl<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Link Generated', 'ifthenpay-payments-for-contactform7'); ?></div>
-					<div class="iftp-step-time"><?php echo esc_html($step2_time); ?></div>
-				</div>
-				<div class="iftp-step-line <?php echo esc_attr($line2_class); ?>" aria-hidden="true"></div>
-				<div class="iftp-step" role="listitem">
-					<div class="iftp-step-dot <?php echo esc_attr($step3_dot_class); ?>">
-						<?php if ($entry->payment_status === 'completed') : ?>
-							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-						<?php elseif ($entry->payment_status === 'failed') : ?>
-							<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-						<?php elseif ($entry->payment_status === 'cancelled') : ?>
-							<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-						<?php else : ?>
-							<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-						<?php endif; ?>
-					</div>
-					<div class="iftp-step-lbl<?php echo esc_attr($step3_lbl_muted); ?>"><?php echo esc_html($step3_label); ?></div>
-					<div class="iftp-step-time"><?php echo esc_html($step3_time); ?></div>
-				</div>
-			</div><!-- .iftp-journey -->
-
-				<!-- Transaction card -->
+					<!-- Transaction card -->
 					<div class="iftp-card">
 						<div class="iftp-card-head">
 							<span class="iftp-card-head-ic">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="7" y1="15" x2="7.01" y2="15"/><line x1="11" y1="15" x2="15" y2="15"/></svg>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<rect x="2" y="5" width="20" height="14" rx="2" />
+									<line x1="2" y1="10" x2="22" y2="10" />
+									<line x1="7" y1="15" x2="7.01" y2="15" />
+									<line x1="11" y1="15" x2="15" y2="15" />
+								</svg>
 							</span>
 							<h2><?php esc_html_e('Transaction', 'ifthenpay-payments-for-contactform7'); ?></h2>
 						</div>
 						<div class="iftp-drows">
 							<div class="iftp-drow">
 								<span class="iftp-drow-lbl">
-									<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<line x1="4" y1="9" x2="20" y2="9" />
+										<line x1="4" y1="15" x2="20" y2="15" />
+										<line x1="10" y1="3" x2="8" y2="21" />
+										<line x1="16" y1="3" x2="14" y2="21" />
+									</svg>
 									<?php esc_html_e('Request ID', 'ifthenpay-payments-for-contactform7'); ?>
 								</span>
 								<span class="iftp-code"><?php echo esc_html($entry->request_id ?? '—'); ?></span>
 							</div>
 							<div class="iftp-drow">
 								<span class="iftp-drow-lbl">
-									<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+										<polyline points="15 3 21 3 21 9" />
+										<line x1="10" y1="14" x2="21" y2="3" />
+									</svg>
 									<?php esc_html_e('Payment Link', 'ifthenpay-payments-for-contactform7'); ?>
 								</span>
 								<?php if ($entry->payment_url !== '') : ?>
 									<a class="iftp-paybtn" href="<?php echo esc_url($entry->payment_url); ?>" target="_blank" rel="noopener noreferrer">
 										<?php esc_html_e('Open link', 'ifthenpay-payments-for-contactform7'); ?>
-										<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+										<svg viewBox="0 0 24 24" aria-hidden="true">
+											<line x1="7" y1="17" x2="17" y2="7" />
+											<polyline points="7 7 17 7 17 17" />
+										</svg>
 									</a>
 								<?php else : ?>
 									<span class="iftp-code">—</span>
@@ -1994,67 +2126,75 @@ final class EntriesPage
 					</div>
 
 					<?php if (! empty($form_data)) : ?>
-					<!-- Submitted data card -->
-					<div class="iftp-card">
-						<div class="iftp-card-head">
-							<span class="iftp-card-head-ic">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-							</span>
-							<h2><?php esc_html_e('Submitted Data', 'ifthenpay-payments-for-contactform7'); ?></h2>
-						</div>
-						<div class="iftp-kgrid">
-							<?php
-							$field_entries = array();
-							foreach ($form_data as $key => $value) {
-								if (strpos((string) $key, 'iftp_cf7_') === 0) {
-									continue;
+						<!-- Submitted data card -->
+						<div class="iftp-card">
+							<div class="iftp-card-head">
+								<span class="iftp-card-head-ic">
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<line x1="8" y1="6" x2="21" y2="6" />
+										<line x1="8" y1="12" x2="21" y2="12" />
+										<line x1="8" y1="18" x2="21" y2="18" />
+										<line x1="3" y1="6" x2="3.01" y2="6" />
+										<line x1="3" y1="12" x2="3.01" y2="12" />
+										<line x1="3" y1="18" x2="3.01" y2="18" />
+									</svg>
+								</span>
+								<h2><?php esc_html_e('Submitted Data', 'ifthenpay-payments-for-contactform7'); ?></h2>
+							</div>
+							<div class="iftp-kgrid">
+								<?php
+								$field_entries = array();
+								foreach ($form_data as $key => $value) {
+									if (strpos((string) $key, 'iftp_cf7_') === 0) {
+										continue;
+									}
+									$field_entries[] = array('key' => (string) $key, 'value' => $value);
 								}
-								$field_entries[] = array('key' => (string) $key, 'value' => $value);
-							}
-							$total_fields = count($field_entries);
-							foreach ($field_entries as $fi => $fd) :
-								$str_val   = is_array($fd['value']) ? implode(', ', $fd['value']) : (string) $fd['value'];
-								$max_len   = 200;
-								$is_long   = mb_strlen($str_val) > $max_len;
-								$is_last   = ($fi === $total_fields - 1);
-								$is_odd    = ($total_fields % 2 !== 0);
-								$cell_full = ($is_last && $is_odd) ? ' iftp-kcell--full' : '';
-								$field_svg = $this->get_field_icon_svg($fd['key']);
-							?>
-								<div class="iftp-kcell<?php echo esc_attr($cell_full); ?>">
-									<div class="iftp-klbl">
-										<?php echo $field_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG strings, no user data. ?>
-										<?php echo esc_html($this->format_field_label($fd['key'])); ?>
+								$total_fields = count($field_entries);
+								foreach ($field_entries as $fi => $fd) :
+									$str_val   = is_array($fd['value']) ? implode(', ', $fd['value']) : (string) $fd['value'];
+									$max_len   = 200;
+									$is_long   = mb_strlen($str_val) > $max_len;
+									$is_last   = ($fi === $total_fields - 1);
+									$is_odd    = ($total_fields % 2 !== 0);
+									$cell_full = ($is_last && $is_odd) ? ' iftp-kcell--full' : '';
+									$field_svg = $this->get_field_icon_svg($fd['key']);
+								?>
+									<div class="iftp-kcell<?php echo esc_attr($cell_full); ?>">
+										<div class="iftp-klbl">
+											<?php echo $field_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG strings, no user data.
+											?>
+											<?php echo esc_html($this->format_field_label($fd['key'])); ?>
+										</div>
+										<div class="iftp-kval">
+											<?php if ($is_long) : ?>
+												<span class="iftp-val-short"><?php echo esc_html(mb_substr($str_val, 0, $max_len)); ?>&hellip;</span>
+												<span class="iftp-val-full"><?php echo esc_html($str_val); ?></span>
+												<br /><a href="#" class="iftp-read-more"
+													data-more="<?php esc_attr_e('Read more', 'ifthenpay-payments-for-contactform7'); ?>"
+													data-less="<?php esc_attr_e('Read less', 'ifthenpay-payments-for-contactform7'); ?>">
+													<?php esc_html_e('Read more', 'ifthenpay-payments-for-contactform7'); ?>
+												</a>
+											<?php else : ?>
+												<?php echo esc_html($str_val); ?>
+											<?php endif; ?>
+										</div>
 									</div>
-									<div class="iftp-kval">
-										<?php if ($is_long) : ?>
-											<span class="iftp-val-short"><?php echo esc_html(mb_substr($str_val, 0, $max_len)); ?>&hellip;</span>
-											<span class="iftp-val-full"><?php echo esc_html($str_val); ?></span>
-											<br /><a href="#" class="iftp-read-more"
-												data-more="<?php esc_attr_e('Read more', 'ifthenpay-payments-for-contactform7'); ?>"
-												data-less="<?php esc_attr_e('Read less', 'ifthenpay-payments-for-contactform7'); ?>">
-												<?php esc_html_e('Read more', 'ifthenpay-payments-for-contactform7'); ?>
-											</a>
-										<?php else : ?>
-											<?php echo esc_html($str_val); ?>
-										<?php endif; ?>
-									</div>
-								</div>
-							<?php endforeach; ?>
+								<?php endforeach; ?>
+							</div>
 						</div>
-					</div>
 					<?php endif; ?>
-
 				</div><!-- .iftp-detail-col (left) -->
-
 				<!-- Right column (aside) -->
 				<div class="iftp-detail-col iftp-detail-col--aside">
-
 					<!-- Customer card -->
 					<div class="iftp-card">
 						<div class="iftp-card-head">
 							<span class="iftp-card-head-ic">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+									<circle cx="12" cy="7" r="4" />
+								</svg>
 							</span>
 							<h2><?php esc_html_e('Customer', 'ifthenpay-payments-for-contactform7'); ?></h2>
 						</div>
@@ -2077,19 +2217,24 @@ final class EntriesPage
 							</div>
 						</div>
 					</div>
-
 					<!-- Timestamps card -->
 					<div class="iftp-card">
 						<div class="iftp-card-head">
 							<span class="iftp-card-head-ic">
-								<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<circle cx="12" cy="12" r="10" />
+									<polyline points="12 6 12 12 16 14" />
+								</svg>
 							</span>
 							<h2><?php esc_html_e('Timestamps', 'ifthenpay-payments-for-contactform7'); ?></h2>
 						</div>
 						<div class="iftp-ts-body">
 							<div class="iftp-tsrow">
 								<div class="iftp-ts-ic iftp-ts-ic--created">
-									<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<line x1="12" y1="5" x2="12" y2="19" />
+										<line x1="5" y1="12" x2="19" y2="12" />
+									</svg>
 								</div>
 								<div>
 									<div class="iftp-ts-lbl"><?php esc_html_e('Created', 'ifthenpay-payments-for-contactform7'); ?></div>
@@ -2099,7 +2244,10 @@ final class EntriesPage
 							<?php if ($entry->link_generated_at !== null) : ?>
 								<div class="iftp-tsrow">
 									<div class="iftp-ts-ic iftp-ts-ic--link">
-										<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+										<svg viewBox="0 0 24 24" aria-hidden="true">
+											<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+											<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+										</svg>
 									</div>
 									<div>
 										<div class="iftp-ts-lbl"><?php esc_html_e('Link Generated', 'ifthenpay-payments-for-contactform7'); ?></div>
@@ -2109,7 +2257,10 @@ final class EntriesPage
 							<?php endif; ?>
 							<div class="iftp-tsrow">
 								<div class="iftp-ts-ic iftp-ts-ic--updated">
-									<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.76"/></svg>
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<polyline points="1 4 1 10 7 10" />
+										<path d="M3.51 15a9 9 0 1 0 .49-3.76" />
+									</svg>
 								</div>
 								<div>
 									<div class="iftp-ts-lbl"><?php esc_html_e('Updated', 'ifthenpay-payments-for-contactform7'); ?></div>
@@ -2118,16 +2269,11 @@ final class EntriesPage
 							</div>
 						</div>
 					</div>
-
-				</div><!-- .iftp-detail-col--aside -->
-
+				</div>
 			</div><!-- .iftp-detail-grid -->
 		</div><!-- .wrap -->
 <?php
 	}
-
-
-
 	private function get_field_icon_svg(string $key): string
 	{
 		$k = strtolower(preg_replace('/[^a-z0-9]/i', '', $key) ?? $key);

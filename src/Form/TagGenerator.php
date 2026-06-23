@@ -31,7 +31,7 @@ final class TagGenerator
 		$args         = wp_parse_args($args, array());
 		$content      = isset($args['content']) ? (string) $args['content'] : '';
 		$default_text = __('Pay with ifthenpay', 'ifthenpay-payments-for-contactform7');
-	?>
+?>
 		<header class="description-box">
 			<h3><?php esc_html_e('ifthenpay Payment field form-tag generator', 'ifthenpay-payments-for-contactform7'); ?></h3>
 			<p><?php esc_html_e('Generates a form-tag for the ifthenpay payment button. Add it once in your form body where the button should appear, and remove the default Submit button.', 'ifthenpay-payments-for-contactform7'); ?></p>

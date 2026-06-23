@@ -43,8 +43,6 @@ final class IfthenpayService extends \WPCF7_Service
 
 	private function __construct() {}
 
-
-
 	public function get_title(): string
 	{
 		return 'ifthenpay Payment Gateway';
@@ -67,8 +65,6 @@ final class IfthenpayService extends \WPCF7_Service
 	{
 		echo wp_kses_data('<a href="https://ifthenpay.com/" target="_blank" rel="noopener noreferrer">ifthenpay.com</a>');
 	}
-
-
 
 	public function load($action = ''): void
 	{
@@ -96,7 +92,7 @@ final class IfthenpayService extends \WPCF7_Service
 					? sanitize_key(wp_unslash((string) $_GET['message'])) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 					: '';
 
-				$no_refresh = array( 'saved', 'reset' );
+				$no_refresh = array('saved', 'reset');
 				if ($bk !== '' && ! in_array($message, $no_refresh, true)) {
 					IfthenpayApiFacade::connect($bk);
 				}
@@ -223,8 +219,6 @@ final class IfthenpayService extends \WPCF7_Service
 		}
 	}
 
-
-
 	public function display($action = ''): void
 	{
 		$settings = Settings::get_settings();
@@ -261,8 +255,6 @@ final class IfthenpayService extends \WPCF7_Service
 		}
 	}
 
-
-
 	private function display_stage_1(): void
 	{
 ?>
@@ -297,8 +289,6 @@ final class IfthenpayService extends \WPCF7_Service
 		</form>
 	<?php
 	}
-
-
 
 	/** @param array<string, mixed> $settings */
 	private function display_stage_2(array $settings): void
@@ -566,8 +556,6 @@ final class IfthenpayService extends \WPCF7_Service
 		</form>
 <?php
 	}
-
-
 
 	private function setup_url(string $extra = ''): string
 	{

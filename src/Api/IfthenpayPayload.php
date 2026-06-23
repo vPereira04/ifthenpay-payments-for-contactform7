@@ -103,18 +103,6 @@ final class IfthenpayPayload
 		return implode(';', array_values(array_filter($parts, static fn($v) => is_string($v) && $v !== '')));
 	}
 
-	public static function get_gateway_methods_config(array $config, string $gateway_key): array
-	{
-		if (
-			$gateway_key !== '' &&
-			! empty($config['gateway_methods'][$gateway_key]['methods']) &&
-			is_array($config['gateway_methods'][$gateway_key]['methods'])
-		) {
-			return $config['gateway_methods'][$gateway_key]['methods'];
-		}
-		return isset($config['methods']) && is_array($config['methods']) ? $config['methods'] : array();
-	}
-
 	public static function get_selected_method_code(array $config, array $methods_config): string
 	{
 		$map = array();

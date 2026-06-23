@@ -73,7 +73,6 @@ final class EntryRepository
 			return 0;
 		}
 
-		$this->flush_stats_cache();
 		return (int) $wpdb->insert_id;
 	}
 
@@ -97,9 +96,6 @@ final class EntryRepository
 			array('%s', '%s'),
 			array('%d')
 		);
-		if (false !== $rows) {
-			$this->flush_stats_cache();
-		}
 		return false !== $rows;
 	}
 
@@ -135,9 +131,6 @@ final class EntryRepository
 			$formats,
 			array('%d')
 		);
-		if (false !== $rows) {
-			$this->flush_stats_cache();
-		}
 		return false !== $rows;
 	}
 
@@ -187,9 +180,6 @@ final class EntryRepository
 			array('id' => $id),
 			array('%d')
 		);
-		if (false !== $rows && $rows > 0) {
-			$this->flush_stats_cache();
-		}
 		return false !== $rows && $rows > 0;
 	}
 
@@ -216,9 +206,6 @@ final class EntryRepository
 				array_merge(array($this->table), array_values($ids))
 			)
 		);
-		if ($affected > 0) {
-			$this->flush_stats_cache();
-		}
 		return $affected;
 	}
 
@@ -248,34 +235,7 @@ final class EntryRepository
 				array_merge(array($this->table, $status, $now), array_values($ids))
 			)
 		);
-		if ($affected > 0) {
-			$this->flush_stats_cache();
-		}
 		return $affected;
-	}
-
-	/**
-	 * Retrieve multiple entries by their primary keys.
-	 *
-	 * @param int[] $ids Array of entry IDs.
-	 * @return EntryDto[]
-	 */
-	public function get_by_ids(array $ids): array
-	{
-		global $wpdb;
-		$ids = array_filter(array_map('absint', $ids));
-		if (empty($ids)) {
-			return array();
-		}
-		$fmt  = implode(',', array_fill(0, count($ids), '%d'));
-		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; caching payment data risks stale status.
-			$wpdb->prepare(
-				'SELECT * FROM %i WHERE id IN (' . $fmt . ') ORDER BY created_at DESC', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $fmt is built with only %d placeholders; no user data interpolated.
-				array_merge(array($this->table), array_values($ids))
-			),
-			ARRAY_A
-		);
-		return is_array($rows) ? array_map(array(EntryDto::class, 'from'), $rows) : array();
 	}
 
 	/**
@@ -400,189 +360,6 @@ final class EntryRepository
 	}
 
 	/**
-	 * Count entries matching the given filters.
-	 *
-	 * @param string $status       Filter by payment_status ('' = all).
-	 * @param string $search_field Column to search in.
-	 * @param string $search_op    'contains' or 'is'.
-	 * @param string $search_query Search term.
-	 * @return int Total number of matching entries.
-	 */
-	public function count_all(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all', int $form_id = 0): int
-	{
-		global $wpdb;
-		$status 				 = sanitize_key($status);
-		$search_field 			 = sanitize_key($search_field);
-		$search_op 			 	 = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
-		$search_query			 = sanitize_text_field($search_query);
-		$form_id                 = absint($form_id);
-
-		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query, $form_id);
-
-		$period_sql = $this->period_condition($period, $status, true);
-		if ($period_sql !== '') {
-			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
-		}
-
-		$args = array_merge(array($this->table), $w_args);
-		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
-			$wpdb->prepare(
-				'SELECT COUNT(*) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
-				...$args
-			)
-		);
-	}
-
-	/**
-	 * Sum the amount column for entries matching the given filters.
-	 *
-	 * @param string $status       Filter by payment_status ('' = all).
-	 * @param string $search_field Column to search in.
-	 * @param string $search_op    'contains' or 'is'.
-	 * @param string $search_query Search term.
-	 * @return float Sum of amounts, or 0.0.
-	 */
-	public function sum_amount(string $status = '', string $search_field = '', string $search_op = 'contains', string $search_query = '', string $period = 'all'): float
-	{
-		global $wpdb;
-		$status 				 = sanitize_key($status);
-		$search_field 			 = sanitize_key($search_field);
-		$search_op 			 	 = in_array($search_op, array('contains', 'is'), true) ? $search_op : 'contains';
-		$search_query			 = sanitize_text_field($search_query);
-
-		[$where_tpl, $w_args]  = $this->build_where($status, $search_field, $search_op, $search_query);
-
-		$period_sql = $this->period_condition($period, $status, true);
-		if ($period_sql !== '') {
-			$where_tpl = $where_tpl === '' ? ' WHERE ' . $period_sql : $where_tpl . ' AND ' . $period_sql;
-		}
-
-		$args = array_merge(array($this->table), $w_args);
-		return (float) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
-			$wpdb->prepare(
-				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
-				...$args
-			)
-		);
-	}
-
-	/**
-	 * Sum amounts filtered by status and a time period — used for the revenue card.
-	 *
-	 * Period values: 'day' (today), 'week' (last 7 days), 'month' (current calendar month),
-	 *               'year' (current calendar year), 'all' (no date filter, the default).
-	 */
-	public function sum_amount_period(string $status = '', string $period = 'all'): float
-	{
-		global $wpdb;
-		$status = sanitize_key($status);
-		$period = sanitize_key($period);
-
-		[$where_tpl, $w_args] = $this->build_where($status);
-
-
-		$period_sql = $this->period_condition($period, $status);
-		if ($period_sql !== '') {
-			$where_tpl = $where_tpl === ''
-				? ' WHERE ' . $period_sql
-				: $where_tpl . ' AND ' . $period_sql;
-		}
-
-		$args = array_merge(array($this->table), $w_args);
-		return (float) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl/$period_sql built internally using only hardcoded SQL and %s/%d/%i placeholders.
-			$wpdb->prepare(
-				'SELECT COALESCE(SUM(amount),0) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
-				...$args
-			)
-		);
-	}
-
-	/** Count rows filtered by status and a time period — mirrors sum_amount_period(). */
-	public function count_period(string $status = '', string $period = 'all', bool $any_activity = false): int
-	{
-		global $wpdb;
-		$status = sanitize_key($status);
-		$period = sanitize_key($period);
-
-		[$where_tpl, $w_args] = $this->build_where($status);
-
-		$period_sql = $this->period_condition($period, $status, $any_activity);
-		if ($period_sql !== '') {
-			$where_tpl = $where_tpl === ''
-				? ' WHERE ' . $period_sql
-				: $where_tpl . ' AND ' . $period_sql;
-		}
-
-		$args = array_merge(array($this->table), $w_args);
-		return (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; caching payment data risks stale status; $where_tpl/$period_sql built internally using only hardcoded SQL and %s/%d/%i placeholders.
-			$wpdb->prepare(
-				'SELECT COUNT(*) FROM %i' . $where_tpl, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $where_tpl built by build_where() + period_condition() using only hardcoded SQL and %s/%d/%i placeholders.
-				...$args
-			)
-		);
-	}
-
-	/**
-	 * Return per-bucket counts and amounts for the chart.
-	 *
-	 * Bucket keys:
-	 *  - 'day'   → string hour "0"–"23"
-	 *  - 'year'  → "YYYY-MM"
-	 *  - others  → "YYYY-MM-DD"
-	 *
-	 * @return array<int, array{bucket: string, cnt: string, total: string}>
-	 */
-	public function get_chart_data(string $status = '', string $period = 'all'): array
-	{
-		global $wpdb;
-		$status = sanitize_key($status);
-		$col    = $status === 'completed' ? 'updated_at' : 'created_at';
-
-		[$where_tpl, $w_args] = $this->build_where($status);
-
-		if ($period === 'day') {
-			$group_expr  = "HOUR({$col})";
-			$period_cond = "{$col} >= CURDATE() AND {$col} < DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
-		} elseif ($period === 'year') {
-			$group_expr  = "DATE_FORMAT({$col}, '%Y-%m')";
-			$period_cond = "{$col} >= DATE_FORMAT(NOW(),'%Y-01-01') AND {$col} < DATE_ADD(DATE_FORMAT(NOW(),'%Y-01-01'), INTERVAL 1 YEAR)";
-		} elseif ($period === 'month') {
-			$group_expr  = "DATE({$col})";
-			$period_cond = "{$col} >= DATE_FORMAT(NOW(),'%Y-%m-01') AND {$col} < DATE_ADD(DATE_FORMAT(NOW(),'%Y-%m-01'), INTERVAL 1 MONTH)";
-		} elseif ($period === 'week') {
-			$group_expr  = "DATE({$col})";
-			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-		} elseif ($period === '15day') {
-			$group_expr  = "DATE({$col})";
-			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 15 DAY)";
-		} elseif ($period === '30day') {
-			$group_expr  = "DATE({$col})";
-			$period_cond = "{$col} >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-		} else {
-
-			$group_expr  = "DATE_FORMAT({$col}, '%Y-%m')";
-			$period_cond = '1=1';
-		}
-
-		$where_tpl = $where_tpl === ''
-			? " WHERE {$period_cond}"
-			: $where_tpl . " AND {$period_cond}";
-
-		$args = array_merge([$this->table], $w_args);
-
-		$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; $group_expr derived from a hardcoded switch on $period/$col with no user-controlled values.
-			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-				"SELECT {$group_expr} AS bucket, COUNT(*) AS cnt, COALESCE(SUM(amount),0) AS total FROM %i{$where_tpl} GROUP BY {$group_expr} ORDER BY {$group_expr}",
-				...$args
-			),
-			ARRAY_A
-		);
-
-		return is_array($rows) ? $rows : [];
-	}
-
-	/**
 	 * Count and sum in one query — replaces calling count_all() + sum_amount() separately.
 	 *
 	 * Result cached for 30 s when there is no search term.
@@ -607,8 +384,8 @@ final class EntryRepository
 					round($stats['completed_amount'] + $stats['pending_amount'] + $stats['failed_amount'] + $stats['cancelled_amount'], 2),
 				];
 			}
-			if (isset($stats[ $status . '_any' ], $stats[ $status . '_amount' ])) {
-				return [(int) $stats[ $status . '_any' ], round((float) $stats[ $status . '_amount' ], 2)];
+			if (isset($stats[$status . '_any'], $stats[$status . '_amount'])) {
+				return [(int) $stats[$status . '_any'], round((float) $stats[$status . '_amount'], 2)];
 			}
 		}
 
@@ -679,14 +456,17 @@ final class EntryRepository
 				'pending_any'      => $by['pending'][0]   ?? 0,
 				'failed_any'       => $by['failed'][0]    ?? 0,
 				'cancelled_any'    => $by['cancelled'][0] ?? 0,
+				'expired_any'      => $by['expired'][0]   ?? 0,
 				'completed_count'  => $by['completed'][0] ?? 0,
 				'pending_count'    => $by['pending'][0]   ?? 0,
 				'failed_count'     => $by['failed'][0]    ?? 0,
 				'cancelled_count'  => $by['cancelled'][0] ?? 0,
+				'expired_count'    => $by['expired'][0]   ?? 0,
 				'completed_amount' => $by['completed'][1] ?? 0.0,
 				'pending_amount'   => $by['pending'][1]   ?? 0.0,
 				'failed_amount'    => $by['failed'][1]    ?? 0.0,
 				'cancelled_amount' => $by['cancelled'][1] ?? 0.0,
+				'expired_amount'   => $by['expired'][1]   ?? 0.0,
 			];
 			return $this->stats_memo[$period];
 		}
@@ -703,14 +483,17 @@ final class EntryRepository
 			SUM(CASE WHEN payment_status='pending'   THEN 1 ELSE 0 END) AS pending_any,
 			SUM(CASE WHEN payment_status='failed'    THEN 1 ELSE 0 END) AS failed_any,
 			SUM(CASE WHEN payment_status='cancelled' THEN 1 ELSE 0 END) AS cancelled_any,
+			SUM(CASE WHEN payment_status='expired'   THEN 1 ELSE 0 END) AS expired_any,
 			SUM(CASE WHEN payment_status='completed'{$upd_sql} THEN 1 ELSE 0 END) AS completed_count,
 			SUM(CASE WHEN payment_status='pending'{$cre_sql}   THEN 1 ELSE 0 END) AS pending_count,
 			SUM(CASE WHEN payment_status='failed'{$cre_sql}    THEN 1 ELSE 0 END) AS failed_count,
 			SUM(CASE WHEN payment_status='cancelled'{$cre_sql} THEN 1 ELSE 0 END) AS cancelled_count,
+			SUM(CASE WHEN payment_status='expired'{$cre_sql}   THEN 1 ELSE 0 END) AS expired_count,
 			COALESCE(SUM(CASE WHEN payment_status='completed'{$upd_sql} THEN amount ELSE 0 END),0) AS completed_amount,
 			COALESCE(SUM(CASE WHEN payment_status='pending'{$cre_sql}   THEN amount ELSE 0 END),0) AS pending_amount,
 			COALESCE(SUM(CASE WHEN payment_status='failed'{$cre_sql}    THEN amount ELSE 0 END),0) AS failed_amount,
-			COALESCE(SUM(CASE WHEN payment_status='cancelled'{$cre_sql} THEN amount ELSE 0 END),0) AS cancelled_amount
+			COALESCE(SUM(CASE WHEN payment_status='cancelled'{$cre_sql} THEN amount ELSE 0 END),0) AS cancelled_amount,
+			COALESCE(SUM(CASE WHEN payment_status='expired'{$cre_sql}   THEN amount ELSE 0 END),0) AS expired_amount
 			FROM %i{$where}";
 
 		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; intentionally live for accurate counts; all interpolated SQL is hardcoded date conditions with no user-controlled values.
@@ -722,9 +505,21 @@ final class EntryRepository
 		);
 
 		$z = array(
-			'completed_any' => 0, 'pending_any' => 0, 'failed_any' => 0, 'cancelled_any' => 0,
-			'completed_count' => 0, 'pending_count' => 0, 'failed_count' => 0, 'cancelled_count' => 0,
-			'completed_amount' => 0.0, 'pending_amount' => 0.0, 'failed_amount' => 0.0, 'cancelled_amount' => 0.0,
+			'completed_any' => 0,
+			'pending_any' => 0,
+			'failed_any' => 0,
+			'cancelled_any' => 0,
+			'expired_any' => 0,
+			'completed_count' => 0,
+			'pending_count' => 0,
+			'failed_count' => 0,
+			'cancelled_count' => 0,
+			'expired_count' => 0,
+			'completed_amount' => 0.0,
+			'pending_amount' => 0.0,
+			'failed_amount' => 0.0,
+			'cancelled_amount' => 0.0,
+			'expired_amount' => 0.0,
 		);
 
 		if (! is_array($row)) {
@@ -737,22 +532,19 @@ final class EntryRepository
 			'pending_any'      => (int)   ($row['pending_any']      ?? 0),
 			'failed_any'       => (int)   ($row['failed_any']       ?? 0),
 			'cancelled_any'    => (int)   ($row['cancelled_any']    ?? 0),
+			'expired_any'      => (int)   ($row['expired_any']      ?? 0),
 			'completed_count'  => (int)   ($row['completed_count']  ?? 0),
 			'pending_count'    => (int)   ($row['pending_count']    ?? 0),
 			'failed_count'     => (int)   ($row['failed_count']     ?? 0),
 			'cancelled_count'  => (int)   ($row['cancelled_count']  ?? 0),
+			'expired_count'    => (int)   ($row['expired_count']    ?? 0),
 			'completed_amount' => (float) ($row['completed_amount'] ?? 0.0),
 			'pending_amount'   => (float) ($row['pending_amount']   ?? 0.0),
 			'failed_amount'    => (float) ($row['failed_amount']    ?? 0.0),
 			'cancelled_amount' => (float) ($row['cancelled_amount'] ?? 0.0),
+			'expired_amount'   => (float) ($row['expired_amount']   ?? 0.0),
 		);
 		return $this->stats_memo[$period];
-	}
-
-	/** Sum of all completed payments ever — derived from the memoised get_period_stats('all'), no extra query. */
-	public function get_all_time_paid(): float
-	{
-		return (float) $this->get_period_stats('all')['completed_amount'];
 	}
 
 	/**
@@ -777,21 +569,25 @@ final class EntryRepository
 				SUM(CASE WHEN payment_status='pending'   AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_pending,
 				SUM(CASE WHEN payment_status='failed'    AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_failed,
 				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_cancelled,
+				SUM(CASE WHEN payment_status='expired'   AND updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS d1_expired,
 				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN amount ELSE 0 END),0) AS d7_revenue,
 				SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_completed,
 				SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_pending,
 				SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_failed,
 				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_cancelled,
+				SUM(CASE WHEN payment_status='expired'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS d7_expired,
 				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN amount ELSE 0 END),0) AS d15_revenue,
 				SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_completed,
 				SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_pending,
 				SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_failed,
 				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_cancelled,
+				SUM(CASE WHEN payment_status='expired'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY) THEN 1 ELSE 0 END) AS d15_expired,
 				COALESCE(SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN amount ELSE 0 END),0) AS d30_revenue,
 				SUM(CASE WHEN payment_status='completed' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_completed,
 				SUM(CASE WHEN payment_status='pending'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_pending,
 				SUM(CASE WHEN payment_status='failed'    AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_failed,
-				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_cancelled
+				SUM(CASE WHEN payment_status='cancelled' AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_cancelled,
+				SUM(CASE WHEN payment_status='expired'   AND updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS d30_expired
 				FROM %i
 				WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
 				$this->table
@@ -801,7 +597,7 @@ final class EntryRepository
 
 		$empty = array(
 			'revenue' => 0.0,
-			'counts'  => array('pending' => 0, 'completed' => 0, 'failed' => 0, 'cancelled' => 0),
+			'counts'  => array('pending' => 0, 'completed' => 0, 'failed' => 0, 'cancelled' => 0, 'expired' => 0),
 		);
 
 		if (! is_array($row)) {
@@ -816,6 +612,7 @@ final class EntryRepository
 					'completed' => (int) ($row["{$p}_completed"] ?? 0),
 					'failed'    => (int) ($row["{$p}_failed"]    ?? 0),
 					'cancelled' => (int) ($row["{$p}_cancelled"] ?? 0),
+					'expired'   => (int) ($row["{$p}_expired"]   ?? 0),
 				),
 			);
 		};
@@ -892,8 +689,6 @@ final class EntryRepository
 		}
 	}
 
-	private function flush_stats_cache(): void {}
-
 	/**
 	 * Build a WHERE clause template and its parameter list.
 	 *
@@ -953,27 +748,23 @@ final class EntryRepository
 	}
 
 	/**
-	 * Mark as 'failed' any pending entries that have no payment URL and are older than
-	 * $threshold_hours hours. These are orphaned rows created when the AJAX payment-creation
-	 * request was interrupted before the ifthenpay API responded.
+	 * Mark pending entries as failed when their creation date is older than $expire_days days.
+	 * Mirrors ifthenpay's server-side expiry, which fires at 23:59 on the expiry date.
 	 *
-	 * @param int $threshold_hours Minimum age in hours before a stale entry is cleaned up.
+	 * @param int $expire_days Number of days after which a pending entry is considered expired.
 	 * @return int Number of rows updated.
 	 */
-	public function mark_stale_pending(int $threshold_hours = 1): int
+	public function mark_expired_pending(int $expire_days): int
 	{
 		global $wpdb;
-		$interval = max(1, (int) $threshold_hours);
-		$rows     = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Scheduled hourly cleanup; intentionally live.
+		$days = max(1, $expire_days);
+		$rows = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Daily scheduled expiry; intentionally live, no caching needed.
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $interval is an internal integer constant, never user input.
-				"UPDATE %i SET payment_status = 'failed', updated_at = NOW() WHERE payment_status = 'pending' AND payment_url = '' AND created_at < DATE_SUB(NOW(), INTERVAL {$interval} HOUR)",
-				$this->table
+				"UPDATE %i SET payment_status = 'expired', updated_at = NOW() WHERE payment_status = 'pending' AND created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+				$this->table,
+				$days
 			)
 		);
-		if (false !== $rows && $rows > 0) {
-			$this->flush_stats_cache();
-		}
 		return (int) $rows;
 	}
 

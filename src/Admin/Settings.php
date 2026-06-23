@@ -12,7 +12,7 @@ if (! defined('ABSPATH')) {
  * Global settings — thin helper that reads/writes the single iftp_cf7_settings option.
  *
  * All setup UI is handled by IfthenpayService (CF7 Integration page).
- * Other classes (Process, Callback, FormPanel) call static getters here.
+ * Other classes (Process, FormPanel) call static getters here.
  */
 final class Settings
 {
@@ -117,5 +117,4 @@ final class Settings
 		}
 	}
 
-	public function __construct() {}
 }

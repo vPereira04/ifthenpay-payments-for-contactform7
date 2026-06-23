@@ -27,8 +27,6 @@ final class Process
 		$this->repository = new EntryRepository();
 	}
 
-
-
 	/**
 	 * Inject our hidden POST fields into CF7's posted_data.
 	 *
@@ -117,8 +115,6 @@ final class Process
 			default                 => $output,
 		};
 	}
-
-
 
 	public function ajax_create_payment(): void
 	{
@@ -217,8 +213,6 @@ final class Process
 			)
 		);
 	}
-
-
 
 	public function ajax_verify_payment(): void
 	{

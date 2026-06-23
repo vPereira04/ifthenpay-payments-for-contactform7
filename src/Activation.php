@@ -11,7 +11,7 @@ if (! defined('ABSPATH')) {
 final class Activation
 {
 
-	private const DB_VERSION     = '2.0';
+	private const DB_VERSION     = '1.0.0';
 	private const DB_VERSION_KEY = 'iftp_cf7_db_version';
 
 	public static function activate(): void
@@ -19,8 +19,8 @@ final class Activation
 		self::create_table();
 		update_option(self::DB_VERSION_KEY, self::DB_VERSION, false);
 
-		if (! wp_next_scheduled('iftp_cf7_cleanup_stale')) {
-			wp_schedule_event(time(), 'hourly', 'iftp_cf7_cleanup_stale');
+		if (! wp_next_scheduled('iftp_cf7_expire_payments')) {
+			wp_schedule_event(self::next_2359_timestamp(), 'daily', 'iftp_cf7_expire_payments');
 		}
 
 		\Ifthenpay\CF7\Payment\GatewayEndpoint::flush();
@@ -28,11 +28,21 @@ final class Activation
 
 	public static function deactivate(): void
 	{
-		$timestamp = wp_next_scheduled('iftp_cf7_cleanup_stale');
-		if ($timestamp) {
-			wp_unschedule_event($timestamp, 'iftp_cf7_cleanup_stale');
-		}
+		wp_clear_scheduled_hook('iftp_cf7_expire_payments');
+
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Returns the Unix timestamp for the next upcoming 23:59:00 in the WordPress timezone.
+	 * If it is already past 23:59 today, the timestamp for tomorrow 23:59 is returned.
+	 */
+	private static function next_2359_timestamp(): int
+	{
+		$tz    = wp_timezone();
+		$now   = new \DateTimeImmutable('now', $tz);
+		$today = new \DateTimeImmutable('today 23:59:00', $tz);
+		return $now < $today ? $today->getTimestamp() : ( new \DateTimeImmutable('tomorrow 23:59:00', $tz) )->getTimestamp();
 	}
 
 	public static function maybe_upgrade(): void

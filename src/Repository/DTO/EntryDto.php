@@ -66,6 +66,7 @@ final readonly class EntryDto
 			'pending'   => __('Pending', 'ifthenpay-payments-for-contactform7'),
 			'failed'    => __('Failed', 'ifthenpay-payments-for-contactform7'),
 			'cancelled' => __('Cancelled', 'ifthenpay-payments-for-contactform7'),
+			'expired'   => __('Expired', 'ifthenpay-payments-for-contactform7'),
 			default     => ucfirst($this->payment_status),
 		};
 	}
