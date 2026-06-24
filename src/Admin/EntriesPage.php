@@ -1715,6 +1715,51 @@ final class EntriesPage
 		$label = preg_replace('/^(your[-_])/i', '', $key) ?? $key;
 
 		$label = str_replace(array('-', '_'), ' ', $label);
+
+
+		static $translations = array(
+			'nome'           => 'Name',
+			'primeiro nome'  => 'First Name',
+			'ultimo nome'    => 'Last Name',
+			'apelido'        => 'Last Name',
+			'morada'         => 'Address',
+			'rua'            => 'Street',
+			'cidade'         => 'City',
+			'localidade'     => 'City',
+			'distrito'       => 'District',
+			'codigo postal'  => 'Postal Code',
+			'cp'             => 'Postal Code',
+			'pais'           => 'Country',
+			'telemovel'      => 'Mobile Phone',
+			'telefone'       => 'Phone',
+			'telefone fixo'  => 'Phone',
+			'nif'            => 'Tax ID',
+			'nib'            => 'Bank Account',
+			'iban'           => 'IBAN',
+			'mensagem'       => 'Message',
+			'assunto'        => 'Subject',
+			'empresa'        => 'Company',
+			'descricao'      => 'Description',
+			'observacoes'    => 'Notes',
+			'notas'          => 'Notes',
+			'comentarios'    => 'Comments',
+			'data'           => 'Date',
+			'hora'           => 'Time',
+			'quantidade'     => 'Quantity',
+			'valor'          => 'Amount',
+			'preco'          => 'Price',
+			'genero'         => 'Gender',
+			'sexo'           => 'Gender',
+			'nascimento'     => 'Date of Birth',
+			'website'        => 'Website',
+			'site'           => 'Website',
+		);
+
+		$lower = strtolower(trim($label));
+		if (isset($translations[$lower])) {
+			return $translations[$lower];
+		}
+
 		return ucwords($label);
 	}
 
@@ -1896,13 +1941,6 @@ final class EntriesPage
 		$link_done = $entry->link_generated_at !== null || $entry->payment_url !== '';
 		$is_done   = in_array($entry->payment_status, array('completed', 'failed', 'cancelled', 'expired'), true);
 
-		$step3_label = match ($entry->payment_status) {
-			'completed' => __('Paid', 'ifthenpay-payments-for-contactform7'),
-			'failed'    => __('Failed', 'ifthenpay-payments-for-contactform7'),
-			'cancelled' => __('Cancelled', 'ifthenpay-payments-for-contactform7'),
-			'expired'   => __('Expired', 'ifthenpay-payments-for-contactform7'),
-			default     => __('Payment', 'ifthenpay-payments-for-contactform7'),
-		};
 		$step2_dot_class = $link_done ? 'iftp-step-dot--done' : 'iftp-step-dot--pending';
 		$step2_lbl_muted = $link_done ? '' : ' iftp-step-lbl--muted';
 		$step3_dot_class = match ($entry->payment_status) {
@@ -1923,7 +1961,7 @@ final class EntriesPage
 		};
 
 		$step2_time  = $entry->link_generated_at ?? ($entry->payment_url !== '' ? __('Previously', 'ifthenpay-payments-for-contactform7') : '—');
-		$step3_time  = $is_done ? $entry->updated_at : '—';
+		$step3_time  = $entry->updated_at;
 		$form_label  = $entry->form_title ?: 'Form #' . $entry->form_id;
 	?>
 		<div class="wrap iftp-cf7-entries-wrap">
@@ -2025,6 +2063,7 @@ final class EntriesPage
 								</svg>
 							</div>
 							<div class="iftp-step-lbl"><?php esc_html_e('Created', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-desc"><?php esc_html_e('Customer clicked the pay button', 'ifthenpay-payments-for-contactform7'); ?></div>
 							<div class="iftp-step-time"><?php echo esc_html($entry->created_at); ?></div>
 						</div>
 						<div class="iftp-step-line <?php echo esc_attr($line1_class); ?>" aria-hidden="true"></div>
@@ -2036,6 +2075,7 @@ final class EntriesPage
 								</svg>
 							</div>
 							<div class="iftp-step-lbl<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Link Generated', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-desc<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Payment link was generated', 'ifthenpay-payments-for-contactform7'); ?></div>
 							<div class="iftp-step-time"><?php echo esc_html($step2_time); ?></div>
 						</div>
 						<div class="iftp-step-line <?php echo esc_attr($line2_class); ?>" aria-hidden="true"></div>
@@ -2068,7 +2108,8 @@ final class EntriesPage
 									</svg>
 								<?php endif; ?>
 							</div>
-							<div class="iftp-step-lbl<?php echo esc_attr($step3_lbl_muted); ?>"><?php echo esc_html($step3_label); ?></div>
+							<div class="iftp-step-lbl<?php echo esc_attr($step3_lbl_muted); ?>"><?php esc_html_e('Updated', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-desc<?php echo esc_attr($step3_lbl_muted); ?>"><?php esc_html_e('After payment result — paid, failed or expired', 'ifthenpay-payments-for-contactform7'); ?></div>
 							<div class="iftp-step-time"><?php echo esc_html($step3_time); ?></div>
 						</div>
 					</div><!-- .iftp-journey -->

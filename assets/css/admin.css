@@ -2175,6 +2175,19 @@ a.iftp-stat-card {
 	color: #a0aec0;
 }
 
+.iftp-step-desc {
+	font-size: 10px;
+	color: #94a3b8;
+	text-align: center;
+	white-space: normal;
+	max-width: 110px;
+	line-height: 1.35;
+}
+
+.iftp-step-desc.iftp-step-lbl--muted {
+	color: #c3cdd8;
+}
+
 .iftp-step-time {
 	font-size: 10px;
 	line-height: 1.4;

@@ -758,9 +758,10 @@ final class EntryRepository
 	{
 		global $wpdb;
 		$days = max(1, $expire_days);
+
 		$rows = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Daily scheduled expiry; intentionally live, no caching needed.
 			$wpdb->prepare(
-				"UPDATE %i SET payment_status = 'expired', updated_at = NOW() WHERE payment_status = 'pending' AND created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+				"UPDATE %i SET payment_status = 'expired', updated_at = NOW() WHERE payment_status = 'pending' AND DATE(created_at) <= DATE_SUB(CURDATE(), INTERVAL %d DAY)",
 				$this->table,
 				$days
 			)

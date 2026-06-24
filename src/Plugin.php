@@ -47,8 +47,7 @@ final class Plugin
 		Activation::maybe_upgrade();
 
 		add_action('iftp_cf7_expire_payments', function (): void {
-			$expire_days = (int) get_option('expire_days', 3);
-			(new \Ifthenpay\CF7\Repository\EntryRepository())->mark_expired_pending(max(1, $expire_days));
+			(new \Ifthenpay\CF7\Repository\EntryRepository())->mark_expired_pending(Settings::get_expire_days());
 		});
 
 		add_action('wpcf7_admin_init', array($this, 'register_service'));
@@ -128,14 +127,13 @@ final class Plugin
 			'@font-face{font-family:ifthenpay-icons-ab;'
 				. 'src:url(' . $woff2 . ') format("woff2"),url(' . $woff . ') format("woff");'
 				. 'font-display:block}'
-				. '#wp-admin-bar-ifthenpay-cf7-entries > .ab-item{display:flex;align-items:center;gap:5px}'
+				. '#wp-admin-bar-ifthenpay-cf7-entries > .ab-item{display:flex;align-items:center;gap:6px}'
 				. '#wp-admin-bar-ifthenpay-cf7-entries .iftp-ab-icon{'
 				. 'font-family:ifthenpay-icons-ab;speak:never;font-style:normal;font-weight:400;'
-				. 'font-size:17px;line-height:1;display:inline-flex;align-items:center;flex-shrink:0;'
-				. 'margin-top:5px;'
-				. 'color:rgba(240,245,250,.65);transition:color .12s}'
+				. 'font-size:22px;line-height:1;display:inline-flex;align-items:center;flex-shrink:0;'
+				. 'transform:translateY(3px);color: #fff;transition:color .12s}'
 				. '#wp-admin-bar-ifthenpay-cf7-entries:hover .iftp-ab-icon,'
-				. '#wp-admin-bar-ifthenpay-cf7-entries.hover .iftp-ab-icon{color:#fff}'
+				. '#wp-admin-bar-ifthenpay-cf7-entries.hover .iftp-ab-icon{color: #7b90ff}'
 		);
 	}
 

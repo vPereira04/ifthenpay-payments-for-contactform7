@@ -526,9 +526,10 @@ final class IfthenpayService extends \WPCF7_Service
 								name="description"
 								class="regular-text"
 								value="<?php echo esc_attr($description); ?>"
+								placeholder="e.g.: Purchase at My Store"
 								maxlength="100" />
 							<p class="description">
-								<?php esc_html_e('Shown on the payment record.', 'ifthenpay-payments-for-contactform7'); ?>
+								<?php esc_html_e('Label sent to ifthenpay and displayed to the customer on the payment page. Use something recognisable, like your store or product name.', 'ifthenpay-payments-for-contactform7'); ?>
 							</p>
 						</td>
 					</tr>
@@ -548,6 +549,9 @@ final class IfthenpayService extends \WPCF7_Service
 								value="<?php echo esc_attr((string) $expire_days); ?>"
 								min="1"
 								max="30" />
+							<p class="description">
+								<?php esc_html_e('A value of 1 means a payment created today will expire tomorrow at 23:59. Pending payments older than this many days are marked Expired automatically each night.', 'ifthenpay-payments-for-contactform7'); ?>
+							</p>
 						</td>
 					</tr>
 
