@@ -216,9 +216,9 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
    ![Backoffice Setup](.wordpress-org/screenshot-2.png)
 3. **(Admin Only) CF7 Integration page — Gateway Key & payment methods configuration**
    ![Gateway Configuration](.wordpress-org/screenshot-3.png)
-4. **(Admin Only) Form editor — ifthenpay Payment Gateway tab (per-form settings)**
-   ![Per-form Settings](.wordpress-org/screenshot-4.png)
-5. **(Admin Only) Tag Generator in the form editor**
+4. **(Admin Only) Entering a random CF7 form**
+   ![CF7 Forms](.wordpress-org/screenshot-4.png)
+5. **(Admin Only) Tag Generator in the form editor - ifthenpay Payment Gateway tab (per-form settings)**
    ![Tag Generator](.wordpress-org/screenshot-5.png)
 6. **(Customer Experience) Frontend form with payment button and method logos**
    ![Frontend Form](.wordpress-org/screenshot-6.png)
@@ -226,16 +226,16 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
    ![Payment Window](.wordpress-org/screenshot-7.png)
 8. **(Admin Only) ifthenpay Entries page — stats cards and entries list**
    ![Entries Page](.wordpress-org/screenshot-8.png)
-9. **(Admin Only) Single payment entry detail view**
-   ![Entry Detail](.wordpress-org/screenshot-9.png)
-10. **(Admin Only) WordPress Dashboard widget — revenue and payment counts**
-   ![Dashboard Widget](.wordpress-org/screenshot-10.png)
-11. **(Admin Only) Admin bar shortcut to Entries page**
+9. **(Admin Only) ifthenpay Entries page — Add Simple Payment**
+   ![Add Simple Payment](.wordpress-org/screenshot-9.png)
+10. **(Admin Only) ifthenpay Entries page — Add Complex Payment**
+   ![Add Complex Payment](.wordpress-org/screenshot-10.png)
+11. **(Admin Only) ifthenpay Entries page — Paid Status selected**
     ![Admin Bar](.wordpress-org/screenshot-11.png)
-12. **(Admin Only) Entries table with filter tabs, search, and bulk actions**
-    ![Entries Table](.wordpress-org/screenshot-12.png)
-13. **(Admin Only) Column customizer — drag to reorder, toggle visibility**
-    ![Column Customizer](.wordpress-org/screenshot-13.png)
+12. **(Admin Only) Single Entry View page - All information about a single Entry**
+    ![Single Entry View](.wordpress-org/screenshot-12.png)
+13. **(Admin Only) WordPress Dashboard Card with a revenue summary**
+    ![Dashboard Card](.wordpress-org/screenshot-13.png)
 
 ## Support
 

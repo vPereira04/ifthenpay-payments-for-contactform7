@@ -152,16 +152,16 @@ All network requests are performed server-side over HTTPS. Sensitive credentials
 1.  (Admin Only) CF7 Integration page — Integration Card View
 2.  (Admin Only) CF7 Integration page — Backoffice Key setup
 3.  (Admin Only) CF7 Integration page — Gateway Key & payment methods configuration
-4.  (Admin Only) Form editor — ifthenpay Payment Gateway tab (per-form settings)
-5.  (Admin Only) Tag Generator in the form editor
+4.  (Admin Only) Entering a random CF7 form
+5.  (Admin Only) Tag Generator in the form editor - ifthenpay Payment Gateway tab (per-form settings)
 6.  (Customer Experience) Frontend form with payment button and method logos
 7.  (Customer Experience) ifthenpay payment window
 8.  (Admin Only) ifthenpay Entries page — stats cards and entries list
-9.  (Admin Only) Single payment entry detail view
-10. (Admin Only) WordPress Dashboard widget — revenue and payment counts
-11. (Admin Only) Admin bar shortcut to Entries page
-12. (Admin Only) Entries table with filter tabs, search, and bulk actions**
-13. (Admin Only) Column customizer — drag to reorder, toggle visibility
+9.  (Admin Only) ifthenpay Entries page — Add Simple Payment
+10. (Admin Only) ifthenpay Entries page — Add Complex Payment
+11. (Admin Only) ifthenpay Entries page — Paid Status selected
+12. (Admin Only) Single Entry View page - All information about a single Entry
+13. (Admin Only) WordPress Dashboard Card with a revenue summary
 
 == Changelog ==
 
