@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ifthenpay-payments-for-contactform7 1.0.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ifthenpay-payments-for-contactform7\n"
-"POT-Creation-Date: 2026-06-23 16:12:26+00:00\n"
+"POT-Creation-Date: 2026-06-24 10:07:56+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -12,503 +12,499 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
-#: src/Admin/EntriesPage.php:226 src/Admin/Settings.php:87
+#: src/Admin/EntriesPage.php:225 src/Admin/Settings.php:87
 msgid "Unauthorized."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:252
+#: src/Admin/EntriesPage.php:251
 msgid "Amount must be greater than zero."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:276
+#: src/Admin/EntriesPage.php:275
 msgid "Failed to save entry."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:508
+#: src/Admin/EntriesPage.php:506
 msgctxt "period filter"
 msgid "All"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:509
+#: src/Admin/EntriesPage.php:507
 msgctxt "period filter"
 msgid "Year"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:510
+#: src/Admin/EntriesPage.php:508
 msgctxt "period filter"
 msgid "Month"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:511
+#: src/Admin/EntriesPage.php:509
 msgctxt "period filter"
 msgid "Week"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:512
+#: src/Admin/EntriesPage.php:510
 msgctxt "period filter"
 msgid "Day"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:577 src/Admin/EntriesPage.php:1945 src/Plugin.php:121
+#: src/Admin/EntriesPage.php:575 src/Admin/EntriesPage.php:1937 src/Plugin.php:111
 msgid "Entries"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:588 src/Admin/EntriesPage.php:1153 src/Admin/EntriesPage.php:1302
+#: src/Admin/EntriesPage.php:586 src/Admin/EntriesPage.php:1149 src/Admin/EntriesPage.php:1298
 msgid "Add Payment"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:595 src/Plugin.php:383
+#: src/Admin/EntriesPage.php:593 src/Plugin.php:373
 msgid "Time period"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:640
+#: src/Admin/EntriesPage.php:638
 msgid "Gray Revenue"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:641
+#: src/Admin/EntriesPage.php:639
 msgid "Paid Revenue"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:642
+#: src/Admin/EntriesPage.php:640
 msgid "Pending Total"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:643
+#: src/Admin/EntriesPage.php:641
 msgid "Failed Total"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:644
+#: src/Admin/EntriesPage.php:642
 msgid "Cancelled Total"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:645
+#: src/Admin/EntriesPage.php:643
 msgid "Expired Total"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:653
+#: src/Admin/EntriesPage.php:651
 msgid "All time"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:654
+#: src/Admin/EntriesPage.php:652
 msgid "This year"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:655
+#: src/Admin/EntriesPage.php:653
 msgid "This month"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:656 src/Plugin.php:351
+#: src/Admin/EntriesPage.php:654 src/Plugin.php:341
 msgid "Last 7 days"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:657
+#: src/Admin/EntriesPage.php:655
 msgid "Today"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:691
+#: src/Admin/EntriesPage.php:689
 msgctxt "payment count label"
 msgid "paid"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:692
+#: src/Admin/EntriesPage.php:690
 msgctxt "payment count label"
 msgid "pending"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:693
+#: src/Admin/EntriesPage.php:691
 msgctxt "payment count label"
 msgid "failed"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:694
+#: src/Admin/EntriesPage.php:692
 msgctxt "payment count label"
 msgid "cancelled"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:696
+#: src/Admin/EntriesPage.php:694
 msgctxt "payment count label"
 msgid "payments"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:706
+#: src/Admin/EntriesPage.php:704
 msgid "Toggle bar view"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:724 src/Admin/EntriesPage.php:803 src/Admin/EntriesPage.php:1191 src/Admin/EntriesPage.php:1232 src/Admin/EntriesPage.php:1908 src/Plugin.php:416 src/Repository/DTO/EntryDto.php:65
+#: src/Admin/EntriesPage.php:722 src/Admin/EntriesPage.php:801 src/Admin/EntriesPage.php:1187 src/Admin/EntriesPage.php:1228 src/Admin/EntriesPage.php:1900 src/Plugin.php:406 src/Repository/DTO/EntryDto.php:65
 msgid "Paid"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:739 src/Admin/EntriesPage.php:804 src/Admin/EntriesPage.php:1192 src/Admin/EntriesPage.php:1233 src/Plugin.php:412 src/Repository/DTO/EntryDto.php:66
+#: src/Admin/EntriesPage.php:737 src/Admin/EntriesPage.php:802 src/Admin/EntriesPage.php:1188 src/Admin/EntriesPage.php:1229 src/Plugin.php:402 src/Repository/DTO/EntryDto.php:66
 msgid "Pending"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:754 src/Admin/EntriesPage.php:805 src/Admin/EntriesPage.php:1194 src/Admin/EntriesPage.php:1235 src/Admin/EntriesPage.php:1909 src/Plugin.php:420 src/Repository/DTO/EntryDto.php:67
+#: src/Admin/EntriesPage.php:752 src/Admin/EntriesPage.php:803 src/Admin/EntriesPage.php:1190 src/Admin/EntriesPage.php:1231 src/Admin/EntriesPage.php:1901 src/Plugin.php:410 src/Repository/DTO/EntryDto.php:67
 msgid "Failed"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:769 src/Admin/EntriesPage.php:806 src/Admin/EntriesPage.php:1193 src/Admin/EntriesPage.php:1234 src/Admin/EntriesPage.php:1910 src/Plugin.php:424 src/Repository/DTO/EntryDto.php:68
+#: src/Admin/EntriesPage.php:767 src/Admin/EntriesPage.php:804 src/Admin/EntriesPage.php:1189 src/Admin/EntriesPage.php:1230 src/Admin/EntriesPage.php:1902 src/Plugin.php:414 src/Repository/DTO/EntryDto.php:68
 msgid "Cancelled"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:783 src/Admin/EntriesPage.php:807 src/Admin/EntriesPage.php:1195 src/Admin/EntriesPage.php:1236 src/Admin/EntriesPage.php:1911 src/Plugin.php:428 src/Repository/DTO/EntryDto.php:69
+#: src/Admin/EntriesPage.php:781 src/Admin/EntriesPage.php:805 src/Admin/EntriesPage.php:1191 src/Admin/EntriesPage.php:1232 src/Admin/EntriesPage.php:1903 src/Plugin.php:418 src/Repository/DTO/EntryDto.php:69
 msgid "Expired"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:799
+#: src/Admin/EntriesPage.php:797
 msgid "Filter by status"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:802
+#: src/Admin/EntriesPage.php:800
 msgid "All"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:841 src/Admin/EntriesPage.php:842
+#: src/Admin/EntriesPage.php:839 src/Admin/EntriesPage.php:840
 msgid "Bulk Actions"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:843
+#: src/Admin/EntriesPage.php:841
 msgid "Mark as Paid"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:844
+#: src/Admin/EntriesPage.php:842
 msgid "Mark as Cancelled"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:845
+#: src/Admin/EntriesPage.php:843
 msgid "Mark as Failed"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:846
+#: src/Admin/EntriesPage.php:844
 msgid "Mark as Pending"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:847
+#: src/Admin/EntriesPage.php:845
 msgid "Mark as Expired"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:848
+#: src/Admin/EntriesPage.php:846
 msgid "Delete"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:850
+#: src/Admin/EntriesPage.php:848
 msgid "Apply"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:866
+#: src/Admin/EntriesPage.php:864
 msgid "No entries found"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:867
+#: src/Admin/EntriesPage.php:865
 msgid "No payment entries match your current filter. Try a different search or status."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:928
+#: src/Admin/EntriesPage.php:926
 msgid "View"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:930
+#: src/Admin/EntriesPage.php:928
 msgid "Move this entry to trash?"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:930
+#: src/Admin/EntriesPage.php:928
 msgid "Trash"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:994
+#: src/Admin/EntriesPage.php:991
 msgid "Open"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1063
+#: src/Admin/EntriesPage.php:1060
 msgid "Customize Columns"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1065 src/Admin/EntriesPage.php:1159
+#: src/Admin/EntriesPage.php:1062 src/Admin/EntriesPage.php:1155
 msgid "Close"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1072
+#: src/Admin/EntriesPage.php:1069
 msgid "Drag to reorder · check to show/hide. ID and Customer are always shown."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1073
+#: src/Admin/EntriesPage.php:1070
 msgid "Column order"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1099
+#: src/Admin/EntriesPage.php:1096
 msgid "Save"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1102
+#: src/Admin/EntriesPage.php:1099
 msgid "Reset"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1119
+#: src/Admin/EntriesPage.php:1116
 msgid "How entries work:"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1120
+#: src/Admin/EntriesPage.php:1117
 msgid "An entry is created every time a visitor clicks Pay on one of your Contact Form 7 forms. Entries start as Pending until payment is confirmed via callback."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1121
+#: src/Admin/EntriesPage.php:1118
 msgid "IDs are never reused — deleting entries does not reset the counter."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1124 src/Admin/EntriesPage.php:1314
+#: src/Admin/EntriesPage.php:1121 src/Admin/EntriesPage.php:1310
 msgid "Dismiss"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1134
+#: src/Admin/EntriesPage.php:1131
 msgid "Scroll to top"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1139 src/Admin/EntriesPage.php:1654 src/Admin/EntriesPage.php:1661 src/Admin/EntriesPage.php:1702 src/Admin/EntriesPage.php:1709
-msgid ""
-msgstr ""
-
-#: src/Admin/EntriesPage.php:1155
+#: src/Admin/EntriesPage.php:1151
 msgid "Mode"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1156
+#: src/Admin/EntriesPage.php:1152
 msgid "Simple"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1157
+#: src/Admin/EntriesPage.php:1153
 msgid "Complex"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1168
+#: src/Admin/EntriesPage.php:1164
 msgid "Customer Data"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1175
+#: src/Admin/EntriesPage.php:1171
 msgid "Customer Name"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1179
+#: src/Admin/EntriesPage.php:1175
 msgid "E-mail"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1179 src/Admin/EntriesPage.php:1201 src/Admin/EntriesPage.php:1216 src/Admin/EntriesPage.php:1242 src/Admin/EntriesPage.php:1257 src/Admin/EntriesPage.php:1266 src/Admin/EntriesPage.php:1270 src/Admin/EntriesPage.php:1276 src/Admin/EntriesPage.php:1280 src/Admin/EntriesPage.php:1286 src/Admin/EntriesPage.php:1292
+#: src/Admin/EntriesPage.php:1175 src/Admin/EntriesPage.php:1197 src/Admin/EntriesPage.php:1212 src/Admin/EntriesPage.php:1238 src/Admin/EntriesPage.php:1253 src/Admin/EntriesPage.php:1262 src/Admin/EntriesPage.php:1266 src/Admin/EntriesPage.php:1272 src/Admin/EntriesPage.php:1276 src/Admin/EntriesPage.php:1282 src/Admin/EntriesPage.php:1288
 msgid "(optional)"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1185 src/Admin/EntriesPage.php:1226
+#: src/Admin/EntriesPage.php:1181 src/Admin/EntriesPage.php:1222
 msgid "Amount (€)"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1189 src/Admin/EntriesPage.php:1230 src/Admin/EntriesPage.php:1738
+#: src/Admin/EntriesPage.php:1185 src/Admin/EntriesPage.php:1226 src/Admin/EntriesPage.php:1730
 msgid "Status"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1201 src/Admin/EntriesPage.php:1242
+#: src/Admin/EntriesPage.php:1197 src/Admin/EntriesPage.php:1238
 msgid "Payment Method"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1203 src/Admin/EntriesPage.php:1244
+#: src/Admin/EntriesPage.php:1199 src/Admin/EntriesPage.php:1240
 msgid "— Select method —"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1216 src/Admin/EntriesPage.php:1257
+#: src/Admin/EntriesPage.php:1212 src/Admin/EntriesPage.php:1253
 msgid "Form / Reference"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1262 src/Admin/EntriesPage.php:2148
+#: src/Admin/EntriesPage.php:1258 src/Admin/EntriesPage.php:2140
 msgid "Submitted Data"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1266 src/Admin/EntriesPage.php:1519
+#: src/Admin/EntriesPage.php:1262 src/Admin/EntriesPage.php:1515
 msgid "Name"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1270 src/Admin/EntriesPage.php:1520
+#: src/Admin/EntriesPage.php:1266 src/Admin/EntriesPage.php:1516
 msgid "Email"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1276
+#: src/Admin/EntriesPage.php:1272
 msgid "Address"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1280
+#: src/Admin/EntriesPage.php:1276
 msgid "Postal Code"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1286
+#: src/Admin/EntriesPage.php:1282
 msgid "Mobile Phone"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1292
+#: src/Admin/EntriesPage.php:1288
 msgid "Message"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1301
+#: src/Admin/EntriesPage.php:1297
 msgid "Cancel"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1313
+#: src/Admin/EntriesPage.php:1309
 msgid "Adding payments here is optional — you are not required to do so. This simply lets you manually record real-world payments in your list for organizational purposes."
 msgstr ""
 
 #. translators: %d: the ID of a deleted CF7 form
 
-#: src/Admin/EntriesPage.php:1499
+#: src/Admin/EntriesPage.php:1495
 msgid "Deleted Form #%d"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1521 src/Admin/EntriesPage.php:1737
+#: src/Admin/EntriesPage.php:1517 src/Admin/EntriesPage.php:1729
 msgid "Form"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1522 src/Admin/EntriesPage.php:1739 src/Admin/EntriesPage.php:1996
+#: src/Admin/EntriesPage.php:1518 src/Admin/EntriesPage.php:1731 src/Admin/EntriesPage.php:1988
 msgid "Method"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1523 src/Admin/EntriesPage.php:1736 src/Form/TagGenerator.php:45
+#: src/Admin/EntriesPage.php:1519 src/Admin/EntriesPage.php:1728 src/Form/TagGenerator.php:45
 msgid "Amount"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1542
+#: src/Admin/EntriesPage.php:1538
 msgid "Filter by form"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1543
+#: src/Admin/EntriesPage.php:1539
 msgid "All Forms"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1549
+#: src/Admin/EntriesPage.php:1545
 msgid "Search field"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1554
+#: src/Admin/EntriesPage.php:1550
 msgid "Operator"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1555
+#: src/Admin/EntriesPage.php:1551
 msgid "contains"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1556
+#: src/Admin/EntriesPage.php:1552
 msgid "is"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1559
+#: src/Admin/EntriesPage.php:1555
 msgid "Search…"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1560
+#: src/Admin/EntriesPage.php:1556
 msgid "Search"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1565
+#: src/Admin/EntriesPage.php:1561
 msgid "Clear"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1571
+#: src/Admin/EntriesPage.php:1567
 msgid "Items per page"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1587
+#: src/Admin/EntriesPage.php:1583
 msgid "Columns"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1647
+#: src/Admin/EntriesPage.php:1641
 msgid "Pagination"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1650
+#: src/Admin/EntriesPage.php:1644
 msgid "Previous page"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1667
+#: src/Admin/EntriesPage.php:1659
 msgid "Page 1"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1678 src/Admin/EntriesPage.php:1696
+#: src/Admin/EntriesPage.php:1671 src/Admin/EntriesPage.php:1690
 msgid "Page %d"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1691
+#: src/Admin/EntriesPage.php:1684
 msgid "Type a page number and press Enter"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1701
+#: src/Admin/EntriesPage.php:1695
 msgid "Next page"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1733
+#: src/Admin/EntriesPage.php:1725
 msgid "ID"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1734 src/Admin/EntriesPage.php:2017 src/Admin/EntriesPage.php:2205
+#: src/Admin/EntriesPage.php:1726 src/Admin/EntriesPage.php:2009 src/Admin/EntriesPage.php:2197
 msgid "Customer"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1735 src/Admin/EntriesPage.php:2106
+#: src/Admin/EntriesPage.php:1727 src/Admin/EntriesPage.php:2098
 msgid "Request ID"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1740 src/Admin/EntriesPage.php:2117
+#: src/Admin/EntriesPage.php:1732 src/Admin/EntriesPage.php:2109
 msgid "Payment Link"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1741
+#: src/Admin/EntriesPage.php:1733
 msgid "Date"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1912
+#: src/Admin/EntriesPage.php:1904
 msgid "Payment"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1933
+#: src/Admin/EntriesPage.php:1925
 msgid "Previously"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1950
+#: src/Admin/EntriesPage.php:1942
 msgid "Entry"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1954
+#: src/Admin/EntriesPage.php:1946
 msgid "Delete this entry permanently?"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1961
+#: src/Admin/EntriesPage.php:1953
 msgid "Delete Entry"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2026
+#: src/Admin/EntriesPage.php:2018
 msgid "Payment journey"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2035 src/Admin/EntriesPage.php:2246
+#: src/Admin/EntriesPage.php:2027 src/Admin/EntriesPage.php:2238
 msgid "Created"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2046 src/Admin/EntriesPage.php:2259
+#: src/Admin/EntriesPage.php:2038 src/Admin/EntriesPage.php:2251
 msgid "Link Generated"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2095
+#: src/Admin/EntriesPage.php:2087
 msgid "Transaction"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2121
+#: src/Admin/EntriesPage.php:2113
 msgid "Open link"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2180 src/Admin/EntriesPage.php:2182
+#: src/Admin/EntriesPage.php:2172 src/Admin/EntriesPage.php:2174
 msgid "Read more"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2181
+#: src/Admin/EntriesPage.php:2173
 msgid "Read less"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2235
+#: src/Admin/EntriesPage.php:2227
 msgid "Timestamps"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2272
+#: src/Admin/EntriesPage.php:2264
 msgid "Updated"
 msgstr ""
 
@@ -714,173 +710,177 @@ msgstr ""
 msgid "Payment record not found."
 msgstr ""
 
-#: src/Plugin.php:180 src/Plugin.php:181
+#: src/Plugin.php:170 src/Plugin.php:171
 msgid "ifthenpay Entries"
 msgstr ""
 
-#: src/Plugin.php:221
+#: src/Plugin.php:211
 msgid "Opening payment..."
 msgstr ""
 
-#: src/Plugin.php:222
+#: src/Plugin.php:212
 msgid "The payment amount is not set. Please check the form and try again."
 msgstr ""
 
-#: src/Plugin.php:223
+#: src/Plugin.php:213
 msgid "Retry"
 msgstr ""
 
-#: src/Plugin.php:224
+#: src/Plugin.php:214
 msgid "or"
 msgstr ""
 
-#: src/Plugin.php:225
+#: src/Plugin.php:215
 msgid "New Payment"
 msgstr ""
 
-#: src/Plugin.php:226
+#: src/Plugin.php:216
 msgid "Please fill in this field."
 msgstr ""
 
-#: src/Plugin.php:227
+#: src/Plugin.php:217
 msgid "Email address must be 100 characters or fewer."
 msgstr ""
 
-#: src/Plugin.php:308 src/Service/IfthenpayService.php:430 src/Service/IfthenpayService.php:468
+#: src/Plugin.php:298 src/Service/IfthenpayService.php:432 src/Service/IfthenpayService.php:470
 msgid "Activate Method"
 msgstr ""
 
-#: src/Plugin.php:328
+#: src/Plugin.php:318
 msgid "ifthenpay Payments"
 msgstr ""
 
 #. translators: %d: number of paid transactions
 
-#: src/Plugin.php:345 src/Plugin.php:369
+#: src/Plugin.php:335 src/Plugin.php:359
 msgid "from %d paid transactions"
 msgstr ""
 
-#: src/Plugin.php:350
+#: src/Plugin.php:340
 msgid "Last 24 hours"
 msgstr ""
 
-#: src/Plugin.php:352
+#: src/Plugin.php:342
 msgid "Last 15 days"
 msgstr ""
 
-#: src/Plugin.php:353
+#: src/Plugin.php:343
 msgid "Last 30 days"
 msgstr ""
 
-#: src/Plugin.php:433
+#: src/Plugin.php:423
 msgid "View all entries"
 msgstr ""
 
-#: src/Plugin.php:443
+#: src/Plugin.php:433
 msgid "ifthenpay | Payments for Contact Form 7"
 msgstr ""
 
-#: src/Plugin.php:444
+#: src/Plugin.php:434
 msgid "requires Contact Form 7 to be installed and active."
 msgstr ""
 
-#: src/Plugin.php:463
+#: src/Plugin.php:453
 msgid "Powered by"
 msgstr ""
 
 #: src/Service/IfthenpayService.php:232
-msgid "Accept Multibanco, MB WAY, CCARD, and Payshop payments natively inside your Contact Form 7 forms."
+msgid "Streamline your checkout experience using ifthenpay's reliable payment gateway. Designed for effortless integration, it allows businesses to accept secure regional payments without complex setup processes. Their certified technology manages every transaction safely, helping brands increase conversion rates and optimize daily cash flow."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:236
+#: src/Service/IfthenpayService.php:234
+msgid "Become an ifthenpay Merchant"
+msgstr ""
+
+#: src/Service/IfthenpayService.php:238
 msgid "ifthenpay is active on this site."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:244
+#: src/Service/IfthenpayService.php:246
 msgid "Manage integration"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:245
+#: src/Service/IfthenpayService.php:247
 msgid "Setup integration"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:269
+#: src/Service/IfthenpayService.php:271
 msgid "Backoffice Key"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:282
+#: src/Service/IfthenpayService.php:284
 msgid "Found in your ifthenpay Backoffice"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:288
+#: src/Service/IfthenpayService.php:290
 msgid "Connect"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:323
+#: src/Service/IfthenpayService.php:325
 msgid "Backoffice Key (Required)"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:329
+#: src/Service/IfthenpayService.php:331
 msgid "Disconnect ifthenpay? All settings will be cleared."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:330
+#: src/Service/IfthenpayService.php:332
 msgid "Disconnect"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:339
+#: src/Service/IfthenpayService.php:341
 msgid "Gateway Key (Required)"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:345 src/Service/IfthenpayService.php:601
+#: src/Service/IfthenpayService.php:347 src/Service/IfthenpayService.php:603
 msgid "No gateways found. Contact ifthenpay support."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:362
+#: src/Service/IfthenpayService.php:364
 msgid "Payment Methods (Required)"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:483
+#: src/Service/IfthenpayService.php:485
 msgid "Default Payment Method (Optional)"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:509
+#: src/Service/IfthenpayService.php:511
 msgid "Which payment method is pre-selected in the payment modal."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:518
+#: src/Service/IfthenpayService.php:520
 msgid "Default Description (Optional)"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:529
+#: src/Service/IfthenpayService.php:531
 msgid "Shown on the payment record."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:538
+#: src/Service/IfthenpayService.php:540
 msgid "Payment expires in (days) / (Optional)"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:555
+#: src/Service/IfthenpayService.php:557
 msgid "Save Configuration"
 msgstr ""
 
-#: src/Service/IfthenpayService.php:596
+#: src/Service/IfthenpayService.php:598
 msgid "Backoffice Key connected. Configure your gateway below."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:597
+#: src/Service/IfthenpayService.php:599
 msgid "Settings saved."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:598
+#: src/Service/IfthenpayService.php:600
 msgid "ifthenpay integration reset."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:599
+#: src/Service/IfthenpayService.php:601
 msgid "Invalid Backoffice Key."
 msgstr ""
 
-#: src/Service/IfthenpayService.php:600
+#: src/Service/IfthenpayService.php:602
 msgid "Could not validate the Backoffice Key. Please try again."
 msgstr ""
 

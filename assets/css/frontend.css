@@ -107,16 +107,16 @@
 	border: 1px solid transparent;
 }
 
-/* Pending — blue */
+/* Pending — amber */
 .iftp-cf7-runtime-warning.iftp-warn-pending {
-	background: #eff6ff;
-	border-color: #bfdbfe;
+	background: #fffae9;
+	border-color: #fde68a;
 }
 
 .iftp-cf7-runtime-warning.iftp-warn-pending p {
 	margin: 0;
 	font-size: 14px;
-	color: #1e40af;
+	color: #92400e;
 }
 
 /* Cancelled — amber */

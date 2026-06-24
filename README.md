@@ -210,30 +210,32 @@ All network requests are performed server-side over HTTPS. Sensitive credentials
 
 Below are screenshots demonstrating key features and interfaces of the plugin:
 
-1. **(Admin Only) CF7 Integration page — Backoffice Key setup**
-   ![Backoffice Setup](.wordpress-org/screenshot-1.png)
-2. **(Admin Only) CF7 Integration page — Gateway Key & payment methods configuration**
-   ![Gateway Configuration](.wordpress-org/screenshot-2.png)
-3. **(Admin Only) Form editor — ifthenpay Payment Gateway tab (per-form settings)**
-   ![Per-form Settings](.wordpress-org/screenshot-3.png)
-4. **(Admin Only) Tag Generator in the form editor**
-   ![Tag Generator](.wordpress-org/screenshot-4.png)
-5. **(Customer Experience) Frontend form with payment button and method logos**
-   ![Frontend Form](.wordpress-org/screenshot-5.png)
-6. **(Customer Experience) ifthenpay payment window**
-   ![Payment Window](.wordpress-org/screenshot-6.png)
-7. **(Admin Only) ifthenpay Entries page — stats cards and entries list**
-   ![Entries Page](.wordpress-org/screenshot-7.png)
-8. **(Admin Only) Single payment entry detail view**
-   ![Entry Detail](.wordpress-org/screenshot-8.png)
-9. **(Admin Only) WordPress Dashboard widget — revenue and payment counts**
-   ![Dashboard Widget](.wordpress-org/screenshot-9.png)
-10. **(Admin Only) Admin bar shortcut to Entries page**
-    ![Admin Bar](.wordpress-org/screenshot-10.png)
-11. **(Admin Only) Entries table with filter tabs, search, and bulk actions**
-    ![Entries Table](.wordpress-org/screenshot-11.png)
-12. **(Admin Only) Column customizer — drag to reorder, toggle visibility**
-    ![Column Customizer](.wordpress-org/screenshot-12.png)
+1. **(Admin Only) CF7 Integration page — Integration Card View**
+   ![Integration Card View](.wordpress-org/screenshot-1.png)
+2. **(Admin Only) CF7 Integration page — Backoffice Key setup**
+   ![Backoffice Setup](.wordpress-org/screenshot-2.png)
+3. **(Admin Only) CF7 Integration page — Gateway Key & payment methods configuration**
+   ![Gateway Configuration](.wordpress-org/screenshot-3.png)
+4. **(Admin Only) Form editor — ifthenpay Payment Gateway tab (per-form settings)**
+   ![Per-form Settings](.wordpress-org/screenshot-4.png)
+5. **(Admin Only) Tag Generator in the form editor**
+   ![Tag Generator](.wordpress-org/screenshot-5.png)
+6. **(Customer Experience) Frontend form with payment button and method logos**
+   ![Frontend Form](.wordpress-org/screenshot-6.png)
+7. **(Customer Experience) ifthenpay payment window**
+   ![Payment Window](.wordpress-org/screenshot-7.png)
+8. **(Admin Only) ifthenpay Entries page — stats cards and entries list**
+   ![Entries Page](.wordpress-org/screenshot-8.png)
+9. **(Admin Only) Single payment entry detail view**
+   ![Entry Detail](.wordpress-org/screenshot-9.png)
+10. **(Admin Only) WordPress Dashboard widget — revenue and payment counts**
+   ![Dashboard Widget](.wordpress-org/screenshot-10.png)
+11. **(Admin Only) Admin bar shortcut to Entries page**
+    ![Admin Bar](.wordpress-org/screenshot-11.png)
+12. **(Admin Only) Entries table with filter tabs, search, and bulk actions**
+    ![Entries Table](.wordpress-org/screenshot-12.png)
+13. **(Admin Only) Column customizer — drag to reorder, toggle visibility**
+    ![Column Customizer](.wordpress-org/screenshot-13.png)
 
 ## Support
 

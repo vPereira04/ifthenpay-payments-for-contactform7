@@ -545,10 +545,10 @@
 
 	const IFTP_STATUS_OPTIONS = [
 		{ value: 'completed', label: 'Paid', color: '#00a32a' },
-		{ value: 'pending', label: 'Pending', color: '#00609c' },
+		{ value: 'pending', label: 'Pending', color: '#d69300' },
 		{ value: 'cancelled', label: 'Cancelled', color: '#8c8f94' },
 		{ value: 'failed', label: 'Failed', color: '#d63638' },
-		{ value: 'expired', label: 'Expired', color: '#d69300' },
+		{ value: 'expired', label: 'Expired', color: '#2e414e' },
 	];
 
 	function iftpCloseAllStatusDropdowns() {
@@ -687,8 +687,8 @@
 		mark_paid: { type: 'dot', color: '#00a32a' },
 		mark_cancelled: { type: 'dot', color: '#8c8f94' },
 		mark_failed: { type: 'dot', color: '#d63638' },
-		mark_pending: { type: 'dot', color: '#00609c' },
-		mark_expired: { type: 'dot', color: '#d69300' },
+		mark_pending: { type: 'dot', color: '#d69300' },
+		mark_expired: { type: 'dot', color: '#2e414e' },
 		delete: {
 			type: 'svg',
 			html: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
@@ -1827,23 +1827,6 @@
 		iftpInitDashWidget();
 		iftpInitEntriesPrefs();
 
-
-		const periodTabsEl = document.querySelector(
-			'.iftp-period-tabs:not(.iftp-dash-period-tabs)'
-		);
-		if (periodTabsEl) {
-			periodTabsEl
-				.querySelectorAll('.iftp-period-tab')
-				.forEach(function (tab) {
-					tab.addEventListener('click', function (e) {
-						if (tab.classList.contains('active')) {
-							e.preventDefault();
-							return;
-						}
-						periodTabsEl.classList.add('is-loading');
-					});
-				});
-		}
 	});
 
 

@@ -229,7 +229,9 @@ final class IfthenpayService extends \WPCF7_Service
 
 		$this->print_notice($message);
 
-		echo '<p>' . esc_html__('Accept Multibanco, MB WAY, CCARD, and Payshop payments natively inside your Contact Form 7 forms.', 'ifthenpay-payments-for-contactform7') . '</p>';
+		echo '<p>' . esc_html__('Streamline your checkout experience using ifthenpay\'s reliable payment gateway. Designed for effortless integration, it allows businesses to accept secure regional payments without complex setup processes. Their certified technology manages every transaction safely, helping brands increase conversion rates and optimize daily cash flow.', 'ifthenpay-payments-for-contactform7') . '</p>';
+
+		echo '<p><a href="https://ifthenpay.com/join/" target="_blank" rel="noopener noreferrer">' . esc_html__('Become an ifthenpay Merchant', 'ifthenpay-payments-for-contactform7') . '</a></p>';
 
 		if ($this->is_active()) {
 			echo '<p class="dashicons-before dashicons-yes">'

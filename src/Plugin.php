@@ -51,16 +51,6 @@ final class Plugin
 			(new \Ifthenpay\CF7\Repository\EntryRepository())->mark_expired_pending(max(1, $expire_days));
 		});
 
-
-		add_action( 'init', function (): void {
-			if ( isset( $_GET['test_ifthenpay'] ) ) {
-
-				do_action('iftp_cf7_expire_payments');
-
-				wp_die( '<h1>Boa! Expire chamadas! Working...</h1>' );
-			}
-		});
-
 		add_action('wpcf7_admin_init', array($this, 'register_service'));
 
 		$process = new Process();
@@ -463,7 +453,7 @@ final class Plugin
 			. '<span class="iftp-bot-title-chip-label">' . esc_html__('Powered by', 'ifthenpay-payments-for-contactform7') . '</span>'
 			. '<img src="' . $logo_url . '" alt="ifthenpay" class="iftp-brand-logo-bot" draggable="false" />'
 			. '</span>'
-			. '<p id="iftp-footer-version" class="alignright"> Version ' . $plugin_version . '</p>';
+			. '<p id="iftp-footer-version" class="alignright"> Version ' . esc_html($plugin_version) . '</p>';
 	}
 
 	private function __construct() {}
