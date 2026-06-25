@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: ifthenpay-payments-for-contactform7 1.0.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ifthenpay-"
 "payments-for-contactform7\n"
-"POT-Creation-Date: 2026-06-25 10:48+0100\n"
+"POT-Creation-Date: 2026-06-25 12:38+0100\n"
 "PO-Revision-Date: 2026-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -714,8 +714,13 @@ msgstr ""
 
 #: src/Form/TagGenerator.php:120
 msgid ""
-"Add the form-tag above to your form template where you want the payment "
-"button to appear."
+"Add the following ifthenpay form-tag where you want the payment button to "
+"appear in your form template:"
+msgstr ""
+
+#: src/Form/TagGenerator.php:122
+msgid ""
+"(Note: Remove the default CF7 [submit] button and use this one instead)."
 msgstr ""
 
 #: src/Payment/Process.php:139

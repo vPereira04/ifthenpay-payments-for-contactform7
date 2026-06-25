@@ -117,9 +117,11 @@ final class TagGenerator
 				</button>
 			</div>
 			<p class="mail-tag-tip">
-				<?php esc_html_e('Add the form-tag above to your form template where you want the payment button to appear.', 'ifthenpay-payments-for-contactform7'); ?>
+				<?php esc_html_e('Add the following ifthenpay form-tag where you want the payment button to appear in your form template:', 'ifthenpay-payments-for-contactform7'); ?>
+					<strong data-tag-part="mail-tag">[ifthenpay_payment amount:x]</strong>
+				<?php esc_html_e('(Note: Remove the default CF7 [submit] button and use this one instead).', 'ifthenpay-payments-for-contactform7'); ?>
 			</p>
 		</footer>
-<?php
+	<?php
 	}
 }
