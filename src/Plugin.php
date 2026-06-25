@@ -106,7 +106,7 @@ final class Plugin
 
 		$wp_admin_bar->add_node(array(
 			'id'    => 'ifthenpay-cf7-entries',
-			'title' => '<span class="iftp-ab-icon" aria-hidden="true">&#xE000;</span>'
+			'title' => '<span class="iftp-ab-icon ab-icon" aria-hidden="true"></span>'
 				. '<span class="ab-label">' . esc_html__('Entries', 'ifthenpay-payments-for-contactform7') . '</span>',
 			'href'  => admin_url('admin.php?page=ifthenpay-cf7-entries'),
 			'meta'  => array('class' => 'ifthenpay-cf7-ab-node'),
@@ -128,12 +128,9 @@ final class Plugin
 				. 'src:url(' . $woff2 . ') format("woff2"),url(' . $woff . ') format("woff");'
 				. 'font-display:block}'
 				. '#wp-admin-bar-ifthenpay-cf7-entries > .ab-item{display:flex;align-items:center;gap:6px}'
-				. '#wp-admin-bar-ifthenpay-cf7-entries .iftp-ab-icon{'
-				. 'font-family:ifthenpay-icons-ab;speak:never;font-style:normal;font-weight:400;'
-				. 'font-size:22px;line-height:1;display:inline-flex;align-items:center;flex-shrink:0;'
-				. 'transform:translateY(3px);color: #fff;transition:color .12s}'
-				. '#wp-admin-bar-ifthenpay-cf7-entries:hover .iftp-ab-icon,'
-				. '#wp-admin-bar-ifthenpay-cf7-entries.hover .iftp-ab-icon{color: #7b90ff}'
+				. '#wp-admin-bar-ifthenpay-cf7-entries .iftp-ab-icon::before{'
+				. 'content:"\E000"; font-family:ifthenpay-icons-ab !important; font-size:25px !important;'
+				. 'transition:color .12s !important}'
 		);
 	}
 
@@ -330,7 +327,7 @@ final class Plugin
 		$dash_data_json = (string) wp_json_encode($widget_data);
 
 		/* translators: %d: number of paid transactions */
-		$paid_template = esc_attr(__('from %d paid transactions', 'ifthenpay-payments-for-contactform7'));
+		$paid_template = __('from %d paid transactions', 'ifthenpay-payments-for-contactform7');
 
 		$entries_url = admin_url('admin.php?page=ifthenpay-cf7-entries');
 
@@ -349,8 +346,7 @@ final class Plugin
 			<div class="iftp-dash-top-row">
 				<div class="iftp-dash-metric">
 					<div class="iftp-rev-amount" id="iftp-cf7-dash-revenue">€<?php echo esc_html(number_format($default['revenue'], 2, '.', ',')); ?></div>
-					<div class="iftp-rev-sub" id="iftp-cf7-dash-rev-sub" data-template="<?php echo $paid_template; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already esc_attr'd above
-																					?>">
+					<div class="iftp-rev-sub" id="iftp-cf7-dash-rev-sub" data-template="<?php echo esc_attr($paid_template); ?>">
 						<?php
 						printf(
 							/* translators: %d: number of paid transactions */

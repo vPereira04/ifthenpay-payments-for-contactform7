@@ -73,12 +73,12 @@ final class EntriesPage
 		$orderby_in_url = isset($_GET['orderby']);
 		$order_in_url   = isset($_GET['order']);
 
-		$status_raw   = isset($_GET['status'])   ? sanitize_key(wp_unslash((string) $_GET['status']))   : '';    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$period_raw   = isset($_GET['period'])   ? sanitize_key(wp_unslash((string) $_GET['period']))   : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$orderby_raw  = $orderby_in_url          ? sanitize_key(wp_unslash((string) $_GET['orderby']))  : $prefs['orderby'];
-		$order_raw    = $order_in_url            ? sanitize_key(wp_unslash((string) $_GET['order']))    : $prefs['order'];
-		$per_page_raw = isset($_GET['per_page']) ? absint(wp_unslash((string) $_GET['per_page']))       : 20;    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$form_id      = isset($_GET['form_id'])  ? absint(wp_unslash((string) $_GET['form_id']))        : 0;     // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$status_raw   = sanitize_key((string) (filter_input(INPUT_GET, 'status', FILTER_DEFAULT) ?? ''));
+		$period_raw   = sanitize_key((string) (filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'all'));
+		$orderby_raw  = $orderby_in_url ? sanitize_key((string) (filter_input(INPUT_GET, 'orderby', FILTER_DEFAULT) ?? '')) : $prefs['orderby'];
+		$order_raw    = $order_in_url   ? sanitize_key((string) (filter_input(INPUT_GET, 'order', FILTER_DEFAULT) ?? ''))   : $prefs['order'];
+		$per_page_raw = absint((string) (filter_input(INPUT_GET, 'per_page', FILTER_SANITIZE_NUMBER_INT) ?? 20));
+		$form_id      = absint((string) (filter_input(INPUT_GET, 'form_id', FILTER_SANITIZE_NUMBER_INT) ?? 0));
 
 		$sort_cols = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
 		$status    = in_array($status_raw,  array('', 'pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $status_raw  : '';
@@ -99,8 +99,8 @@ final class EntriesPage
 		$db_status = in_array($status, array('pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $status : '';
 
 
-		$cursor = ($current_page > 1 && isset($_GET['cursor'])) ? absint($_GET['cursor']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$dir_raw = isset($_GET['dir']) ? sanitize_key(wp_unslash((string) $_GET['dir'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$cursor  = ($current_page > 1) ? absint((string) (filter_input(INPUT_GET, 'cursor', FILTER_SANITIZE_NUMBER_INT) ?? 0)) : 0;
+		$dir_raw = sanitize_key((string) (filter_input(INPUT_GET, 'dir', FILTER_DEFAULT) ?? ''));
 		$dir     = in_array($dir_raw, array('prev', 'last'), true) ? $dir_raw : 'next';
 
 
@@ -210,8 +210,9 @@ final class EntriesPage
 
 		$args = array('page' => 'ifthenpay-cf7-entries', 'bulk_done' => '1');
 		foreach (array('status', 'period', 'paged', 'search_field', 'search_op', 'search_query') as $key) {
-			if (! empty($_GET[$key])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				$args[$key] = sanitize_text_field(wp_unslash((string) $_GET[$key])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$val = filter_input(INPUT_GET, $key, FILTER_DEFAULT);
+			if ($val !== null && $val !== false && $val !== '') {
+				$args[$key] = sanitize_text_field((string) $val);
 			}
 		}
 		wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
@@ -233,7 +234,7 @@ final class EntriesPage
 		$status     = isset($_POST['payment_status']) ? sanitize_key(wp_unslash((string) $_POST['payment_status'])) : 'completed';
 		$form_title = isset($_POST['form_title']) ? sanitize_text_field(wp_unslash((string) $_POST['form_title'])) : '';
 
-		$form_data_raw = isset($_POST['form_data']) ? wp_unslash((string) $_POST['form_data']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string; sanitizing the raw value before json_decode() would corrupt it. Each key and value is sanitized individually via sanitize_text_field/sanitize_textarea_field in the foreach block below before any data is stored.
+		$form_data_raw = (string) (filter_input(INPUT_POST, 'form_data', FILTER_DEFAULT) ?? '');
 		$form_data     = '';
 		if ($form_data_raw !== '') {
 			$decoded = json_decode($form_data_raw, true);
@@ -289,7 +290,7 @@ final class EntriesPage
 			wp_send_json_error(array('message' => 'Not logged in.'), 403);
 		}
 
-		$raw  = isset($_POST['prefs']) ? wp_unslash((string) $_POST['prefs']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- JSON string; sanitizing before json_decode() would corrupt it. Each decoded key is validated against an explicit allowlist and its value type-checked in the switch block below before any data is stored. Nonce verified above via check_ajax_referer.
+		$raw  = (string) (filter_input(INPUT_POST, 'prefs', FILTER_DEFAULT) ?? '');
 		$data = json_decode($raw, true);
 		if (! is_array($data)) {
 			wp_send_json_error(array('message' => 'Invalid data.'));
@@ -2002,8 +2003,7 @@ final class EntriesPage
 					<!-- ── Hero band ── -->
 					<div class="iftp-detail-hero">
 						<div class="iftp-hero-accent iftp-hero-accent--<?php echo esc_attr($entry->payment_status); ?>"></div>
-						<div class="iftp-hero-ghost" style="color:<?php echo esc_attr($ghost_color); ?>"><?php echo $ghost_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG strings, no user data.
-																											?></div>
+						<div class="iftp-hero-ghost" style="color:<?php echo esc_attr($ghost_color); ?>"><?php echo wp_kses($ghost_svg, self::get_svg_kses()); ?></div>
 						<div class="iftp-hero-inner">
 							<div class="iftp-hero-amount-wrap">
 								<span class="iftp-hero-eyebrow"><?php echo esc_html('Entry #' . $entry->id . ' · ' . $form_label); ?></span>
@@ -2063,7 +2063,7 @@ final class EntriesPage
 								</svg>
 							</div>
 							<div class="iftp-step-lbl"><?php esc_html_e('Created', 'ifthenpay-payments-for-contactform7'); ?></div>
-							<div class="iftp-step-desc"><?php esc_html_e('Customer clicked the pay button', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-desc"><?php esc_html_e('Customer clicked to Pay', 'ifthenpay-payments-for-contactform7'); ?></div>
 							<div class="iftp-step-time"><?php echo esc_html($entry->created_at); ?></div>
 						</div>
 						<div class="iftp-step-line <?php echo esc_attr($line1_class); ?>" aria-hidden="true"></div>
@@ -2075,7 +2075,7 @@ final class EntriesPage
 								</svg>
 							</div>
 							<div class="iftp-step-lbl<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Link Generated', 'ifthenpay-payments-for-contactform7'); ?></div>
-							<div class="iftp-step-desc<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Payment link was generated', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-desc<?php echo esc_attr($step2_lbl_muted); ?>"><?php esc_html_e('Payment link generated', 'ifthenpay-payments-for-contactform7'); ?></div>
 							<div class="iftp-step-time"><?php echo esc_html($step2_time); ?></div>
 						</div>
 						<div class="iftp-step-line <?php echo esc_attr($line2_class); ?>" aria-hidden="true"></div>
@@ -2109,7 +2109,7 @@ final class EntriesPage
 								<?php endif; ?>
 							</div>
 							<div class="iftp-step-lbl<?php echo esc_attr($step3_lbl_muted); ?>"><?php esc_html_e('Updated', 'ifthenpay-payments-for-contactform7'); ?></div>
-							<div class="iftp-step-desc<?php echo esc_attr($step3_lbl_muted); ?>"><?php esc_html_e('After payment result — paid, failed or expired', 'ifthenpay-payments-for-contactform7'); ?></div>
+							<div class="iftp-step-desc<?php echo esc_attr($step3_lbl_muted); ?>"><?php esc_html_e('Payment Status Update', 'ifthenpay-payments-for-contactform7'); ?></div>
 							<div class="iftp-step-time"><?php echo esc_html($step3_time); ?></div>
 						</div>
 					</div><!-- .iftp-journey -->
@@ -2201,8 +2201,7 @@ final class EntriesPage
 								?>
 									<div class="iftp-kcell<?php echo esc_attr($cell_full); ?>">
 										<div class="iftp-klbl">
-											<?php echo $field_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG strings, no user data.
-											?>
+											<?php echo wp_kses($field_svg, self::get_svg_kses()); ?>
 											<?php echo esc_html($this->format_field_label($fd['key'])); ?>
 										</div>
 										<div class="iftp-kval">
@@ -2335,5 +2334,41 @@ final class EntriesPage
 			return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
 		}
 		return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+	}
+
+	/**
+	 * Allowed SVG tags and attributes for wp_kses() — covers all inline icons used in this file.
+	 *
+	 * wp_kses() lowercases attribute names, so camelCase SVG attributes (e.g. viewBox, strokeWidth)
+	 * must be listed in lowercase. Modern browsers parse inline SVG case-insensitively within HTML5.
+	 *
+	 * @return array<string, array<string, array<mixed>>>
+	 */
+	private static function get_svg_kses(): array
+	{
+		$shared = array(
+			'fill'            => array(),
+			'stroke'          => array(),
+			'stroke-width'    => array(),
+			'stroke-linecap'  => array(),
+			'stroke-linejoin' => array(),
+			'aria-hidden'     => array(),
+		);
+		return array(
+			'svg'      => array_merge(
+				$shared,
+				array(
+					'viewbox' => array(),
+					'xmlns'   => array(),
+					'width'   => array(),
+					'height'  => array(),
+				)
+			),
+			'path'     => array_merge($shared, array('d' => array())),
+			'polyline' => array_merge($shared, array('points' => array())),
+			'circle'   => array_merge($shared, array('cx' => array(), 'cy' => array(), 'r' => array())),
+			'line'     => array_merge($shared, array('x1' => array(), 'y1' => array(), 'x2' => array(), 'y2' => array())),
+			'rect'     => array_merge($shared, array('x' => array(), 'y' => array(), 'width' => array(), 'height' => array(), 'rx' => array(), 'ry' => array())),
+		);
 	}
 }

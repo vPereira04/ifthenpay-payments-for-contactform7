@@ -37,8 +37,9 @@ final class Process
 	{
 		$keys = array('iftp_cf7_entry_id', 'iftp_cf7_payment_status');
 		foreach ($keys as $key) {
-			if (isset($_POST[$key])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Called within CF7's wpcf7_posted_data filter; CF7 verifies its own nonce before this hook fires.
-				$posted_data[$key] = sanitize_text_field(wp_unslash((string) $_POST[$key])); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Called within CF7's wpcf7_posted_data filter; CF7 verifies its own nonce before this hook fires.
+			$val = filter_input(INPUT_POST, $key, FILTER_DEFAULT);
+			if ($val !== null && $val !== false) {
+				$posted_data[$key] = sanitize_text_field((string) $val);
 			}
 		}
 		return $posted_data;
@@ -126,10 +127,7 @@ final class Process
 		$email      = isset($_POST['customer_email']) ? sanitize_email(wp_unslash((string) $_POST['customer_email'])) : '';
 		$form_title = isset($_POST['form_title']) ? sanitize_text_field(wp_unslash((string) $_POST['form_title'])) : '';
 
-		$form_data_raw = '';
-		if (isset($_POST['form_data'])) {
-			$form_data_raw = wp_unslash((string) $_POST['form_data']); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload sanitized via json_decode() + wp_json_encode() below.
-		}
+		$form_data_raw = (string) (filter_input(INPUT_POST, 'form_data', FILTER_DEFAULT) ?? '');
 
 		$customer_ip = sanitize_text_field(wp_unslash((string) ($_SERVER['REMOTE_ADDR'] ?? '')));
 
@@ -272,7 +270,7 @@ final class Process
 	public function validate_email_length(\WPCF7_Validation $result, \WPCF7_FormTag $tag): \WPCF7_Validation
 	{
 		$name  = $tag->name;
-		$value = isset($_POST[$name]) ? sanitize_text_field(wp_unslash((string) $_POST[$name])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Called by CF7 validation filter; CF7 verifies its own nonce before invoking validators.
+		$value = sanitize_text_field((string) (filter_input(INPUT_POST, $name, FILTER_DEFAULT) ?? ''));
 		if ($value !== '' && mb_strlen($value) > 100) {
 			$result->invalidate(
 				$tag,

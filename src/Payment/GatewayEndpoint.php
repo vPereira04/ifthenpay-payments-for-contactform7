@@ -74,16 +74,38 @@ final class GatewayEndpoint
 		$method         = strtoupper((string) $request_method);
 
 		$entry_id = absint(get_query_var(self::REF_VAR));
-		$apk      = sanitize_text_field(wp_unslash((string) ($_REQUEST['apk'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
+		$apk = sanitize_text_field(
+			(string) (filter_input(INPUT_GET, 'apk', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'apk', FILTER_DEFAULT) ?? '')
+		);
 
-		$val    = sanitize_text_field(wp_unslash((string) ($_REQUEST['val'] ?? $_REQUEST['amount'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
-		$status = sanitize_key(wp_unslash($_REQUEST['status'] ?? '')); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
-		$ret    = esc_url_raw(wp_unslash((string) ($_REQUEST['ret'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
-		$mtd    = sanitize_text_field(wp_unslash((string) ($_REQUEST['mtd'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
+		$val = sanitize_text_field(
+			(string) (filter_input(INPUT_GET, 'val', FILTER_DEFAULT)
+				?? filter_input(INPUT_GET, 'amount', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'val', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'amount', FILTER_DEFAULT)
+				?? '')
+		);
+		$status = sanitize_key(
+			(string) (filter_input(INPUT_GET, 'status', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'status', FILTER_DEFAULT) ?? '')
+		);
+		$ret = esc_url_raw(
+			(string) (filter_input(INPUT_GET, 'ret', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'ret', FILTER_DEFAULT) ?? '')
+		);
+		$mtd = sanitize_text_field(
+			(string) (filter_input(INPUT_GET, 'mtd', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'mtd', FILTER_DEFAULT) ?? '')
+		);
 
-		$req    = sanitize_text_field(wp_unslash((string) ($_REQUEST['req'] ?? $_REQUEST['requestId'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
+		$req = sanitize_text_field(
+			(string) (filter_input(INPUT_GET, 'req', FILTER_DEFAULT)
+				?? filter_input(INPUT_GET, 'requestId', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'req', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'requestId', FILTER_DEFAULT)
+				?? '')
+		);
 
-		$error_msg = sanitize_text_field(wp_unslash((string) ($_REQUEST['error'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Payment gateway callback; nonce not applicable.
+		$error_msg = sanitize_text_field(
+			(string) (filter_input(INPUT_GET, 'error', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'error', FILTER_DEFAULT) ?? '')
+		);
 		if ($status === '' && $error_msg !== '') {
 			$status = 'error';
 		}
@@ -160,33 +182,25 @@ final class GatewayEndpoint
 
 		$expected = Settings::get_anti_phishing_key();
 		if ($expected !== '' && $apk !== $expected) {
-			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
-				sprintf('[iftp-cf7] process_success: APK mismatch for entry %d. got=%s expected=%s', $entry_id, $apk, $expected)
-			);
+
 			return;
 		}
 
 		$repo  = new EntryRepository();
 		$entry = $repo->get_by_id($entry_id);
 		if ($entry === null) {
-			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
-				sprintf('[iftp-cf7] process_success: entry %d not found', $entry_id)
-			);
+
 			return;
 		}
 
 
 		if ($entry->payment_status === 'completed') {
-			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
-				sprintf('[iftp-cf7] process_success: entry %d already completed, skipping', $entry_id)
-			);
+
 			return;
 		}
 
 		if ($val === '' || number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
-			defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
-				sprintf('[iftp-cf7] process_success: amount mismatch for entry %d. val=%s db_amount=%s', $entry_id, $val, number_format($entry->amount, 2, '.', ''))
-			);
+
 			return;
 		}
 
@@ -196,9 +210,7 @@ final class GatewayEndpoint
 			'completed',
 			$request_id !== '' ? $request_id : null
 		);
-		defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
-			sprintf('[iftp-cf7] process_success: entry %d marked completed via method=%s', $entry_id, $method)
-		);
+
 	}
 
 	private static function process_other(int $entry_id, string $status, string $method = '', string $request_id = ''): void
@@ -246,13 +258,27 @@ final class GatewayEndpoint
 			return;
 		}
 
-		$val = sanitize_text_field(wp_unslash((string) ($_REQUEST['val'] ?? $_REQUEST['amount'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Server-side webhook from payment gateway; nonce not applicable.
+		$val = sanitize_text_field(
+			(string) (filter_input(INPUT_POST, 'val', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'amount', FILTER_DEFAULT)
+				?? filter_input(INPUT_GET, 'val', FILTER_DEFAULT)
+				?? filter_input(INPUT_GET, 'amount', FILTER_DEFAULT)
+				?? '')
+		);
 		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
 			return;
 		}
 
-		$method     = sanitize_text_field(wp_unslash((string) ($_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get))); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Server-side webhook from payment gateway; nonce verification not applicable.
-		$request_id = sanitize_text_field(wp_unslash((string) ($_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get))); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Server-side webhook from payment gateway; nonce verification not applicable.
+		$method     = sanitize_text_field(
+			(string) (filter_input(INPUT_POST, 'PaymentMethod', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'Method', FILTER_DEFAULT)
+				?? $method_get)
+		);
+		$request_id = sanitize_text_field(
+			(string) (filter_input(INPUT_POST, 'RequestId', FILTER_DEFAULT)
+				?? filter_input(INPUT_POST, 'requestId', FILTER_DEFAULT)
+				?? $req_get)
+		);
 
 		$repo->update_transaction(
 			$entry->id,

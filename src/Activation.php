@@ -60,15 +60,21 @@ final class Activation
 		global $wpdb;
 		$table = $wpdb->prefix . IFTP_CF7_TABLE;
 		foreach (array('idx_payment_status', 'idx_created_at', 'idx_updated_at') as $idx) {
-			$exists = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema migration; one-time upgrade check.
-				$wpdb->prepare(
-					'SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = %s AND index_name = %s',
-					$table,
-					$idx
-				)
-			);
+			$cache_key = 'iftp_cf7_idx_' . md5($table . $idx);
+			$exists    = wp_cache_get($cache_key, 'iftp_cf7_schema');
+			if (false === $exists) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- information_schema query; no WP Core API exists to inspect index metadata.
+				$exists = $wpdb->get_var(
+					$wpdb->prepare(
+						'SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = %s AND index_name = %s',
+						$table,
+						$idx
+					)
+				);
+				wp_cache_set($cache_key, (int) $exists, 'iftp_cf7_schema', 60);
+			}
 			if ($exists) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- One-time schema migration on plugin upgrade; identifiers escaped via %i.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange -- DDL operation; no WP Core API exists to drop a custom index.
 				$wpdb->query($wpdb->prepare('ALTER TABLE %i DROP INDEX %i', $table, $idx));
 			}
 		}

@@ -88,9 +88,7 @@ final class IfthenpayService extends \WPCF7_Service
 		if ($sub_action === '') {
 			if ($method === 'GET') {
 				$bk      = Settings::get_backoffice_key();
-				$message = isset($_GET['message']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL param for redirect detection; value restricted to known keys via sanitize_key().
-					? sanitize_key(wp_unslash((string) $_GET['message'])) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-					: '';
+				$message = sanitize_key((string) (filter_input(INPUT_GET, 'message', FILTER_DEFAULT) ?? ''));
 
 				$no_refresh = array('saved', 'reset');
 				if ($bk !== '' && ! in_array($message, $no_refresh, true)) {
@@ -208,9 +206,7 @@ final class IfthenpayService extends \WPCF7_Service
 				$base_cb = home_url('/' . GatewayEndpoint::SLUG . '/');
 				$cb_ok = IfthenpayClient::activate_callback($gateway_key, $base_cb);
 				if (! $cb_ok) {
-					defined('WP_DEBUG') && WP_DEBUG && error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, gated by WP_DEBUG.
-						sprintf('[iftp-cf7] activate_callback failed for gateway_key=%s', $gateway_key)
-					);
+					do_action('iftp_cf7_log', sprintf('[iftp-cf7] activate_callback failed for gateway_key=%s', $gateway_key));
 				}
 			}
 
@@ -223,9 +219,7 @@ final class IfthenpayService extends \WPCF7_Service
 	{
 		$settings = Settings::get_settings();
 		$bk       = (string) ($settings['backoffice_key'] ?? '');
-		$message  = isset($_GET['message']) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL param for admin notice display; set by own wp_safe_redirect() after nonce-verified operations.
-			? sanitize_key(wp_unslash((string) $_GET['message'])) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Value restricted to known keys via $map and sanitized with sanitize_key().
-			: '';
+		$message  = sanitize_key((string) (filter_input(INPUT_GET, 'message', FILTER_DEFAULT) ?? ''));
 
 		$this->print_notice($message);
 
