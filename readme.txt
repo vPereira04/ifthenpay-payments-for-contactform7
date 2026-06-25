@@ -152,7 +152,7 @@ All network requests are performed server-side over HTTPS. Sensitive credentials
 1.  (Admin Only) CF7 Integration page — Integration Card View
 2.  (Admin Only) CF7 Integration page — Backoffice Key setup
 3.  (Admin Only) CF7 Integration page — Gateway Key & payment methods configuration
-4.  (Admin Only) Entering a random CF7 form
+4.  (Admin Only) Entering a CF7 form of your choice
 5.  (Admin Only) Tag Generator in the form editor - ifthenpay Payment Gateway tab (per-form settings)
 6.  (Customer Experience) Frontend form with payment button and method logos
 7.  (Customer Experience) ifthenpay payment window

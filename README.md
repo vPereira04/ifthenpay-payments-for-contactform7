@@ -216,7 +216,7 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
    ![Backoffice Setup](.wordpress-org/screenshot-2.png)
 3. **(Admin Only) CF7 Integration page — Gateway Key & payment methods configuration**
    ![Gateway Configuration](.wordpress-org/screenshot-3.png)
-4. **(Admin Only) Entering a random CF7 form**
+4. **(Admin Only) Entering a CF7 form of your choice**
    ![CF7 Forms](.wordpress-org/screenshot-4.png)
 5. **(Admin Only) Tag Generator in the form editor - ifthenpay Payment Gateway tab (per-form settings)**
    ![Tag Generator](.wordpress-org/screenshot-5.png)
