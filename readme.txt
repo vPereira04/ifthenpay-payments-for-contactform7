@@ -69,7 +69,6 @@ Use these inside CF7 mail templates to include payment data in confirmation emai
 * [ifthenpay-method] — Payment method used (e.g. MBWAY, MULTIBANCO)
 * [ifthenpay-status] — Payment status label (e.g. Paid, Pending)
 * [ifthenpay-payment-url] — The payment link URL
-* [ifthenpay-entry-id] — Internal entry ID
 
 == Installation ==
 

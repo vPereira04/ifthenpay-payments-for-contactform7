@@ -344,7 +344,7 @@
 				submitCf7Form($form);
 			}, 200);
 		} else {
-			clearSession();
+
 
 
 			const formEl = $form[0];

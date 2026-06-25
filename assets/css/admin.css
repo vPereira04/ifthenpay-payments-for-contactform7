@@ -1584,7 +1584,8 @@ a.iftp-stat-card {
 		grid-template-columns: 1fr 1fr;
 	}
 
-	.iftp-stat-card--revenue {
+	.iftp-stat-card--revenue,
+	.iftp-stat-card--expired {
 		grid-column: 1 / -1;
 	}
 }
@@ -1638,6 +1639,60 @@ a.iftp-stat-card {
 	.iftp-stats-row {
 		grid-template-columns: 1fr 1fr;
 	}
+
+	/* Compact horizontal layout: number left (spanning both text rows), label+period right, bar full-width bottom */
+	a.iftp-stat-card {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		grid-template-rows: auto auto auto;
+		gap: 0 8px;
+		align-items: start;
+		padding: 8px 10px;
+	}
+
+	a.iftp-stat-card .iftp-stat-card-header {
+		grid-column: 2;
+		grid-row: 1;
+		align-self: end;
+		flex-direction: column;
+		align-items: flex-end;
+		text-align: right;
+		gap: 3px;
+	}
+
+	a.iftp-stat-card .iftp-stat-card-val {
+		grid-column: 1;
+		grid-row: 1 / 3;
+		font-size: 23px;
+		padding-top: 0;
+		margin-top: 0;
+		align-self: center;
+	}
+
+	a.iftp-stat-card .iftp-stat-card-sub {
+		grid-column: 2;
+		grid-row: 2;
+		align-self: start;
+	}
+
+	a.iftp-stat-card .iftp-rev-bar {
+		grid-column: 1 / -1;
+		grid-row: 3;
+		margin-top: 4px;
+	}
+
+	a.iftp-stat-card .iftp-stat-card-ghost {
+		width: 100px;
+		height: 100px;
+		top: -38px;
+		right: 4px;
+	}
+
+	a.iftp-stat-card .iftp-stat-card-ghost svg {
+		width: 110px;
+		height: 110px;
+	}
+
 
 	/* Mobile: tablenav-middle wraps by default; inputs stay compact */
 	.iftp-tablenav-middle .iftp-search-input {
@@ -4254,6 +4309,12 @@ th.sorted .iftp-sort-arrow:not(.iftp-sort-active) {
 	.iftp-action-btn-label { display: none; }
 	.iftp-action-btn { padding: 0 10px; }
 	.iftp-action-btn .iftp-btn-sep { display: none; }
+
+	/* Dropdown opens rightward so it stays on-screen */
+	.iftp-period-dropdown-panel {
+		left: 0;
+		right: auto;
+	}
 }
 
 /* ══════════════════════════════════════════════════
