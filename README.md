@@ -225,7 +225,7 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
 7. **(Customer Experience) ifthenpay payment window**
    ![Payment Window](.wordpress-org/screenshot-7.png)
 8. **(Admin Only) ifthenpay Entries page — stats cards and entries list**
-   ![Entries Page](.wordpress-org/screenshot-8.png)
+   ![Entries Page](.wordpress-org/screenshot-8.gif)
 9. **(Admin Only) ifthenpay Entries page — Add Simple Payment**
    ![Add Simple Payment](.wordpress-org/screenshot-9.png)
 10. **(Admin Only) ifthenpay Entries page — Add Complex Payment**
