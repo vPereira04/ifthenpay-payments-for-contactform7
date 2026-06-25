@@ -234,6 +234,16 @@ final class EntriesPage
 		$status     = isset($_POST['payment_status']) ? sanitize_key(wp_unslash((string) $_POST['payment_status'])) : 'completed';
 		$form_title = isset($_POST['form_title']) ? sanitize_text_field(wp_unslash((string) $_POST['form_title'])) : '';
 
+		$mode_raw   = isset($_POST['payment_mode']) ? sanitize_key(wp_unslash((string) $_POST['payment_mode'])) : 'simple';
+		$is_complex = $mode_raw === 'complex';
+		$chars      = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		$suffix     = '';
+		$len        = wp_rand(5, 10);
+		for ($i = 0; $i < $len; $i++) {
+			$suffix .= $chars[ wp_rand(0, strlen($chars) - 1) ];
+		}
+		$request_id = ($is_complex ? 'AddedC' : 'AddedS') . '-' . $suffix;
+
 		$form_data_raw = (string) (filter_input(INPUT_POST, 'form_data', FILTER_DEFAULT) ?? '');
 		$form_data     = '';
 		if ($form_data_raw !== '') {
@@ -268,6 +278,7 @@ final class EntriesPage
 					'payment_method' => $method,
 					'payment_status' => $status,
 					'form_data'      => $form_data,
+					'request_id'     => $request_id,
 				)
 			)
 		);
@@ -943,7 +954,7 @@ final class EntriesPage
 										},
 										'request_id' => function (EntryDto $e): void {
 											echo '<td class="column-request" data-col="request_id">';
-											echo $e->request_id ? '<p>' . esc_html($e->request_id) . '</p>' : '—';
+											echo $e->request_id ? '<p title="' . esc_html($e->request_id) . '">' . esc_html($e->request_id) . '</p>' : '—';
 											echo '</td>';
 										},
 										'form_title' => function (EntryDto $e): void {
@@ -1518,6 +1529,7 @@ final class EntriesPage
 			'form_title'     => __('Form', 'ifthenpay-payments-for-contactform7'),
 			'payment_method' => __('Method', 'ifthenpay-payments-for-contactform7'),
 			'amount'         => __('Amount', 'ifthenpay-payments-for-contactform7'),
+			'request_id'     => __('Request ID', 'ifthenpay-payments-for-contactform7'),
 		);
 		$clear_args  = array('page' => 'ifthenpay-cf7-entries', 'status' => $current_tab, 'period' => $period);
 		if ($form_id > 0) {

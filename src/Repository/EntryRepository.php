@@ -47,26 +47,28 @@ final class EntryRepository
 	{
 		global $wpdb;
 		$now = current_time('mysql');
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- custom plugin table; no WP Core API exists for this operation.
-		$wpdb->insert(
-			$this->table,
-			array(
-				'form_id'        => $dto->form_id,
-				'form_title'     => $dto->form_title,
-				'customer_name'  => $dto->customer_name,
-				'customer_email' => $dto->customer_email,
-				'customer_ip'    => $dto->customer_ip,
-				'amount'         => number_format($dto->amount, 2, '.', ''),
-				'payment_method' => $dto->payment_method,
-				'payment_status' => $dto->payment_status,
-				'payment_url'    => $dto->payment_url,
-				'return_url'     => $dto->return_url,
-				'form_data'      => $dto->form_data,
-				'created_at'     => $now,
-				'updated_at'     => $now,
-			),
-			array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+		$row = array(
+			'form_id'        => $dto->form_id,
+			'form_title'     => $dto->form_title,
+			'customer_name'  => $dto->customer_name,
+			'customer_email' => $dto->customer_email,
+			'customer_ip'    => $dto->customer_ip,
+			'amount'         => number_format($dto->amount, 2, '.', ''),
+			'payment_method' => $dto->payment_method,
+			'payment_status' => $dto->payment_status,
+			'payment_url'    => $dto->payment_url,
+			'return_url'     => $dto->return_url,
+			'form_data'      => $dto->form_data,
+			'created_at'     => $now,
+			'updated_at'     => $now,
 		);
+		$fmt = array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');
+		if ($dto->request_id !== null) {
+			$row['request_id'] = $dto->request_id;
+			$fmt[]             = '%s';
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- custom plugin table; no WP Core API exists for this operation.
+		$wpdb->insert($this->table, $row, $fmt);
 		if ($wpdb->last_error) {
 			return 0;
 		}

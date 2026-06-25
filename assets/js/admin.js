@@ -1144,6 +1144,7 @@
 		const postData = {
 			action: 'iftp_cf7_add_payment',
 			nonce: (window.iftpCf7Admin || {}).add_payment_nonce || '',
+			payment_mode: isComplex ? 'complex' : 'simple',
 			customer_name: isComplex
 				? $panel.find('[name="ap_sd_name"]').val()
 				: $panel.find('[name="ap_customer_name"]').val(),
@@ -1841,6 +1842,7 @@
 		payment_method:
 			'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
 		amount: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+		request_id: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
 	};
 
 	function iftpCloseAllFilterDropdowns() {
