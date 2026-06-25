@@ -224,18 +224,10 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
    ![Frontend Form](.wordpress-org/screenshot-6.png)
 7. **(Customer Experience) ifthenpay payment window**
    ![Payment Window](.wordpress-org/screenshot-7.png)
-8. **(Admin Only) ifthenpay Entries page — stats cards and entries list**
+8. **(Admin Only) ifthenpay Entries page — Table Options & Features**
    ![Entries Page](.wordpress-org/screenshot-8.gif)
-9. **(Admin Only) ifthenpay Entries page — Add Simple Payment**
-   ![Add Simple Payment](.wordpress-org/screenshot-9.png)
-10. **(Admin Only) ifthenpay Entries page — Add Complex Payment**
-   ![Add Complex Payment](.wordpress-org/screenshot-10.png)
-11. **(Admin Only) ifthenpay Entries page — Paid Status selected**
-    ![Admin Bar](.wordpress-org/screenshot-11.png)
-12. **(Admin Only) Single Entry View page - All information about a single Entry**
-    ![Single Entry View](.wordpress-org/screenshot-12.png)
-13. **(Admin Only) WordPress Dashboard Card with a revenue summary**
-    ![Dashboard Card](.wordpress-org/screenshot-13.png)
+9. **(Admin Only) ifthenpay Entries page — Status Selection | Add Payment | Single Entry Info**
+   ![Add Simple Payment](.wordpress-org/screenshot-9.gif)
 
 ## Support
 

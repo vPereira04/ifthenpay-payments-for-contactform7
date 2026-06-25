@@ -156,12 +156,8 @@ All network requests are performed server-side over HTTPS. Sensitive credentials
 5.  (Admin Only) Tag Generator in the form editor - ifthenpay Payment Gateway tab (per-form settings)
 6.  (Customer Experience) Frontend form with payment button and method logos
 7.  (Customer Experience) ifthenpay payment window
-8.  (Admin Only) ifthenpay Entries page — stats cards and entries list
-9.  (Admin Only) ifthenpay Entries page — Add Simple Payment
-10. (Admin Only) ifthenpay Entries page — Add Complex Payment
-11. (Admin Only) ifthenpay Entries page — Paid Status selected
-12. (Admin Only) Single Entry View page - All information about a single Entry
-13. (Admin Only) WordPress Dashboard Card with a revenue summary
+8.  (Admin Only) ifthenpay Entries page — Table Options & Features
+9.  (Admin Only) ifthenpay Entries page — Status Selection | Add Payment | Single Entry Info
 
 == Changelog ==
 
