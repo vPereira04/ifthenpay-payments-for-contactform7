@@ -307,6 +307,8 @@
 	$(document).on('click', '#iftp-clear-selection', function (e) {
 		e.preventDefault();
 		iftpSelClear();
+		$('input[name="entry_ids[]"], #cb-select-all, #cb-select-all-2').prop('checked', false);
+		$('.iftp-cf7-entries-table tbody tr').removeClass('iftp-row-selected');
 		iftpSelUpdateUI();
 	});
 
@@ -1359,6 +1361,53 @@
 	}
 
 
+	function iftpInitCheckboxes() {
+
+		const MARK =
+			'<span class="iftp-checkmark" aria-hidden="true">' +
+			'<svg viewBox="0 0 10 10" fill="none">' +
+			'<polyline class="iftp-check-path" points="1.5,5.5 4,8 8.5,2.5"/>' +
+			'</svg></span>';
+
+		$(
+			'.iftp-col-visibility-cb, ' +
+			'.iftp-cf7-entries-table .check-column input[type="checkbox"]'
+		).each(function () {
+			const $input = $(this);
+			if ($input.parent().hasClass('iftp-cb-wrap')) return;
+			$input.wrap('<span class="iftp-cb-wrap"></span>');
+			$input.after(MARK);
+		});
+
+
+		function syncRowSelected($input) {
+			$input.closest('tbody tr').toggleClass(
+				'iftp-row-selected',
+				!!$input.prop('checked')
+			);
+		}
+
+
+		$(document).on(
+			'change',
+			'.iftp-cf7-entries-table tbody input[name="entry_ids[]"]',
+			function () { syncRowSelected($(this)); }
+		);
+
+
+		$(document).on('change', '#cb-select-all, #cb-select-all-2', function () {
+			setTimeout(function () {
+				$('.iftp-cf7-entries-table tbody input[name="entry_ids[]"]')
+					.each(function () { syncRowSelected($(this)); });
+			}, 10);
+		});
+
+
+		$('.iftp-cf7-entries-table tbody input[name="entry_ids[]"]')
+			.each(function () { syncRowSelected($(this)); });
+	}
+
+
 	function iftpInitEntriesPrefs() {
 		const $wrap = $('.iftp-entries-table-wrap');
 		const $table = $wrap.find('.iftp-cf7-entries-table');
@@ -1502,6 +1551,7 @@
 
 
 		let dragSrc = null;
+		let touchDragSrc = null;
 
 		$list.on('dragstart', '.iftp-col-item', function (e) {
 			dragSrc = this;
@@ -1550,6 +1600,51 @@
 		});
 
 
+		const listEl = $list[0];
+		if (listEl) {
+			listEl.addEventListener('touchstart', function (e) {
+				const item = e.target.closest('.iftp-col-item');
+				if (!item) return;
+				touchDragSrc = item;
+				item.classList.add('iftp-col-dragging');
+			}, { passive: true });
+
+			listEl.addEventListener('touchmove', function (e) {
+				if (!touchDragSrc) return;
+				e.preventDefault();
+				const touch = e.touches[0];
+				const el = document.elementFromPoint(touch.clientX, touch.clientY);
+				const target = el && el.closest('.iftp-col-item');
+				listEl.querySelectorAll('.iftp-col-item').forEach(function (n) {
+					n.classList.remove('iftp-col-drag-over');
+				});
+				if (target && target !== touchDragSrc) {
+					target.classList.add('iftp-col-drag-over');
+				}
+			}, { passive: false });
+
+			listEl.addEventListener('touchend', function (e) {
+				if (!touchDragSrc) return;
+				const touch = e.changedTouches[0];
+				const el = document.elementFromPoint(touch.clientX, touch.clientY);
+				const target = el && el.closest('.iftp-col-item');
+				if (target && target !== touchDragSrc) {
+					const $src = $(touchDragSrc);
+					const $tgt = $(target);
+					if ($src.index() < $tgt.index()) {
+						$src.insertAfter($tgt);
+					} else {
+						$src.insertBefore($tgt);
+					}
+				}
+				listEl.querySelectorAll('.iftp-col-item').forEach(function (n) {
+					n.classList.remove('iftp-col-dragging', 'iftp-col-drag-over');
+				});
+				touchDragSrc = null;
+			}, { passive: true });
+		}
+
+
 		function reorderTableCols(order) {
 			$table.find('thead tr, tfoot tr').each(function () {
 				const $row = $(this);
@@ -1573,9 +1668,21 @@
 
 
 		function toggleTableCol(colKey, visible) {
-			$table
-				.find('[data-col="' + colKey + '"]')
-				.css('display', visible ? 'table-cell' : 'none');
+			const $cells = $table.find('[data-col="' + colKey + '"]');
+			if (visible) {
+				$cells.css({ display: 'table-cell', opacity: '0' });
+
+				requestAnimationFrame(function () {
+					requestAnimationFrame(function () {
+						$cells.css('opacity', '');
+					});
+				});
+			} else {
+				$cells.addClass('iftp-col-hiding');
+				setTimeout(function () {
+					$cells.filter('.iftp-col-hiding').css('display', 'none').removeClass('iftp-col-hiding');
+				}, 190);
+			}
 		}
 
 
@@ -1826,6 +1933,7 @@
 		})();
 
 		iftpInitDashWidget();
+		iftpInitCheckboxes();
 		iftpInitEntriesPrefs();
 
 	});

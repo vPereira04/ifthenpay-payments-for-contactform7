@@ -80,7 +80,8 @@ final class TagGenerator
 					id="<?php echo esc_attr($content . '-css'); ?>"
 					data-tag-part="option"
 					data-tag-option="css:"
-					pattern="[A-Za-z0-9_-]*" />
+					pattern="[A-Za-z0-9_-]*"
+					placeholder=" e.g. custom-css-class" />
 				<div></div>
 				<span class="description">
 					<?php esc_html_e('(Optional) - A custom CSS class to apply to the payment button.', 'ifthenpay-payments-for-contactform7'); ?>
@@ -92,7 +93,7 @@ final class TagGenerator
 				<input type="text"
 					id="<?php echo esc_attr($content . '-text'); ?>"
 					data-tag-part="value"
-					placeholder="<?php echo esc_attr($default_text); ?>" />
+					placeholder="Default: <?php echo esc_attr($default_text); ?>" />
 				<div></div>
 				<span class="description">
 					<?php

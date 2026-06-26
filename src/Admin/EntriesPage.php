@@ -242,7 +242,7 @@ final class EntriesPage
 		for ($i = 0; $i < $len; $i++) {
 			$suffix .= $chars[ wp_rand(0, strlen($chars) - 1) ];
 		}
-		$request_id = ($is_complex ? 'AddedC' : 'AddedS') . '-' . $suffix;
+		$request_id = 'Manual-' . $suffix;
 
 		$form_data_raw = (string) (filter_input(INPUT_POST, 'form_data', FILTER_DEFAULT) ?? '');
 		$form_data     = '';
@@ -649,7 +649,7 @@ final class EntriesPage
 
 			$rev_labels = array(
 				'bluecompleted'	 => __('Gray Revenue', 'ifthenpay-payments-for-contactform7'),
-				'completed'		 => __('Revenue', 'ifthenpay-payments-for-contactform7'),
+				'completed'		 => __('Paid Revenue', 'ifthenpay-payments-for-contactform7'),
 				'pending'   	 => __('Pending Total', 'ifthenpay-payments-for-contactform7'),
 				'failed'    	 => __('Failed Total', 'ifthenpay-payments-for-contactform7'),
 				'cancelled'	  	 => __('Cancelled Total', 'ifthenpay-payments-for-contactform7'),
@@ -922,7 +922,7 @@ final class EntriesPage
 								<thead>
 									<tr>
 										<td class="manage-column column-cb check-column">
-											<input id="cb-select-all" type="checkbox" autocomplete="off" />
+											<span class="iftp-cb-wrap"><input id="cb-select-all" type="checkbox" autocomplete="off" /><span class="iftp-checkmark" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none"><polyline class="iftp-check-path" points="1.5,5.5 4,8 8.5,2.5"/></svg></span></span>
 										</td>
 										<?php foreach ($ordered_cols as $col_key) : ?>
 											<?php $this->render_col_th($col_key, $col_defs[$col_key], $sort); ?>
@@ -1060,7 +1060,7 @@ final class EntriesPage
 									?>
 										<tr>
 											<th class="check-column">
-												<input type="checkbox" name="entry_ids[]" value="<?php echo esc_attr((string) $entry->id); ?>" autocomplete="off" />
+												<span class="iftp-cb-wrap"><input type="checkbox" name="entry_ids[]" value="<?php echo esc_attr((string) $entry->id); ?>" autocomplete="off" /><span class="iftp-checkmark" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none"><polyline class="iftp-check-path" points="1.5,5.5 4,8 8.5,2.5"/></svg></span></span>
 											</th>
 											<?php foreach ($ordered_cols as $col_key) : ?>
 												<?php if (isset($render_cell[$col_key])) {
@@ -1072,7 +1072,7 @@ final class EntriesPage
 								</tbody>
 								<tfoot>
 									<tr>
-										<td class="manage-column column-cb check-column"><input id="cb-select-all-2" type="checkbox" autocomplete="off" /></td>
+										<td class="manage-column column-cb check-column"><span class="iftp-cb-wrap"><input id="cb-select-all-2" type="checkbox" autocomplete="off" /><span class="iftp-checkmark" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none"><polyline class="iftp-check-path" points="1.5,5.5 4,8 8.5,2.5"/></svg></span></span></td>
 										<?php foreach ($ordered_cols as $col_key) : ?>
 											<?php $this->render_col_th($col_key, $col_defs[$col_key], $sort); ?>
 										<?php endforeach; ?>
@@ -1113,10 +1113,10 @@ final class EntriesPage
 											<circle cx="15" cy="19" r="1" fill="currentColor" />
 										</svg>
 									</span>
-									<input type="checkbox"
+									<span class="iftp-cb-wrap"><input type="checkbox"
 										class="iftp-col-visibility-cb"
 										id="iftp-colvis-<?php echo esc_attr($col_key); ?>"
-										<?php checked(isset($visible_set[$col_key])); ?> />
+										<?php checked(isset($visible_set[$col_key])); ?> /><span class="iftp-checkmark" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none"><polyline class="iftp-check-path" points="1.5,5.5 4,8 8.5,2.5"/></svg></span></span>
 									<label for="iftp-colvis-<?php echo esc_attr($col_key); ?>" class="iftp-col-item-label">
 										<?php echo esc_html($col_defs[$col_key]['label']); ?>
 									</label>
@@ -1346,7 +1346,7 @@ final class EntriesPage
 
 		<script>
 			(function() {
-				var STORAGE_KEY = 'iftp_cf7_selected';
+				var STORAGE_KEY = 'iftp_cf7_selected_ids';
 
 				function getStoredIds() {
 					try {

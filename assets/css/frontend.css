@@ -1,5 +1,18 @@
 /* ifthenpay | Payments for Contact Form 7 — Frontend Styles */
 
+:root {
+	--iftp-fe-brand:              #0e6bab;
+	--iftp-fe-brand-dark:         #0a5a94;
+	--iftp-fe-warn-amber-border:  #fde68a;
+	--iftp-fe-warn-amber-text:    #92400e;
+	--iftp-fe-warn-pending-bg:    #fffae9;
+	--iftp-fe-warn-cancel-bg:     #fffbeb;
+	--iftp-fe-error-bg:           #fff5f4;
+	--iftp-fe-error-border:       #f0b8b4;
+	--iftp-fe-error-text:         #7f1d1d;
+  --iftp-fe-desabled-button:     #6b7280;
+}
+
 @font-face {
 	font-family: ifthenpay-icons;
 	src: url('../fonts/ifthenpay-icons.woff2') format('woff2'),
@@ -8,8 +21,6 @@
 	font-weight: normal;
 	font-style: normal;
 }
-
-
 
 /* Payment field container */
 .iftp-cf7-payment-field {
@@ -41,7 +52,7 @@
 	justify-content: center;
 	gap: 8px;
 	padding: 11px 24px;
-	background: #0e6bab;
+	background: var(--iftp-fe-brand);
 	color: #fff;
 	border: none;
 	border-radius: 6px;
@@ -53,40 +64,43 @@
 	transition: background 0.15s, opacity 0.15s;
 }
 
-.iftp-cf7-pay-button:hover:not(:disabled) {
-	background: #0a5a94;
-}
-
+/* Lower-specificity states before the :hover:not() guard (specificity 0,3,0) */
 .iftp-cf7-pay-button:focus-visible {
-	outline: 3px solid #0e6bab;
+	outline: 3px solid var(--iftp-fe-brand);
 	outline-offset: 2px;
 }
 
 .iftp-cf7-pay-button:disabled,
+/* stylelint-disable-next-line selector-class-pattern -- BEM modifier */
 .iftp-cf7-pay-button--disabled {
 	opacity: 0.55;
 	cursor: not-allowed;
-	background: #6b7280;
+	background: var(--iftp-fe-desabled-button);
+}
+
+/* Misconfigured state — sets display:none, no conflict with hover's background */
+.iftp-cf7-is-misconfigured .iftp-cf7-pay-button {
+	display: none;
+}
+
+.iftp-cf7-pay-button:hover:not(:disabled) {
+	background: var(--iftp-fe-brand-dark);
 }
 
 /* Config warning (always red) */
 .iftp-cf7-config-warning {
-	background: #fff5f4;
-	border: 1px solid #f0b8b4;
+	background: var(--iftp-fe-error-bg);
+	border: 1px solid var(--iftp-fe-error-border);
 	border-radius: 6px;
 	padding: 12px 16px;
 }
 
-.iftp-cf7-config-warning p {
-	margin: 0;
-	font-size: 14px;
-	color: #7f1d1d;
-}
-
+/* Shared error/config text */
+.iftp-cf7-config-warning p,
 .iftp-cf7-error-msg {
 	margin: 0;
 	font-size: 14px;
-	color: #7f1d1d;
+	color: var(--iftp-fe-error-text);
 }
 
 /*
@@ -109,38 +123,34 @@
 
 /* Pending — amber */
 .iftp-cf7-runtime-warning.iftp-warn-pending {
-	background: #fffae9;
-	border-color: #fde68a;
-}
-
-.iftp-cf7-runtime-warning.iftp-warn-pending p {
-	margin: 0;
-	font-size: 14px;
-	color: #92400e;
+	background: var(--iftp-fe-warn-pending-bg);
+	border-color: var(--iftp-fe-warn-amber-border);
 }
 
 /* Cancelled — amber */
 .iftp-cf7-runtime-warning.iftp-warn-cancel {
-	background: #fffbeb;
-	border-color: #fde68a;
+	background: var(--iftp-fe-warn-cancel-bg);
+	border-color: var(--iftp-fe-warn-amber-border);
 }
 
+/* Pending & Cancelled share the same text colour */
+.iftp-cf7-runtime-warning.iftp-warn-pending p,
 .iftp-cf7-runtime-warning.iftp-warn-cancel p {
 	margin: 0;
 	font-size: 14px;
-	color: #92400e;
+	color: var(--iftp-fe-warn-amber-text);
 }
 
 /* Error / failed — red */
 .iftp-cf7-runtime-warning.iftp-warn-error {
-	background: #fff5f4;
-	border-color: #f0b8b4;
+	background: var(--iftp-fe-error-bg);
+	border-color: var(--iftp-fe-error-border);
 }
 
 .iftp-cf7-runtime-warning.iftp-warn-error p {
 	margin: 0;
 	font-size: 14px;
-	color: #7f1d1d;
+	color: var(--iftp-fe-error-text);
 }
 
 /* Icons on status message paragraphs */
@@ -156,54 +166,3 @@
 .iftp-msg-pending::before { content: 'ℹ'; }
 .iftp-msg-cancel::before  { content: '⚠'; }
 .iftp-msg-error::before   { content: '✕'; }
-
-/* Spinner overlay (injected by JS) */
-.iftp-cf7-spinner-overlay {
-	position: fixed;
-	inset: 0;
-	background: rgb(255 255 255 / 75%);
-	z-index: 999998;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-/* Payment modal overlay (injected by JS) */
-.iftp-cf7-overlay {
-	position: fixed;
-	inset: 0;
-	background: rgb(15 23 42 / 55%);
-	display: flex;
-	z-index: 2147483647;
-}
-
-.iftp-cf7-modal {
-	position: relative;
-	width: 100vw;
-	height: 100vh;
-	background: #fff;
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-}
-
-.iftp-cf7-modal-header {
-	display: flex;
-	align-items: center;
-	gap: 14px;
-	padding: 16px 24px;
-	background: #fef3c7;
-	border-bottom: 1px solid #fcd34d;
-	flex-shrink: 0;
-}
-
-.iftp-cf7-iframe {
-	flex: 1;
-	border: none;
-	width: 100%;
-}
-
-/* Misconfigured state */
-.iftp-cf7-is-misconfigured .iftp-cf7-pay-button {
-	display: none;
-}

@@ -502,7 +502,7 @@ final class IfthenpayService extends \WPCF7_Service
 								<?php endforeach; ?>
 							</select>
 							<p class="description">
-								<?php esc_html_e('Which payment method is pre-selected in the payment modal.', 'ifthenpay-payments-for-contactform7'); ?>
+								<?php esc_html_e('Which payment method is pre-selected in the Payment.', 'ifthenpay-payments-for-contactform7'); ?>
 							</p>
 						</td>
 					</tr>
