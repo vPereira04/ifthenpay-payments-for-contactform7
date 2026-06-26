@@ -140,12 +140,7 @@ final class Plugin
 			return;
 		}
 
-		$service_file = IFTP_CF7_DIR . 'src/Service/IfthenpayService.php';
-		if (! file_exists($service_file)) {
-			return;
-		}
-
-		require_once $service_file;
+		require_once IFTP_CF7_DIR . 'src/Service/IfthenpayService.php';
 
 		if (! class_exists(IfthenpayService::class)) {
 			return;

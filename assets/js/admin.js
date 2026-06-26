@@ -11,7 +11,6 @@
 		String(newText)
 			.split('')
 			.forEach(function (ch) {
-				let node;
 				if (/\d/.test(ch)) {
 					const slot = document.createElement('span');
 					slot.className = 'iftp-od-slot';
@@ -37,7 +36,7 @@
 						});
 					})(reel, parseInt(ch, 10), digitIdx++ * 25);
 				} else {
-					node = document.createElement('span');
+					const node = document.createElement('span');
 					node.className = 'iftp-od-sym';
 					node.textContent = ch;
 					el.appendChild(node);
@@ -2298,19 +2297,6 @@
 			} catch (e) {}
 		});
 
-
-		(function () {
-			try {
-				const paged =
-					new URL(window.location.href).searchParams.get('paged') ||
-					'1';
-				if (paged !== '1') {
-					sessionStorage.setItem('iftp_cf7_paged', paged);
-				} else {
-					sessionStorage.removeItem('iftp_cf7_paged');
-				}
-			} catch (e) {}
-		})();
 	})();
 
 

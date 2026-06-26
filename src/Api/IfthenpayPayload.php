@@ -52,38 +52,10 @@ final class IfthenpayPayload
 	public static function build_gateway_urls(int $entry_id, string $return_url, float $amount = 0.0, string $gateway_key = ''): array
 	{
 
-		$endpoint_class = 'Ifthenpay\\CF7\\Payment\\GatewayEndpoint';
-
-		if (class_exists($endpoint_class)) {
-			return array(
-				'success_url' => $endpoint_class::build_success_url($entry_id, $amount, $gateway_key, $return_url),
-				'cancel_url'  => $endpoint_class::build_status_url($entry_id, 'cancel', $return_url),
-				'error_url'   => $endpoint_class::build_status_url($entry_id, 'error', $return_url),
-			);
-		}
-
 		return array(
-			'success_url' => add_query_arg(
-				array(
-					'iftp_cf7_pay'   => 'success',
-					'iftp_cf7_entry' => $entry_id,
-				),
-				$return_url
-			),
-			'cancel_url'  => add_query_arg(
-				array(
-					'iftp_cf7_pay'   => 'cancel',
-					'iftp_cf7_entry' => $entry_id,
-				),
-				$return_url
-			),
-			'error_url'   => add_query_arg(
-				array(
-					'iftp_cf7_pay'   => 'error',
-					'iftp_cf7_entry' => $entry_id,
-				),
-				$return_url
-			),
+			'success_url' => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_success_url($entry_id, $amount, $gateway_key, $return_url),
+			'cancel_url'  => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_status_url($entry_id, 'cancel', $return_url),
+			'error_url'   => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_status_url($entry_id, 'error', $return_url),
 		);
 	}
 
@@ -117,16 +89,7 @@ final class IfthenpayPayload
 			return '';
 		}
 
-		$entity = '';
-		if (! empty($config['default_method'])) {
-			$entity = strtoupper((string) $config['default_method']);
-		}
-		if (! empty($config['gateway_key'])) {
-			$gk = (string) $config['gateway_key'];
-			if (! empty($config['gateway_methods'][$gk]['default_method'])) {
-				$entity = strtoupper((string) $config['gateway_methods'][$gk]['default_method']);
-			}
-		}
+		$entity = ! empty($config['default_method']) ? strtoupper((string) $config['default_method']) : '';
 
 		if ($entity !== '' && isset($methods_config[$entity]) && ! empty($methods_config[$entity]['enabled'])) {
 			return $map[$entity] ?? (string) reset($map);

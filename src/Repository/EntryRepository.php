@@ -296,6 +296,7 @@ final class EntryRepository
 
 		$allowed_order_cols = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
 		$orderby_col        = in_array($orderby, $allowed_order_cols, true) ? $orderby : 'id';
+		$rows               = array();
 
 		if ($orderby_col === 'id') {
 			if ($cursor > 0 || $page === 1) {
@@ -391,8 +392,8 @@ final class EntryRepository
 			$stats = $this->get_period_stats('all');
 			if ($status === '') {
 				return [
-					$stats['completed_any'] + $stats['pending_any'] + $stats['failed_any'] + $stats['cancelled_any'],
-					round($stats['completed_amount'] + $stats['pending_amount'] + $stats['failed_amount'] + $stats['cancelled_amount'], 2),
+					$stats['completed_any'] + $stats['pending_any'] + $stats['failed_any'] + $stats['cancelled_any'] + $stats['expired_any'],
+					round($stats['completed_amount'] + $stats['pending_amount'] + $stats['failed_amount'] + $stats['cancelled_amount'] + $stats['expired_amount'], 2),
 				];
 			}
 			if (isset($stats[$status . '_any'], $stats[$status . '_amount'])) {
@@ -690,28 +691,8 @@ final class EntryRepository
 	 */
 	private function period_conditions_triple(string $period): array
 	{
-		switch ($period) {
-			case 'day':
-				$c = "updated_at >= CURDATE() AND updated_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
-				return array($c, $c, $c);
-			case 'week':
-				$c = "updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-				return array($c, $c, $c);
-			case '15day':
-				$c = "updated_at >= DATE_SUB(NOW(), INTERVAL 15 DAY)";
-				return array($c, $c, $c);
-			case '30day':
-				$c = "updated_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-				return array($c, $c, $c);
-			case 'month':
-				$c = "updated_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND updated_at < DATE_ADD(DATE_FORMAT(NOW(),'%Y-%m-01'), INTERVAL 1 MONTH)";
-				return array($c, $c, $c);
-			case 'year':
-				$c = "updated_at >= DATE_FORMAT(NOW(),'%Y-01-01') AND updated_at < DATE_ADD(DATE_FORMAT(NOW(),'%Y-01-01'), INTERVAL 1 YEAR)";
-				return array($c, $c, $c);
-			default:
-				return array('', '', '');
-		}
+		$c = $this->period_condition($period);
+		return array($c, $c, $c);
 	}
 
 	/**

@@ -234,9 +234,7 @@ final class EntriesPage
 		$status     = isset($_POST['payment_status']) ? sanitize_key(wp_unslash((string) $_POST['payment_status'])) : 'completed';
 		$form_title = isset($_POST['form_title']) ? sanitize_text_field(wp_unslash((string) $_POST['form_title'])) : '';
 
-		$mode_raw   = isset($_POST['payment_mode']) ? sanitize_key(wp_unslash((string) $_POST['payment_mode'])) : 'simple';
-		$is_complex = $mode_raw === 'complex';
-		$chars      = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 		$suffix     = '';
 		$len        = wp_rand(5, 10);
 		for ($i = 0; $i < $len; $i++) {
@@ -676,13 +674,6 @@ final class EntriesPage
 			));
 			$_stat_url  = static function (string $s) use ($current_tab, $_stat_base): string {
 				return add_query_arg(array_merge($_stat_base, array('status' => $current_tab === $s ? '' : $s)), admin_url('admin.php'));
-			};
-
-			$_stat_cls = static function (string $s) use ($current_tab): string {
-				if ($current_tab === '') {
-					return '';
-				}
-				return $current_tab === $s ? ' iftp-stat-card--active' : ' iftp-stat-card--dim';
 			};
 			?>
 			<?php
