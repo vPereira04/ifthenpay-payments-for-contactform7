@@ -163,6 +163,7 @@ All network requests are performed server-side over HTTPS. Sensitive credentials
 7.  (Customer Experience) ifthenpay payment window
 8.  (Admin Only) ifthenpay Entries page — Table Options & Features
 9.  (Admin Only) ifthenpay Entries page — Status Selection | Add Payment | Single Entry Info
+10. (Admin Only) ifthenpay Entries page — Mobile Version
 
 == Changelog ==
 

@@ -233,6 +233,10 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
    ![Entries Page](.wordpress-org/screenshot-8.gif)
 9. **(Admin Only) ifthenpay Entries page — Status Selection | Add Payment | Single Entry Info**
    ![Add Simple Payment](.wordpress-org/screenshot-9.gif)
+10. **(Admin Only) ifthenpay Entries page — Mobile Version**
+   <p align="center">
+      <img src=".wordpress-org/screenshot-10.gif" alt="Add Simple Payment" />
+   </p>
 
 ## Support
 
