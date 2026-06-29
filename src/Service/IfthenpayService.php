@@ -88,7 +88,7 @@ final class IfthenpayService extends \WPCF7_Service
 		if ($sub_action === '') {
 			if ($method === 'GET') {
 				$bk      = Settings::get_backoffice_key();
-				$message = sanitize_key((string) (filter_input(INPUT_GET, 'message', FILTER_DEFAULT) ?? ''));
+				$message = sanitize_key(wp_unslash((string) ($_GET['message'] ?? '')));
 
 				$no_refresh = array('saved', 'reset');
 				if ($bk !== '' && ! in_array($message, $no_refresh, true)) {
@@ -219,7 +219,7 @@ final class IfthenpayService extends \WPCF7_Service
 	{
 		$settings = Settings::get_settings();
 		$bk       = (string) ($settings['backoffice_key'] ?? '');
-		$message  = sanitize_key((string) (filter_input(INPUT_GET, 'message', FILTER_DEFAULT) ?? ''));
+		$message  = sanitize_key(wp_unslash((string) ($_GET['message'] ?? '')));
 
 		$this->print_notice($message);
 

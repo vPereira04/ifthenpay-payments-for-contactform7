@@ -73,10 +73,10 @@ final class EntriesPage
 		$orderby_in_url = isset($_GET['orderby']);
 		$order_in_url   = isset($_GET['order']);
 
-		$status_raw   = sanitize_key((string) (filter_input(INPUT_GET, 'status', FILTER_DEFAULT) ?? ''));
-		$period_raw   = sanitize_key((string) (filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'all'));
-		$orderby_raw  = $orderby_in_url ? sanitize_key((string) (filter_input(INPUT_GET, 'orderby', FILTER_DEFAULT) ?? '')) : $prefs['orderby'];
-		$order_raw    = $order_in_url   ? sanitize_key((string) (filter_input(INPUT_GET, 'order', FILTER_DEFAULT) ?? ''))   : $prefs['order'];
+		$status_raw   = isset($_GET['status'])  ? sanitize_key(wp_unslash((string) $_GET['status']))  : '';
+		$period_raw   = isset($_GET['period'])  ? sanitize_key(wp_unslash((string) $_GET['period']))  : 'all';
+		$orderby_raw  = $orderby_in_url ? (isset($_GET['orderby']) ? sanitize_key(wp_unslash((string) $_GET['orderby'])) : '') : $prefs['orderby'];
+		$order_raw    = $order_in_url   ? (isset($_GET['order'])   ? sanitize_key(wp_unslash((string) $_GET['order']))   : '') : $prefs['order'];
 		$per_page_raw = absint((string) (filter_input(INPUT_GET, 'per_page', FILTER_SANITIZE_NUMBER_INT) ?? 20));
 		$form_id      = absint((string) (filter_input(INPUT_GET, 'form_id', FILTER_SANITIZE_NUMBER_INT) ?? 0));
 
@@ -100,7 +100,7 @@ final class EntriesPage
 
 
 		$cursor  = ($current_page > 1) ? absint((string) (filter_input(INPUT_GET, 'cursor', FILTER_SANITIZE_NUMBER_INT) ?? 0)) : 0;
-		$dir_raw = sanitize_key((string) (filter_input(INPUT_GET, 'dir', FILTER_DEFAULT) ?? ''));
+		$dir_raw = isset($_GET['dir']) ? sanitize_key(wp_unslash((string) $_GET['dir'])) : '';
 		$dir     = in_array($dir_raw, array('prev', 'last'), true) ? $dir_raw : 'next';
 
 
@@ -209,10 +209,11 @@ final class EntriesPage
 		};
 
 		$args = array('page' => 'ifthenpay-cf7-entries', 'bulk_done' => '1');
+
 		foreach (array('status', 'period', 'paged', 'search_field', 'search_op', 'search_query') as $key) {
-			$val = filter_input(INPUT_GET, $key, FILTER_DEFAULT);
-			if ($val !== null && $val !== false && $val !== '') {
-				$args[$key] = sanitize_text_field((string) $val);
+			$val = isset($_GET[$key]) ? wp_unslash((string) $_GET[$key]) : '';
+			if ($val !== '') {
+				$args[$key] = sanitize_text_field($val);
 			}
 		}
 		wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
@@ -242,7 +243,8 @@ final class EntriesPage
 		}
 		$request_id = 'Manual-' . $suffix;
 
-		$form_data_raw = (string) (filter_input(INPUT_POST, 'form_data', FILTER_DEFAULT) ?? '');
+
+		$form_data_raw = isset($_POST['form_data']) ? wp_unslash((string) $_POST['form_data']) : '';
 		$form_data     = '';
 		if ($form_data_raw !== '') {
 			$decoded = json_decode($form_data_raw, true);
@@ -299,7 +301,8 @@ final class EntriesPage
 			wp_send_json_error(array('message' => 'Not logged in.'), 403);
 		}
 
-		$raw  = (string) (filter_input(INPUT_POST, 'prefs', FILTER_DEFAULT) ?? '');
+
+		$raw  = isset($_POST['prefs']) ? wp_unslash((string) $_POST['prefs']) : '';
 		$data = json_decode($raw, true);
 		if (! is_array($data)) {
 			wp_send_json_error(array('message' => 'Invalid data.'));
@@ -519,63 +522,8 @@ final class EntriesPage
 			'week'  => _x('Week', 'period filter', 'ifthenpay-payments-for-contactform7'),
 			'day'   => _x('Day', 'period filter', 'ifthenpay-payments-for-contactform7'),
 		);
+
 ?>
-		<script>
-			(function() {
-				'use strict';
-				try {
-					var url = new URL(window.location.href);
-					var changed = false;
-					if (!url.searchParams.has('per_page')) {
-						var pp = localStorage.getItem('iftp_cf7_per_page');
-						if (pp && pp !== '20') {
-							url.searchParams.set('per_page', pp);
-							url.searchParams.set('paged', '1');
-							url.searchParams.delete('cursor');
-							url.searchParams.delete('dir');
-							changed = true;
-						}
-					} else {
-						localStorage.setItem('iftp_cf7_per_page', url.searchParams.get('per_page'));
-					}
-					if (!url.searchParams.has('period')) {
-						var period = localStorage.getItem('iftp_cf7_period');
-						if (period && period !== 'all') {
-							url.searchParams.set('period', period);
-							changed = true;
-						}
-					} else {
-						localStorage.setItem('iftp_cf7_period', url.searchParams.get('period'));
-					}
-					if (!url.searchParams.has('status')) {
-						var status = sessionStorage.getItem('iftp_cf7_status');
-						if (status && status !== '') {
-							url.searchParams.set('status', status);
-							changed = true;
-						}
-					} else {
-						sessionStorage.setItem('iftp_cf7_status', url.searchParams.get('status'));
-					}
-					if (!url.searchParams.has('form_id')) {
-						var formId = sessionStorage.getItem('iftp_cf7_form_id');
-						if (formId && formId !== '0') {
-							url.searchParams.set('form_id', formId);
-							changed = true;
-						}
-					} else {
-						var fid = url.searchParams.get('form_id');
-						if (fid && fid !== '0') {
-							sessionStorage.setItem('iftp_cf7_form_id', fid);
-						} else {
-							sessionStorage.removeItem('iftp_cf7_form_id');
-						}
-					}
-					if (changed) {
-						window.location.replace(url.toString());
-					}
-				} catch (e) {}
-			}());
-		</script>
 		<div class="wrap iftp-cf7-entries-wrap">
 			<div class="iftp-page-header">
 				<div class="iftp-header-left">
@@ -896,15 +844,8 @@ final class EntriesPage
 							<input type="hidden" name="status" value="<?php echo esc_attr($current_tab); ?>" />
 						<?php endif; ?>
 
-						<?php if (! empty($hidden_cols)) : ?>
-							<style>
-								<?php foreach ($hidden_cols as $hk) : ?>.iftp-cf7-entries-table [data-col="<?php echo esc_attr($hk); ?>"] {
-									display: none;
-								}
-
-								<?php endforeach; ?>
-							</style>
-						<?php endif; ?>
+						<!-- Column visibility CSS is injected via wp_add_inline_style() in Plugin::enqueue_admin_assets(). -->
+						<!-- admin-entries.js reads data-hidden-cols on the table wrapper as a fallback. -->
 						<div class="iftp-entries-table-wrap iftp-density-compact"
 							data-col-labels="<?php echo esc_attr($col_labels_json); ?>"
 							data-col-order="<?php echo esc_attr((string) wp_json_encode($ordered_cols)); ?>"
@@ -1335,145 +1276,7 @@ final class EntriesPage
 			<?php endif; ?>
 		</div>
 
-		<script>
-			(function() {
-				var STORAGE_KEY = 'iftp_cf7_selected_ids';
-
-				function getStoredIds() {
-					try {
-						return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
-					} catch (e) {
-						return [];
-					}
-				}
-
-				function setStoredIds(ids) {
-					try {
-						sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-					} catch (e) {}
-				}
-
-				function clearStoredIds() {
-					try {
-						sessionStorage.removeItem(STORAGE_KEY);
-					} catch (e) {}
-				}
-
-				function getAllCheckboxes() {
-					return document.querySelectorAll('input[name="entry_ids[]"]');
-				}
-
-				/* Sync both select-all headers to reflect the current checked state */
-				function updateSelectAllState() {
-					var cbs = Array.from(getAllCheckboxes());
-					var total = cbs.length;
-					var checked = cbs.filter(function(cb) {
-						return cb.checked;
-					}).length;
-					['cb-select-all', 'cb-select-all-2'].forEach(function(id) {
-						var el = document.getElementById(id);
-						if (!el) return;
-						el.checked = total > 0 && checked === total;
-						el.indeterminate = checked > 0 && checked < total;
-					});
-				}
-
-				/* Write current page's checkbox state into storage, preserving other pages' IDs */
-				function syncStorageFromPage() {
-					var storedSet = new Set(getStoredIds().map(String));
-					getAllCheckboxes().forEach(function(cb) {
-						storedSet.delete(cb.value);
-						if (cb.checked) storedSet.add(cb.value);
-					});
-					setStoredIds(Array.from(storedSet));
-				}
-
-				function uncheckAll() {
-					getAllCheckboxes().forEach(function(cb) {
-						cb.checked = false;
-					});
-					['cb-select-all', 'cb-select-all-2'].forEach(function(id) {
-						var el = document.getElementById(id);
-						if (el) {
-							el.checked = false;
-							el.indeterminate = false;
-						}
-					});
-				}
-
-				/* Restore checkboxes whose IDs are in storage — always clears first */
-				function restoreSelectionsFromStorage() {
-					uncheckAll();
-					var storedSet = new Set(getStoredIds().map(String));
-					if (!storedSet.size) return;
-					getAllCheckboxes().forEach(function(cb) {
-						if (storedSet.has(cb.value)) cb.checked = true;
-					});
-					updateSelectAllState();
-				}
-
-				function applyPageState() {
-					var p = new URLSearchParams(window.location.search);
-					if (p.get('bulk_done') === '1') {
-						clearStoredIds();
-						p.delete('bulk_done');
-						history.replaceState(null, '', window.location.pathname + '?' + p.toString());
-						uncheckAll();
-					} else {
-						restoreSelectionsFromStorage();
-					}
-				}
-
-				/* Run immediately, after DOMContentLoaded (beats browser form-state restore), and on bfcache */
-				applyPageState();
-				document.addEventListener('DOMContentLoaded', applyPageState);
-				window.addEventListener('pageshow', function(e) {
-					if (e.persisted) applyPageState();
-				});
-
-				/* Track individual checkbox changes */
-				getAllCheckboxes().forEach(function(cb) {
-					cb.addEventListener('change', function() {
-						syncStorageFromPage();
-						updateSelectAllState();
-					});
-				});
-
-				/* Select-all checkboxes */
-				['cb-select-all', 'cb-select-all-2'].forEach(function(id) {
-					var el = document.getElementById(id);
-					if (!el) return;
-					el.addEventListener('change', function() {
-						getAllCheckboxes().forEach(function(cb) {
-							cb.checked = el.checked;
-						});
-						syncStorageFromPage();
-						updateSelectAllState();
-					});
-				});
-
-				/* Page-jump inputs: navigate on Enter */
-				document.querySelectorAll('.iftp-pag-input').forEach(function(input) {
-					input.addEventListener('keydown', function(e) {
-						if (e.key !== 'Enter') return;
-						e.preventDefault();
-						var p = parseInt(this.value, 10);
-						var total = parseInt(this.getAttribute('data-total'), 10) || 1;
-						if (isNaN(p) || p < 1) return;
-						if (p > total) p = total;
-						var baseUrl = this.getAttribute('data-base-url') || window.location.href;
-						var url = new URL(baseUrl, window.location.href);
-						if (p > 1) {
-							url.searchParams.set('paged', p);
-						} else {
-							url.searchParams.delete('paged');
-						}
-						window.location.href = url.toString();
-					});
-				});
-
-			})();
-		</script>
+	<!-- Checkbox persistence, select-all, and page-jump are handled by admin-entries.js (enqueued via wp_enqueue_script). -->
 	<?php
 	}
 

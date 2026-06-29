@@ -37,9 +37,10 @@ final class Process
 	{
 		$keys = array('iftp_cf7_entry_id', 'iftp_cf7_payment_status');
 		foreach ($keys as $key) {
-			$val = filter_input(INPUT_POST, $key, FILTER_DEFAULT);
-			if ($val !== null && $val !== false) {
-				$posted_data[$key] = sanitize_text_field((string) $val);
+
+			$raw = isset($_POST[$key]) ? wp_unslash((string) $_POST[$key]) : null;
+			if ($raw !== null) {
+				$posted_data[$key] = sanitize_text_field($raw);
 			}
 		}
 		return $posted_data;
@@ -127,7 +128,8 @@ final class Process
 		$email      = isset($_POST['customer_email']) ? sanitize_email(wp_unslash((string) $_POST['customer_email'])) : '';
 		$form_title = isset($_POST['form_title']) ? sanitize_text_field(wp_unslash((string) $_POST['form_title'])) : '';
 
-		$form_data_raw = (string) (filter_input(INPUT_POST, 'form_data', FILTER_DEFAULT) ?? '');
+
+		$form_data_raw = isset($_POST['form_data']) ? wp_unslash((string) $_POST['form_data']) : '';
 
 		$customer_ip = sanitize_text_field(wp_unslash((string) ($_SERVER['REMOTE_ADDR'] ?? '')));
 
@@ -175,8 +177,10 @@ final class Process
 
 		$form_data_json = '{}';
 		if ($form_data_raw !== '') {
-			$decoded        = json_decode($form_data_raw, true);
-			$form_data_json = is_array($decoded) ? (string) wp_json_encode($decoded) : '{}';
+			$decoded = json_decode($form_data_raw, true);
+			if (is_array($decoded)) {
+				$form_data_json = (string) wp_json_encode($this->sanitize_form_data($decoded));
+			}
 		}
 
 		$payment_data = PaymentData::from(
@@ -270,7 +274,8 @@ final class Process
 	public function validate_email_length(\WPCF7_Validation $result, \WPCF7_FormTag $tag): \WPCF7_Validation
 	{
 		$name  = $tag->name;
-		$value = sanitize_text_field((string) (filter_input(INPUT_POST, $name, FILTER_DEFAULT) ?? ''));
+
+		$value = isset($_POST[$name]) ? sanitize_text_field(wp_unslash((string) $_POST[$name])) : '';
 		if ($value !== '' && mb_strlen($value) > 100) {
 			$result->invalidate(
 				$tag,
@@ -278,5 +283,27 @@ final class Process
 			);
 		}
 		return $result;
+	}
+
+	/**
+	 * Recursively sanitizes a decoded form_data array before DB storage.
+	 * Keys → sanitize_text_field; scalar values → sanitize_textarea_field;
+	 * nested arrays are processed depth-first.
+	 *
+	 * @param array<mixed, mixed> $data
+	 * @return array<string, mixed>
+	 */
+	private function sanitize_form_data(array $data): array
+	{
+		$clean = array();
+		foreach ($data as $k => $v) {
+			$safe_key = sanitize_text_field((string) $k);
+			if (is_array($v)) {
+				$clean[$safe_key] = $this->sanitize_form_data($v);
+			} else {
+				$clean[$safe_key] = sanitize_textarea_field((string) $v);
+			}
+		}
+		return $clean;
 	}
 }

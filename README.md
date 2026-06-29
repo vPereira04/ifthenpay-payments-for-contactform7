@@ -11,6 +11,7 @@ Adds ifthenpay payment methods to Contact Form 7: cards, wallets, and local paym
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Form Tag Reference](#form-tag-reference)
+- [Mail Tags](#mail-tags)
 - [Frequently Asked Questions](#frequently-asked-questions)
 - [External Services](#external-services)
 - [Screenshots](#screenshots)
@@ -28,6 +29,7 @@ Payments are processed through a secure pay-by-link system, ensuring that no sen
 * Secure automatic payment confirmations via callback
 * Payment entries page to manage and track all transactions
 * Revenue dashboard widget with period breakdown
+* CF7 mail tags to include payment data in confirmation emails
 * No card numbers stored on your website
 
 All global settings are configured on the CF7 Integration page. Per-form settings (enable/disable, amount source) are managed inside each form editor.
@@ -40,11 +42,12 @@ All global settings are configured on the CF7 Integration page. Per-form setting
 4. Support for multiple payment methods (cards, wallets, bank transfers)
 5. Per-form configuration — enable payments and set amount source per form
 6. Flexible amount — fixed price or read dynamically from any CF7 field
-7. Payment entries page with filtering, search, bulk actions, and column customization
-8. Revenue dashboard widget with last 24 h / 7 d / 15 d / 30 d breakdown
-9. Admin bar shortcut and keyboard shortcut (`Ctrl+Shift+F`) to Entries page
-10. Multi-language support (EN, ES, FR, PT)
-11. Security-first — no card data stored, anti-phishing key validation, HTTPS only
+7. CF7 mail tags — include payment data in confirmation emails
+8. Payment entries page with filtering, search, bulk actions, and column customization
+9. Revenue dashboard widget with last 24 h / 7 d / 15 d / 30 d breakdown
+10. Admin bar shortcut and keyboard shortcut (`Ctrl+Shift+F`) to Entries page
+11. Multi-language support (EN, ES, FR, PT)
+12. Security-first — no card data stored, anti-phishing key validation, HTTPS only
 
 ## Requirements
 
@@ -80,6 +83,17 @@ The `[ifthenpay_payment]` tag renders the payment button in the form. Place it o
 | `hide:yes` | No | Hides payment method logos displayed above the button. |
 
 The tag generator in the form editor (Form editor → **ifthenpay Payment**) builds the tag for you with a visual UI.
+
+## Mail Tags
+
+Use these inside CF7 mail templates to include payment data in confirmation emails sent after form submission:
+
+| Tag | Description |
+|-----|-------------|
+| `[ifthenpay-amount]` | Payment amount with currency symbol (e.g. `€30.00`) |
+| `[ifthenpay-method]` | Payment method used (e.g. `MBWAY`, `MULTIBANCO`) |
+| `[ifthenpay-status]` | Payment status label (e.g. `Paid`, `Pending`) |
+| `[ifthenpay-payment-url]` | The payment link URL |
 
 ## Frequently Asked Questions
 
@@ -180,6 +194,12 @@ This plugin integrates with the ifthenpay payment platform to process payments f
 - **Contact Form 7**
   - **What it is and what it is used for**: A free form builder plugin used to create contact and payment forms. This plugin extends its capabilities by adding a payment button tag and processing.
 
+- **Gravatar (Automattic)**
+  - **What it is and what it is used for:** A profile image service used to retrieve and display the sender's avatar next to their form submission on the plugin's administration entries page.
+  - **What data is sent and when:** An anonymized string created from the user's email address (also called a hash) is sent to the Gravatar service whenever an administrator views the Single Entry Page.
+  - **Automattic Terms of Service:** [Terms of Service](https://automattic.com)
+  - **Automattic Privacy Policy:** [Privacy Policy](https://automattic.com).
+
 - **ifthenpay Backoffice & Integrations**
   - **What it is and what it is used for**: The ifthenpay Backoffice is the merchant dashboard used to manage integrations and payment configurations. The plugin uses the ifthenpay API to generate payment links and validate transactions.
   - **What data is sent and when**:
@@ -213,10 +233,6 @@ Below are screenshots demonstrating key features and interfaces of the plugin:
    ![Entries Page](.wordpress-org/screenshot-8.gif)
 9. **(Admin Only) ifthenpay Entries page — Status Selection | Add Payment | Single Entry Info**
    ![Add Simple Payment](.wordpress-org/screenshot-9.gif)
-10. **(Admin Only) ifthenpay Entries page — Mobile Version**
-   <p align="center">
-      <img src=".wordpress-org/screenshot-10.gif" alt="Add Simple Payment" />
-   </p>
 
 ## Support
 

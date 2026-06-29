@@ -145,16 +145,16 @@ final class FormPanel
 		}
 
 		$nonce = sanitize_text_field(
-			(string) (filter_input(INPUT_POST, 'iftp_cf7_form_nonce', FILTER_DEFAULT) ?? '')
+			wp_unslash((string) ($_POST['iftp_cf7_form_nonce'] ?? ''))
 		);
 		if (! wp_verify_nonce($nonce, 'iftp_cf7_form_config_' . $form_id)) {
 			return;
 		}
 
-		$enabled       = ! empty(filter_input(INPUT_POST, 'iftp_cf7_enabled', FILTER_DEFAULT));
-		$amount_source = sanitize_key((string) (filter_input(INPUT_POST, 'iftp_cf7_amount_source', FILTER_DEFAULT) ?? 'fixed'));
-		$amount_fixed  = sanitize_text_field((string) (filter_input(INPUT_POST, 'iftp_cf7_amount_fixed', FILTER_DEFAULT) ?? ''));
-		$amount_field  = sanitize_text_field((string) (filter_input(INPUT_POST, 'iftp_cf7_amount_field', FILTER_DEFAULT) ?? ''));
+		$enabled       = ! empty($_POST['iftp_cf7_enabled']);
+		$amount_source = sanitize_key(wp_unslash((string) ($_POST['iftp_cf7_amount_source'] ?? 'fixed')));
+		$amount_fixed  = sanitize_text_field(wp_unslash((string) ($_POST['iftp_cf7_amount_fixed'] ?? '')));
+		$amount_field  = sanitize_text_field(wp_unslash((string) ($_POST['iftp_cf7_amount_field'] ?? '')));
 
 		$config = array(
 			'enabled'       => $enabled,

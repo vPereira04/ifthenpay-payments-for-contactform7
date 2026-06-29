@@ -75,36 +75,28 @@ final class GatewayEndpoint
 
 		$entry_id = absint(get_query_var(self::REF_VAR));
 		$apk = sanitize_text_field(
-			(string) (filter_input(INPUT_GET, 'apk', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'apk', FILTER_DEFAULT) ?? '')
+			wp_unslash((string) ($_GET['apk'] ?? $_POST['apk'] ?? ''))
 		);
 
 		$val = sanitize_text_field(
-			(string) (filter_input(INPUT_GET, 'val', FILTER_DEFAULT)
-				?? filter_input(INPUT_GET, 'amount', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'val', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'amount', FILTER_DEFAULT)
-				?? '')
+			wp_unslash((string) ($_GET['val'] ?? $_GET['amount'] ?? $_POST['val'] ?? $_POST['amount'] ?? ''))
 		);
 		$status = sanitize_key(
-			(string) (filter_input(INPUT_GET, 'status', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'status', FILTER_DEFAULT) ?? '')
+			wp_unslash((string) ($_GET['status'] ?? $_POST['status'] ?? ''))
 		);
 		$ret = esc_url_raw(
-			(string) (filter_input(INPUT_GET, 'ret', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'ret', FILTER_DEFAULT) ?? '')
+			wp_unslash((string) ($_GET['ret'] ?? $_POST['ret'] ?? ''))
 		);
 		$mtd = sanitize_text_field(
-			(string) (filter_input(INPUT_GET, 'mtd', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'mtd', FILTER_DEFAULT) ?? '')
+			wp_unslash((string) ($_GET['mtd'] ?? $_POST['mtd'] ?? ''))
 		);
 
 		$req = sanitize_text_field(
-			(string) (filter_input(INPUT_GET, 'req', FILTER_DEFAULT)
-				?? filter_input(INPUT_GET, 'requestId', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'req', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'requestId', FILTER_DEFAULT)
-				?? '')
+			wp_unslash((string) ($_GET['req'] ?? $_GET['requestId'] ?? $_POST['req'] ?? $_POST['requestId'] ?? ''))
 		);
 
 		$error_msg = sanitize_text_field(
-			(string) (filter_input(INPUT_GET, 'error', FILTER_DEFAULT) ?? filter_input(INPUT_POST, 'error', FILTER_DEFAULT) ?? '')
+			wp_unslash((string) ($_GET['error'] ?? $_POST['error'] ?? ''))
 		);
 		if ($status === '' && $error_msg !== '') {
 			$status = 'error';
@@ -193,7 +185,6 @@ final class GatewayEndpoint
 			return;
 		}
 
-
 		if ($entry->payment_status === 'completed') {
 
 			return;
@@ -253,31 +244,22 @@ final class GatewayEndpoint
 			return;
 		}
 
-
 		if ($entry->payment_status === 'completed') {
 			return;
 		}
 
 		$val = sanitize_text_field(
-			(string) (filter_input(INPUT_POST, 'val', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'amount', FILTER_DEFAULT)
-				?? filter_input(INPUT_GET, 'val', FILTER_DEFAULT)
-				?? filter_input(INPUT_GET, 'amount', FILTER_DEFAULT)
-				?? '')
+			wp_unslash((string) ($_POST['val'] ?? $_POST['amount'] ?? $_GET['val'] ?? $_GET['amount'] ?? ''))
 		);
 		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
 			return;
 		}
 
 		$method     = sanitize_text_field(
-			(string) (filter_input(INPUT_POST, 'PaymentMethod', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'Method', FILTER_DEFAULT)
-				?? $method_get)
+			wp_unslash((string) ($_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get))
 		);
 		$request_id = sanitize_text_field(
-			(string) (filter_input(INPUT_POST, 'RequestId', FILTER_DEFAULT)
-				?? filter_input(INPUT_POST, 'requestId', FILTER_DEFAULT)
-				?? $req_get)
+			wp_unslash((string) ($_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get))
 		);
 
 		$repo->update_transaction(

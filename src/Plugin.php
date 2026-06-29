@@ -266,6 +266,49 @@ final class Plugin
 			$this->asset_version('assets/css/admin.css')
 		);
 
+
+		if ($hook === 'contact_page_ifthenpay-cf7-entries' && current_user_can('manage_options')) {
+
+			wp_enqueue_script(
+				'ifthenpay-cf7-entries-restore',
+				IFTP_CF7_URL . 'assets/js/admin-entries-restore.js',
+				array(),
+				$this->asset_version('assets/js/admin-entries-restore.js'),
+				false
+			);
+
+
+			wp_enqueue_script(
+				'ifthenpay-cf7-entries',
+				IFTP_CF7_URL . 'assets/js/admin-entries.js',
+				array('ifthenpay-cf7-admin'),
+				$this->asset_version('assets/js/admin-entries.js'),
+				true
+			);
+
+
+			$all_col_keys   = array('id', 'customer_name', 'request_id', 'amount', 'form_title', 'payment_status', 'payment_method', 'payment_link', 'created_at');
+			$fixed_col_keys = array('id', 'customer_name');
+			$user_id        = get_current_user_id();
+			$prefs          = $user_id ? UserPreferences::get($user_id) : UserPreferences::defaults();
+			$visible_cols   = ! empty($prefs['visible_columns']) && is_array($prefs['visible_columns'])
+				? array_values(array_filter($prefs['visible_columns'], fn($k) => in_array($k, $all_col_keys, true)))
+				: $all_col_keys;
+			foreach ($fixed_col_keys as $fc) {
+				if (! in_array($fc, $visible_cols, true)) {
+					$visible_cols[] = $fc;
+				}
+			}
+			$hidden_cols = array_values(array_diff($all_col_keys, $visible_cols));
+			if (! empty($hidden_cols)) {
+				$col_css = '';
+				foreach ($hidden_cols as $hk) {
+					$col_css .= '.iftp-cf7-entries-table [data-col="' . sanitize_html_class($hk) . '"] { display: none; }' . "\n";
+				}
+				wp_add_inline_style('ifthenpay-cf7-admin', $col_css);
+			}
+		}
+
 		$method_cat      = get_option('iftp_cf7_method_catalog', array());
 		$method_logos_js = array();
 		foreach (is_array($method_cat) ? $method_cat : array() as $m) {
