@@ -14,18 +14,23 @@ use Ifthenpay\CF7\Repository\EntryRepository;
 /**
  * Handles the /iftp_callback/{ref} endpoint — the unified return + webhook URL.
  *
- * Success (browser redirect from ifthenpay):
- *   /iftp_callback/{entry_id}/?apk={base64(gateway_key)}&val={amount}&ret={form_url}&mtd=[PAYMENTMETHOD]&req=[REQUESTID]
+ * Two distinct kinds of request hit this endpoint, with very different trust:
  *
- * Cancel / Error (browser redirect):
- *   /iftp_callback/{entry_id}/?status={cancel|error}&ret={form_url}
+ * 1. Browser return (GET) — the customer's browser, redirected by ifthenpay:
+ *      Success: /iftp_callback/{entry_id}/?val={amount}&ret={form_url}
+ *      Cancel/Error: /iftp_callback/{entry_id}/?status={cancel|error}&ret={form_url}
+ *    The browser carries no shared secret, so this path is NOT trusted and changes
+ *    NO payment state. It only redirects back to the form page with
+ *    ?iftp_cf7_pay=success|cancel|error&iftp_cf7_entry={id} so the frontend JS can
+ *    show the right message.
  *
- * Server webhook (POST from ifthenpay, no browser):
- *   Same params as success — validated by apk, updates entry, returns 200.
- *
- * After processing a browser redirect the handler redirects back to the
- * form page (ret param) with ?iftp_cf7_pay=success|cancel|error&iftp_cf7_entry={id}.
- * The frontend JS then shows the appropriate message.
+ * 2. Server-to-server webhook (POST from ifthenpay, no browser):
+ *      Same path, with apk={anti-phishing secret}&val={amount}&mtd=...&req=...
+ *    This is the ONLY path that updates the entry. It is authenticated by comparing
+ *    the apk against the per-site anti-phishing secret (hash_equals) — a random value
+ *    shared only with ifthenpay, never derived from the gateway key and never exposed
+ *    to the browser. A WP nonce is not applicable: the caller is ifthenpay, not a
+ *    logged-in user.
  */
 final class GatewayEndpoint
 {
@@ -74,30 +79,38 @@ final class GatewayEndpoint
 		$method         = strtoupper((string) $request_method);
 
 		$entry_id = absint(get_query_var(self::REF_VAR));
-		$apk = sanitize_text_field(
-			wp_unslash((string) ($_GET['apk'] ?? $_POST['apk'] ?? ''))
-		);
 
-		$val = sanitize_text_field(
-			wp_unslash((string) ($_GET['val'] ?? $_GET['amount'] ?? $_POST['val'] ?? $_POST['amount'] ?? ''))
-		);
+
+		if ($method === 'POST') {
+			// phpcs:disable WordPress.Security.NonceVerification.Missing -- External webhook; authenticated by the anti-phishing secret (hash_equals) inside handle_webhook(), not by a nonce.
+			$apk = sanitize_text_field(
+				wp_unslash((string) ($_POST['apk'] ?? $_GET['apk'] ?? ''))
+			);
+			$mtd = sanitize_text_field(
+				wp_unslash((string) ($_POST['mtd'] ?? $_GET['mtd'] ?? ''))
+			);
+			$req = sanitize_text_field(
+				wp_unslash((string) ($_POST['req'] ?? $_POST['requestId'] ?? $_GET['req'] ?? $_GET['requestId'] ?? ''))
+			);
+			// phpcs:enable WordPress.Security.NonceVerification.Missing
+			self::handle_webhook($entry_id, $apk, $mtd, $req);
+			echo 'OK';
+			exit;
+		}
+
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only redirect; these values only choose which UI message to show and change no state.
 		$status = sanitize_key(
-			wp_unslash((string) ($_GET['status'] ?? $_POST['status'] ?? ''))
+			wp_unslash((string) ($_GET['status'] ?? ''))
 		);
-		$ret = esc_url_raw(
-			wp_unslash((string) ($_GET['ret'] ?? $_POST['ret'] ?? ''))
-		);
-		$mtd = sanitize_text_field(
-			wp_unslash((string) ($_GET['mtd'] ?? $_POST['mtd'] ?? ''))
-		);
-
-		$req = sanitize_text_field(
-			wp_unslash((string) ($_GET['req'] ?? $_GET['requestId'] ?? $_POST['req'] ?? $_POST['requestId'] ?? ''))
-		);
-
 		$error_msg = sanitize_text_field(
-			wp_unslash((string) ($_GET['error'] ?? $_POST['error'] ?? ''))
+			wp_unslash((string) ($_GET['error'] ?? ''))
 		);
+		$has_success = isset($_GET['val']) || isset($_GET['amount']);
+		$ret = esc_url_raw(
+			wp_unslash((string) ($_GET['ret'] ?? ''))
+		);
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ($status === '' && $error_msg !== '') {
 			$status = 'error';
 		}
@@ -106,7 +119,6 @@ final class GatewayEndpoint
 			$ret = '';
 		}
 
-		$entry  = null;
 		$anchor = '';
 		if ($entry_id > 0) {
 			$repo  = new EntryRepository();
@@ -124,107 +136,28 @@ final class GatewayEndpoint
 			$ret = home_url('/');
 		}
 
-		if ($method === 'POST') {
-
-			self::handle_webhook($entry_id, $apk, $mtd, $req);
-			echo 'OK';
-			exit;
-		}
-
-		if ($apk !== '' && $val !== '' && $status === '') {
-
-			self::process_success($entry_id, $apk, $val, $mtd, $req);
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'iftp_cf7_pay'   => 'success',
-						'iftp_cf7_entry' => $entry_id,
-					),
-					$ret
-				) . $anchor
-			);
-			exit;
-		}
-
+		$pay = '';
 		if ($status !== '') {
+			$pay = $status;
+		} elseif ($has_success) {
+			$pay = 'success';
+		}
 
-			$new_status = $status === 'cancel' ? 'cancelled' : 'failed';
-			self::process_other($entry_id, $new_status, $mtd, $req);
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'iftp_cf7_pay'   => $status,
-						'iftp_cf7_entry' => $entry_id,
-					),
-					$ret
-				) . $anchor
-			);
+		if ($pay === '') {
+			wp_safe_redirect($ret . $anchor);
 			exit;
 		}
 
-		wp_safe_redirect(home_url('/'));
-		exit;
-	}
-
-	private static function process_success(int $entry_id, string $apk, string $val = '', string $method = '', string $request_id = ''): void
-	{
-		if ($entry_id <= 0) {
-			return;
-		}
-
-		$expected = Settings::get_anti_phishing_key();
-		if ($expected !== '' && $apk !== $expected) {
-
-			return;
-		}
-
-		$repo  = new EntryRepository();
-		$entry = $repo->get_by_id($entry_id);
-		if ($entry === null) {
-
-			return;
-		}
-
-		if ($entry->payment_status === 'completed') {
-
-			return;
-		}
-
-		if ($val === '' || number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
-
-			return;
-		}
-
-		$repo->update_transaction(
-			$entry->id,
-			$method,
-			'completed',
-			$request_id !== '' ? $request_id : null
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'iftp_cf7_pay'   => $pay,
+					'iftp_cf7_entry' => $entry_id,
+				),
+				$ret
+			) . $anchor
 		);
-
-	}
-
-	private static function process_other(int $entry_id, string $status, string $method = '', string $request_id = ''): void
-	{
-		if ($entry_id <= 0) {
-			return;
-		}
-		$repo  = new EntryRepository();
-		$entry = $repo->get_by_id($entry_id);
-
-		if ($entry === null || $entry->payment_status === 'completed') {
-			return;
-		}
-		if ($method !== '' || $request_id !== '') {
-			$repo->update_transaction(
-				$entry_id,
-				$method,
-				$status,
-				$request_id !== '' ? $request_id : null
-			);
-		} else {
-			$repo->update_status($entry_id, $status);
-		}
+		exit;
 	}
 
 	private static function handle_webhook(int $entry_id, string $apk, string $method_get = '', string $req_get = ''): void
@@ -234,7 +167,7 @@ final class GatewayEndpoint
 		}
 
 		$expected = Settings::get_anti_phishing_key();
-		if ($expected !== '' && $apk !== $expected) {
+		if ($expected === '' || ! hash_equals($expected, $apk)) {
 			return;
 		}
 
@@ -248,19 +181,17 @@ final class GatewayEndpoint
 			return;
 		}
 
-		$val = sanitize_text_field(
-			wp_unslash((string) ($_POST['val'] ?? $_POST['amount'] ?? $_GET['val'] ?? $_GET['amount'] ?? ''))
-		);
-		if ($val !== '' && number_format((float) $val, 2, '.', '') !== number_format($entry->amount, 2, '.', '')) {
+		$val = sanitize_text_field(wp_unslash((string) ($_REQUEST['val'] ?? $_REQUEST['amount'] ?? ''))); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ($val === '') {
 			return;
 		}
 
-		$method     = sanitize_text_field(
-			wp_unslash((string) ($_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get))
-		);
-		$request_id = sanitize_text_field(
-			wp_unslash((string) ($_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get))
-		);
+		if (abs((float) $val - $entry->amount) > 0.009) {
+			return;
+		}
+
+		$method     = sanitize_text_field(wp_unslash((string) ($_POST['PaymentMethod'] ?? $_POST['Method'] ?? $method_get))); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$request_id = sanitize_text_field(wp_unslash((string) ($_POST['RequestId'] ?? $_POST['requestId'] ?? $req_get))); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$repo->update_transaction(
 			$entry->id,
@@ -272,18 +203,16 @@ final class GatewayEndpoint
 		do_action('iftp_cf7_payment_confirmed', $entry->id, $method);
 	}
 
-	public static function build_success_url(int $entry_id, float $amount, string $gateway_key, string $return_url): string
+	public static function build_success_url(int $entry_id, float $amount, string $return_url): string
 	{
-		$base = home_url('/' . self::SLUG . '/' . $entry_id . '/');
-		$url  = add_query_arg(
+
+		return add_query_arg(
 			array(
-				'apk' => base64_encode($gateway_key),
 				'val' => number_format($amount, 2, '.', ''),
 				'ret' => $return_url,
 			),
-			$base
+			home_url('/' . self::SLUG . '/' . $entry_id . '/')
 		);
-		return $url . '&mtd=[PAYMENTMETHOD]&req=[REQUESTID]';
 	}
 
 	public static function build_status_url(int $entry_id, string $status, string $return_url): string

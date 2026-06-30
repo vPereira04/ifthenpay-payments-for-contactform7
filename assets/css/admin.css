@@ -4417,3 +4417,29 @@ ul.striped > :nth-child(odd),
 	outline: none !important;
 	box-shadow: none !important;
 }
+
+/* ── Confirm modal ── */
+.iftp-modal--sm .iftp-modal-box {
+	width: 420px;
+}
+
+.iftp-confirm-body {
+	padding: 20px 20px 24px;
+}
+
+.iftp-confirm-body p {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--iftp-text-dark);
+}
+
+.iftp-confirm-yes-btn--danger {
+	background: var(--iftp-danger) !important;
+	border-color: var(--iftp-danger-dark) !important;
+	color: #fff !important;
+}
+
+.iftp-confirm-yes-btn--danger:hover {
+	background: var(--iftp-danger-dark) !important;
+}

@@ -2331,4 +2331,66 @@
 			});
 		});
 	})();
+
+
+
+	function iftpConfirmOpen($trigger) {
+		var msg         = $trigger.data('iftp-confirm');
+		var title       = $trigger.data('iftp-confirm-title') || 'Confirm';
+		var href        = $trigger.attr('href');
+		var destructive = String($trigger.data('iftp-confirm-destructive')) === '1';
+
+		$('#iftp-confirm-heading').text(title);
+		$('#iftp-confirm-message').text(msg);
+		$('#iftp-confirm-yes').attr('href', href);
+
+		var $yes = $('#iftp-confirm-yes');
+		if (destructive) {
+			$yes.addClass('iftp-confirm-yes-btn--danger').removeClass('button-primary');
+		} else {
+			$yes.removeClass('iftp-confirm-yes-btn--danger').addClass('button-primary');
+		}
+
+		var _sw = window.innerWidth - document.documentElement.clientWidth;
+		$('body')
+			.css('padding-right', _sw > 0 ? _sw + 'px' : '')
+			.addClass('iftp-modal-open');
+
+		var $modal = $('#iftp-confirm-modal');
+		$modal.show();
+		void $modal[0].offsetWidth;
+		$modal.addClass('iftp-modal--open');
+	}
+
+	function iftpConfirmClose() {
+		var $modal = $('#iftp-confirm-modal');
+		$modal.removeClass('iftp-modal--open');
+		setTimeout(function () {
+			$modal.hide();
+			$('body').css('padding-right', '').removeClass('iftp-modal-open');
+		}, 210);
+	}
+
+	$(document).on('click', '.iftp-confirm-link', function (e) {
+		e.preventDefault();
+		iftpConfirmOpen($(this));
+	});
+
+	$(document).on(
+		'click',
+		'#iftp-confirm-modal .iftp-modal-overlay, .iftp-confirm-close, .iftp-confirm-cancel',
+		function () {
+			iftpConfirmClose();
+		}
+	);
+
+	$(document).on('click', '#iftp-confirm-modal .iftp-modal-box', function (e) {
+		e.stopPropagation();
+	});
+
+	$(document).on('keydown', function (e) {
+		if (e.key === 'Escape' && $('#iftp-confirm-modal').hasClass('iftp-modal--open')) {
+			iftpConfirmClose();
+		}
+	});
 })(jQuery);

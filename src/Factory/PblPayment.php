@@ -46,8 +46,7 @@ final class PblPayment
 		$gateway_urls = IfthenpayPayload::build_gateway_urls(
 			$entry_id,
 			$this->data->base_url,
-			$this->data->amount,
-			$this->data->gateway_key
+			$this->data->amount
 		);
 
 		$payload = IfthenpayPayload::build_pay_by_link_payload(

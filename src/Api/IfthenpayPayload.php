@@ -39,21 +39,21 @@ final class IfthenpayPayload
 	}
 
 	/**
-	 * Build the success / cancel / error return URLs for ifthenpay.
+	 * Build the success / cancel / error browser-return URLs for ifthenpay.
 	 *
-	 * Format: https://site.com/iftp_cf7?callback=iftp_cf7&ref={id}&apk={base64(gk)}&val={amount}&ret={form_url}
-	 * All routing goes through GatewayEndpoint which validates, updates the DB
-	 * entry, then redirects the browser back to the form page.
+	 * These are pure UI redirects — GatewayEndpoint::handle() routes them back to the
+	 * form page with a status flag and changes no payment state. The authoritative
+	 * status update happens only on the server-to-server webhook (POST), which is
+	 * authenticated by the anti-phishing secret. No secret is placed in these URLs.
 	 *
-	 * @param string $return_url   Form page URL the browser is sent back to.
-	 * @param float  $amount       Payment amount (included in success URL).
-	 * @param string $gateway_key  Gateway key (base64-encoded as anti-phishing).
+	 * @param string $return_url Form page URL the browser is sent back to.
+	 * @param float  $amount     Payment amount (included in the success URL).
 	 */
-	public static function build_gateway_urls(int $entry_id, string $return_url, float $amount = 0.0, string $gateway_key = ''): array
+	public static function build_gateway_urls(int $entry_id, string $return_url, float $amount = 0.0): array
 	{
 
 		return array(
-			'success_url' => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_success_url($entry_id, $amount, $gateway_key, $return_url),
+			'success_url' => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_success_url($entry_id, $amount, $return_url),
 			'cancel_url'  => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_status_url($entry_id, 'cancel', $return_url),
 			'error_url'   => \Ifthenpay\CF7\Payment\GatewayEndpoint::build_status_url($entry_id, 'error', $return_url),
 		);

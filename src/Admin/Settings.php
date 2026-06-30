@@ -53,12 +53,34 @@ final class Settings
 	}
 
 	/**
-	 * Anti-phishing key = base64 of the gateway key (deterministic, never stored).
+	 * Anti-phishing key — a random per-site secret shared only with ifthenpay.
+	 *
+	 * Registered with ifthenpay as the callback `apKey`; ifthenpay echoes it back
+	 * in the server-to-server webhook so we can prove the request originated from
+	 * them. Read-only — never derived from the gateway key (which is exposed on the
+	 * frontend) and never sent to the browser. Returns '' until ensure_anti_phishing_key()
+	 * has run, which makes webhook validation fail closed.
 	 */
 	public static function get_anti_phishing_key(): string
 	{
-		$gk = self::get_gateway_key();
-		return $gk !== '' ? base64_encode($gk) : '';
+		return trim((string) (self::get_settings()['anti_phishing_key'] ?? ''));
+	}
+
+	/**
+	 * Return the anti-phishing secret, generating and persisting one on first use.
+	 *
+	 * Called only from the admin save path (when the callback is (re)registered with
+	 * ifthenpay), never from the public webhook, so untrusted requests can't trigger
+	 * a DB write.
+	 */
+	public static function ensure_anti_phishing_key(): string
+	{
+		$key = self::get_anti_phishing_key();
+		if ($key === '') {
+			$key = wp_generate_password(40, false);
+			self::update_settings(array('anti_phishing_key' => $key));
+		}
+		return $key;
 	}
 
 	/** @return array<string, mixed> */

@@ -204,7 +204,7 @@ final class IfthenpayService extends \WPCF7_Service
 
 			if ($gateway_key !== '') {
 				$base_cb = home_url('/' . GatewayEndpoint::SLUG . '/');
-				$cb_ok = IfthenpayClient::activate_callback($gateway_key, $base_cb);
+				$cb_ok = IfthenpayClient::activate_callback($gateway_key, $base_cb, Settings::ensure_anti_phishing_key());
 				if (! $cb_ok) {
 					do_action('iftp_cf7_log', sprintf('[iftp-cf7] activate_callback failed for gateway_key=%s', $gateway_key));
 				}

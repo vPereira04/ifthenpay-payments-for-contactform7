@@ -77,8 +77,8 @@ final class EntriesPage
 		$period_raw   = isset($_GET['period'])  ? sanitize_key(wp_unslash((string) $_GET['period']))  : 'all';
 		$orderby_raw  = $orderby_in_url ? (isset($_GET['orderby']) ? sanitize_key(wp_unslash((string) $_GET['orderby'])) : '') : $prefs['orderby'];
 		$order_raw    = $order_in_url   ? (isset($_GET['order'])   ? sanitize_key(wp_unslash((string) $_GET['order']))   : '') : $prefs['order'];
-		$per_page_raw = absint((string) (filter_input(INPUT_GET, 'per_page', FILTER_SANITIZE_NUMBER_INT) ?? 20));
-		$form_id      = absint((string) (filter_input(INPUT_GET, 'form_id', FILTER_SANITIZE_NUMBER_INT) ?? 0));
+		$per_page_raw = absint((int) ($_GET['per_page'] ?? 20));
+		$form_id      = absint((int) ($_GET['form_id'] ?? 0));
 
 		$sort_cols = array('id', 'customer_name', 'form_title', 'payment_method', 'amount', 'payment_status', 'created_at');
 		$status    = in_array($status_raw,  array('', 'pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $status_raw  : '';
@@ -99,7 +99,7 @@ final class EntriesPage
 		$db_status = in_array($status, array('pending', 'completed', 'failed', 'cancelled', 'expired'), true) ? $status : '';
 
 
-		$cursor  = ($current_page > 1) ? absint((string) (filter_input(INPUT_GET, 'cursor', FILTER_SANITIZE_NUMBER_INT) ?? 0)) : 0;
+		$cursor  = ($current_page > 1) ? absint((int) ($_GET['cursor'] ?? 0)) : 0;
 		$dir_raw = isset($_GET['dir']) ? sanitize_key(wp_unslash((string) $_GET['dir'])) : '';
 		$dir     = in_array($dir_raw, array('prev', 'last'), true) ? $dir_raw : 'next';
 
@@ -888,8 +888,9 @@ final class EntriesPage
 											<a href="<?php echo esc_url($cur_view_url); ?>">#<?php echo esc_html((string) $e->id); ?></a>
 											<div class="row-actions">
 												<span class="view"><a href="<?php echo esc_url($cur_view_url); ?>"><?php esc_html_e('View', 'ifthenpay-payments-for-contactform7'); ?></a></span>
-												| <span class="trash"><a href="<?php echo esc_url($cur_del_url); ?>" class="submitdelete"
-														onclick="return confirm('<?php esc_attr_e('Move this entry to trash?', 'ifthenpay-payments-for-contactform7'); ?>');"><?php esc_html_e('Trash', 'ifthenpay-payments-for-contactform7'); ?></a></span>
+												| <span class="trash"><a href="<?php echo esc_url($cur_del_url); ?>" class="submitdelete iftp-confirm-link"
+														data-iftp-confirm="<?php esc_attr_e('Move this entry to trash?', 'ifthenpay-payments-for-contactform7'); ?>"
+														data-iftp-confirm-title="<?php esc_attr_e('Move to Trash', 'ifthenpay-payments-for-contactform7'); ?>"><?php esc_html_e('Trash', 'ifthenpay-payments-for-contactform7'); ?></a></span>
 											</div>
 										</td>
 									<?php
@@ -1274,6 +1275,31 @@ final class EntriesPage
 					<button type="button" class="iftp-ap-toast-close" aria-label="<?php esc_attr_e('Dismiss', 'ifthenpay-payments-for-contactform7'); ?>">&#215;</button>
 				</div>
 			<?php endif; ?>
+		</div>
+
+		<!-- Confirm action modal -->
+		<div id="iftp-confirm-modal" class="iftp-modal iftp-modal--sm" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="iftp-confirm-title">
+			<div class="iftp-modal-overlay"></div>
+			<div class="iftp-modal-box">
+				<div class="iftp-modal-head">
+					<h2 id="iftp-confirm-title">
+						<span id="iftp-confirm-heading"></span>
+					</h2>
+					<button type="button" class="iftp-modal-close iftp-confirm-close" aria-label="<?php esc_attr_e('Close', 'ifthenpay-payments-for-contactform7'); ?>">
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<line x1="18" y1="6" x2="6" y2="18" />
+							<line x1="6" y1="6" x2="18" y2="18" />
+						</svg>
+					</button>
+				</div>
+				<div class="iftp-confirm-body">
+					<p id="iftp-confirm-message"></p>
+				</div>
+				<div class="iftp-modal-foot">
+					<button type="button" class="button iftp-confirm-cancel"><?php esc_html_e('No', 'ifthenpay-payments-for-contactform7'); ?></button>
+					<a href="#" id="iftp-confirm-yes" class="button button-primary iftp-confirm-yes-btn"><?php esc_html_e('Yes', 'ifthenpay-payments-for-contactform7'); ?></a>
+				</div>
+			</div>
 		</div>
 
 	<!-- Checkbox persistence, select-all, and page-jump are handled by admin-entries.js (enqueued via wp_enqueue_script). -->
@@ -1807,8 +1833,10 @@ final class EntriesPage
 						<span class="iftp-entry-chip-label"><?php esc_html_e('Entry', 'ifthenpay-payments-for-contactform7'); ?> <strong>#<?php echo esc_html((string) $entry->id); ?></strong></span>
 					</div>
 				</div>
-				<a href="<?php echo esc_url($del_url); ?>" class="iftp-delete-btn"
-					onclick="return confirm('<?php esc_attr_e('Delete this entry permanently?', 'ifthenpay-payments-for-contactform7'); ?>');">
+				<a href="<?php echo esc_url($del_url); ?>" class="iftp-delete-btn iftp-confirm-link"
+					data-iftp-confirm="<?php esc_attr_e('Delete this entry permanently? This cannot be undone.', 'ifthenpay-payments-for-contactform7'); ?>"
+					data-iftp-confirm-title="<?php esc_attr_e('Delete Entry', 'ifthenpay-payments-for-contactform7'); ?>"
+					data-iftp-confirm-destructive="1">
 					<svg viewBox="0 0 24 24" aria-hidden="true">
 						<polyline points="3 6 5 6 21 6" />
 						<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -2136,6 +2164,31 @@ final class EntriesPage
 				</div>
 			</div><!-- .iftp-detail-grid -->
 		</div><!-- .wrap -->
+
+		<!-- Confirm action modal -->
+		<div id="iftp-confirm-modal" class="iftp-modal iftp-modal--sm" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="iftp-confirm-title">
+			<div class="iftp-modal-overlay"></div>
+			<div class="iftp-modal-box">
+				<div class="iftp-modal-head">
+					<h2 id="iftp-confirm-title">
+						<span id="iftp-confirm-heading"></span>
+					</h2>
+					<button type="button" class="iftp-modal-close iftp-confirm-close" aria-label="<?php esc_attr_e('Close', 'ifthenpay-payments-for-contactform7'); ?>">
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<line x1="18" y1="6" x2="6" y2="18" />
+							<line x1="6" y1="6" x2="18" y2="18" />
+						</svg>
+					</button>
+				</div>
+				<div class="iftp-confirm-body">
+					<p id="iftp-confirm-message"></p>
+				</div>
+				<div class="iftp-modal-foot">
+					<button type="button" class="button iftp-confirm-cancel"><?php esc_html_e('No', 'ifthenpay-payments-for-contactform7'); ?></button>
+					<a href="#" id="iftp-confirm-yes" class="button button-primary iftp-confirm-yes-btn"><?php esc_html_e('Yes', 'ifthenpay-payments-for-contactform7'); ?></a>
+				</div>
+			</div>
+		</div>
 <?php
 	}
 	private function get_field_icon_svg(string $key): string

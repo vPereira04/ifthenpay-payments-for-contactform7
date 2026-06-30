@@ -225,15 +225,17 @@ final class Plugin
 		if (! current_user_can('manage_options')) {
 			return;
 		}
-		$url = wp_json_encode(admin_url('admin.php?page=ifthenpay-cf7-entries'));
+		wp_localize_script('common', 'iftpCf7Shortcut', array(
+			'url' => admin_url('admin.php?page=ifthenpay-cf7-entries'),
+		));
 		wp_add_inline_script(
 			'common',
 			'document.addEventListener("keydown",function(e){' .
 				'if(!(e.ctrlKey||e.metaKey)||!e.shiftKey||e.code!=="KeyF")return;' .
 				'var t=(document.activeElement||{}).tagName||"";' .
 				'if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT")return;' .
-				'e.preventDefault();window.location.href=' . $url . ';' .
-				'});'
+				'e.preventDefault();window.location.href=(window.iftpCf7Shortcut||{}).url||"";' .
+			'});'
 		);
 	}
 

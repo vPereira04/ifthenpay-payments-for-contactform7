@@ -1,18 +1,21 @@
 # Copyright (C) 2026 ifthenpay-payments-for-contactform7
 # This file is distributed under the same license as the ifthenpay-payments-for-contactform7 package.
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: ifthenpay-payments-for-contactform7 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ifthenpay-payments-for-contactform7\n"
-"POT-Creation-Date: 2026-06-29 08:06:45+00:00\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ifthenpay-"
+"payments-for-contactform7\n"
+"POT-Creation-Date: 2026-06-30 09:03+0100\n"
 "PO-Revision-Date: 2026-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
 
-#: src/Admin/EntriesPage.php:227 src/Admin/Settings.php:87
+#: src/Admin/EntriesPage.php:227 src/Admin/Settings.php:109
 msgid "Unauthorized."
 msgstr ""
 
@@ -49,15 +52,17 @@ msgctxt "period filter"
 msgid "Day"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:533 src/Admin/EntriesPage.php:1802 src/Plugin.php:110
+#: src/Admin/EntriesPage.php:533 src/Admin/EntriesPage.php:1828
+#: src/Plugin.php:110
 msgid "Entries"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:545 src/Admin/EntriesPage.php:1113 src/Admin/EntriesPage.php:1262
+#: src/Admin/EntriesPage.php:545 src/Admin/EntriesPage.php:1114
+#: src/Admin/EntriesPage.php:1263
 msgid "Add Payment"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:552 src/Plugin.php:405
+#: src/Admin/EntriesPage.php:552 src/Plugin.php:407
 msgid "Time period"
 msgstr ""
 
@@ -97,7 +102,7 @@ msgstr ""
 msgid "This month"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:613 src/Plugin.php:374
+#: src/Admin/EntriesPage.php:613 src/Plugin.php:376
 msgid "Last 7 days"
 msgstr ""
 
@@ -134,23 +139,33 @@ msgstr ""
 msgid "Toggle bar view"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:674 src/Admin/EntriesPage.php:772 src/Admin/EntriesPage.php:1151 src/Admin/EntriesPage.php:1192 src/Plugin.php:438 src/Repository/DTO/EntryDto.php:65
+#: src/Admin/EntriesPage.php:674 src/Admin/EntriesPage.php:772
+#: src/Admin/EntriesPage.php:1152 src/Admin/EntriesPage.php:1193
+#: src/Plugin.php:440 src/Repository/DTO/EntryDto.php:65
 msgid "Paid"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:689 src/Admin/EntriesPage.php:773 src/Admin/EntriesPage.php:1152 src/Admin/EntriesPage.php:1193 src/Plugin.php:434 src/Repository/DTO/EntryDto.php:66
+#: src/Admin/EntriesPage.php:689 src/Admin/EntriesPage.php:773
+#: src/Admin/EntriesPage.php:1153 src/Admin/EntriesPage.php:1194
+#: src/Plugin.php:436 src/Repository/DTO/EntryDto.php:66
 msgid "Pending"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:704 src/Admin/EntriesPage.php:774 src/Admin/EntriesPage.php:1154 src/Admin/EntriesPage.php:1195 src/Plugin.php:442 src/Repository/DTO/EntryDto.php:67
+#: src/Admin/EntriesPage.php:704 src/Admin/EntriesPage.php:774
+#: src/Admin/EntriesPage.php:1155 src/Admin/EntriesPage.php:1196
+#: src/Plugin.php:444 src/Repository/DTO/EntryDto.php:67
 msgid "Failed"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:719 src/Admin/EntriesPage.php:775 src/Admin/EntriesPage.php:1153 src/Admin/EntriesPage.php:1194 src/Plugin.php:446 src/Repository/DTO/EntryDto.php:68
+#: src/Admin/EntriesPage.php:719 src/Admin/EntriesPage.php:775
+#: src/Admin/EntriesPage.php:1154 src/Admin/EntriesPage.php:1195
+#: src/Plugin.php:448 src/Repository/DTO/EntryDto.php:68
 msgid "Cancelled"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:733 src/Admin/EntriesPage.php:776 src/Admin/EntriesPage.php:1155 src/Admin/EntriesPage.php:1196 src/Plugin.php:450 src/Repository/DTO/EntryDto.php:69
+#: src/Admin/EntriesPage.php:733 src/Admin/EntriesPage.php:776
+#: src/Admin/EntriesPage.php:1156 src/Admin/EntriesPage.php:1197
+#: src/Plugin.php:452 src/Repository/DTO/EntryDto.php:69
 msgid "Expired"
 msgstr ""
 
@@ -199,7 +214,9 @@ msgid "No entries found"
 msgstr ""
 
 #: src/Admin/EntriesPage.php:836
-msgid "No payment entries match your current filter. Try a different search or status."
+msgid ""
+"No payment entries match your current filter. Try a different search or "
+"status."
 msgstr ""
 
 #: src/Admin/EntriesPage.php:890
@@ -210,309 +227,337 @@ msgstr ""
 msgid "Move this entry to trash?"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:892
+#: src/Admin/EntriesPage.php:893
+msgid "Move to Trash"
+msgstr ""
+
+#: src/Admin/EntriesPage.php:893
 msgid "Trash"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:955
+#: src/Admin/EntriesPage.php:956
 msgid "Open"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1024
+#: src/Admin/EntriesPage.php:1025
 msgid "Customize Columns"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1026 src/Admin/EntriesPage.php:1119
+#: src/Admin/EntriesPage.php:1027 src/Admin/EntriesPage.php:1120
+#: src/Admin/EntriesPage.php:1288 src/Admin/EntriesPage.php:2176
 msgid "Close"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1033
+#: src/Admin/EntriesPage.php:1034
 msgid "Drag to reorder · check to show/hide. ID and Customer are always shown."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1034
+#: src/Admin/EntriesPage.php:1035
 msgid "Column order"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1060
+#: src/Admin/EntriesPage.php:1061
 msgid "Save"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1063
+#: src/Admin/EntriesPage.php:1064
 msgid "Reset"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1080
+#: src/Admin/EntriesPage.php:1081
 msgid "How entries work:"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1081
-msgid "An entry is created every time a visitor clicks Pay on one of your Contact Form 7 forms. Entries start as Pending until payment is confirmed via callback."
+#: src/Admin/EntriesPage.php:1082
+msgid ""
+"An entry is created every time a visitor clicks Pay on one of your Contact "
+"Form 7 forms. Entries start as Pending until payment is confirmed via "
+"callback."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1082
+#: src/Admin/EntriesPage.php:1083
 msgid "IDs are never reused — deleting entries does not reset the counter."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1085 src/Admin/EntriesPage.php:1274
+#: src/Admin/EntriesPage.php:1086 src/Admin/EntriesPage.php:1275
 msgid "Dismiss"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1095
+#: src/Admin/EntriesPage.php:1096
 msgid "Scroll to top"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1115
+#: src/Admin/EntriesPage.php:1116
 msgid "Mode"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1116
+#: src/Admin/EntriesPage.php:1117
 msgid "Simple"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1117
+#: src/Admin/EntriesPage.php:1118
 msgid "Complex"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1128
+#: src/Admin/EntriesPage.php:1129
 msgid "Customer Data"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1135
+#: src/Admin/EntriesPage.php:1136
 msgid "Customer Name"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1139
+#: src/Admin/EntriesPage.php:1140
 msgid "E-mail"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1139 src/Admin/EntriesPage.php:1161 src/Admin/EntriesPage.php:1176 src/Admin/EntriesPage.php:1202 src/Admin/EntriesPage.php:1217 src/Admin/EntriesPage.php:1226 src/Admin/EntriesPage.php:1230 src/Admin/EntriesPage.php:1236 src/Admin/EntriesPage.php:1240 src/Admin/EntriesPage.php:1246 src/Admin/EntriesPage.php:1252
+#: src/Admin/EntriesPage.php:1140 src/Admin/EntriesPage.php:1162
+#: src/Admin/EntriesPage.php:1177 src/Admin/EntriesPage.php:1203
+#: src/Admin/EntriesPage.php:1218 src/Admin/EntriesPage.php:1227
+#: src/Admin/EntriesPage.php:1231 src/Admin/EntriesPage.php:1237
+#: src/Admin/EntriesPage.php:1241 src/Admin/EntriesPage.php:1247
+#: src/Admin/EntriesPage.php:1253
 msgid "(optional)"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1145 src/Admin/EntriesPage.php:1186
+#: src/Admin/EntriesPage.php:1146 src/Admin/EntriesPage.php:1187
 msgid "Amount (€)"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1149 src/Admin/EntriesPage.php:1190 src/Admin/EntriesPage.php:1602
+#: src/Admin/EntriesPage.php:1150 src/Admin/EntriesPage.php:1191
+#: src/Admin/EntriesPage.php:1628
 msgid "Status"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1161 src/Admin/EntriesPage.php:1202
+#: src/Admin/EntriesPage.php:1162 src/Admin/EntriesPage.php:1203
 msgid "Payment Method"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1163 src/Admin/EntriesPage.php:1204
+#: src/Admin/EntriesPage.php:1164 src/Admin/EntriesPage.php:1205
 msgid "— Select method —"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1176 src/Admin/EntriesPage.php:1217
+#: src/Admin/EntriesPage.php:1177 src/Admin/EntriesPage.php:1218
 msgid "Form / Reference"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1222 src/Admin/EntriesPage.php:2007
+#: src/Admin/EntriesPage.php:1223 src/Admin/EntriesPage.php:2035
 msgid "Submitted Data"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1226 src/Admin/EntriesPage.php:1341
+#: src/Admin/EntriesPage.php:1227 src/Admin/EntriesPage.php:1367
 msgid "Name"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1230 src/Admin/EntriesPage.php:1342
+#: src/Admin/EntriesPage.php:1231 src/Admin/EntriesPage.php:1368
 msgid "Email"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1236
+#: src/Admin/EntriesPage.php:1237
 msgid "Address"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1240
+#: src/Admin/EntriesPage.php:1241
 msgid "Postal Code"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1246
+#: src/Admin/EntriesPage.php:1247
 msgid "Mobile Phone"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1252
+#: src/Admin/EntriesPage.php:1253
 msgid "Message"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1261
+#: src/Admin/EntriesPage.php:1262
 msgid "Cancel"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1273
-msgid "Adding payments here is optional — you are not required to do so. This simply lets you manually record real-world payments in your list for organizational purposes."
+#: src/Admin/EntriesPage.php:1274
+msgid ""
+"Adding payments here is optional — you are not required to do so. This "
+"simply lets you manually record real-world payments in your list for "
+"organizational purposes."
+msgstr ""
+
+#: src/Admin/EntriesPage.php:1299 src/Admin/EntriesPage.php:2187
+msgid "No"
+msgstr ""
+
+#: src/Admin/EntriesPage.php:1300 src/Admin/EntriesPage.php:2188
+msgid "Yes"
 msgstr ""
 
 #. translators: %d: the ID of a deleted CF7 form
-
-#: src/Admin/EntriesPage.php:1321
+#: src/Admin/EntriesPage.php:1347
 msgid "Deleted Form #%d"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1343 src/Admin/EntriesPage.php:1601
+#: src/Admin/EntriesPage.php:1369 src/Admin/EntriesPage.php:1627
 msgid "Form"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1344 src/Admin/EntriesPage.php:1603 src/Admin/EntriesPage.php:1852
+#: src/Admin/EntriesPage.php:1370 src/Admin/EntriesPage.php:1629
+#: src/Admin/EntriesPage.php:1880
 msgid "Method"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1345 src/Admin/EntriesPage.php:1600 src/Form/TagGenerator.php:45
+#: src/Admin/EntriesPage.php:1371 src/Admin/EntriesPage.php:1626
+#: src/Form/TagGenerator.php:45
 msgid "Amount"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1346 src/Admin/EntriesPage.php:1599 src/Admin/EntriesPage.php:1965
+#: src/Admin/EntriesPage.php:1372 src/Admin/EntriesPage.php:1625
+#: src/Admin/EntriesPage.php:1993
 msgid "Request ID"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1365
+#: src/Admin/EntriesPage.php:1391
 msgid "Filter by form"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1366
+#: src/Admin/EntriesPage.php:1392
 msgid "All Forms"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1372
+#: src/Admin/EntriesPage.php:1398
 msgid "Search field"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1377
+#: src/Admin/EntriesPage.php:1403
 msgid "Operator"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1378
+#: src/Admin/EntriesPage.php:1404
 msgid "contains"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1379
+#: src/Admin/EntriesPage.php:1405
 msgid "is"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1382
+#: src/Admin/EntriesPage.php:1408
 msgid "Search…"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1383
+#: src/Admin/EntriesPage.php:1409
 msgid "Search"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1388
+#: src/Admin/EntriesPage.php:1414
 msgid "Clear"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1394
+#: src/Admin/EntriesPage.php:1420
 msgid "Items per page"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1410
+#: src/Admin/EntriesPage.php:1436
 msgid "Columns"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1468
+#: src/Admin/EntriesPage.php:1494
 msgid "Pagination"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1471
+#: src/Admin/EntriesPage.php:1497
 msgid "Previous page"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1486
+#: src/Admin/EntriesPage.php:1512
 msgid "Page 1"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1498 src/Admin/EntriesPage.php:1517
+#: src/Admin/EntriesPage.php:1524 src/Admin/EntriesPage.php:1543
 msgid "Page %d"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1511
+#: src/Admin/EntriesPage.php:1537
 msgid "Type a page number and press Enter"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1522
+#: src/Admin/EntriesPage.php:1548
 msgid "Next page"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1597
+#: src/Admin/EntriesPage.php:1623
 msgid "ID"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1598 src/Admin/EntriesPage.php:1873 src/Admin/EntriesPage.php:2063
+#: src/Admin/EntriesPage.php:1624 src/Admin/EntriesPage.php:1901
+#: src/Admin/EntriesPage.php:2091
 msgid "Customer"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1604 src/Admin/EntriesPage.php:1976
+#: src/Admin/EntriesPage.php:1630 src/Admin/EntriesPage.php:2004
 msgid "Payment Link"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1605
+#: src/Admin/EntriesPage.php:1631
 msgid "Date"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1790
+#: src/Admin/EntriesPage.php:1816
 msgid "Previously"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1807
+#: src/Admin/EntriesPage.php:1833
 msgid "Entry"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1811
-msgid "Delete this entry permanently?"
+#: src/Admin/EntriesPage.php:1837
+msgid "Delete this entry permanently? This cannot be undone."
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1818
+#: src/Admin/EntriesPage.php:1838 src/Admin/EntriesPage.php:1846
 msgid "Delete Entry"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1882
+#: src/Admin/EntriesPage.php:1910
 msgid "Payment journey"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1891 src/Admin/EntriesPage.php:2104
+#: src/Admin/EntriesPage.php:1919 src/Admin/EntriesPage.php:2132
 msgid "Created"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1892
+#: src/Admin/EntriesPage.php:1920
 msgid "Customer clicked to Pay"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1903 src/Admin/EntriesPage.php:2117
+#: src/Admin/EntriesPage.php:1931 src/Admin/EntriesPage.php:2145
 msgid "Link Generated"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1904
+#: src/Admin/EntriesPage.php:1932
 msgid "Payment link generated"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1937 src/Admin/EntriesPage.php:2130
+#: src/Admin/EntriesPage.php:1965 src/Admin/EntriesPage.php:2158
 msgid "Updated"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1938
+#: src/Admin/EntriesPage.php:1966
 msgid "Payment Status Update"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1954
+#: src/Admin/EntriesPage.php:1982
 msgid "Transaction"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:1980
+#: src/Admin/EntriesPage.php:2008
 msgid "Open link"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2038 src/Admin/EntriesPage.php:2040
+#: src/Admin/EntriesPage.php:2066 src/Admin/EntriesPage.php:2068
 msgid "Read more"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2039
+#: src/Admin/EntriesPage.php:2067
 msgid "Read less"
 msgstr ""
 
-#: src/Admin/EntriesPage.php:2093
+#: src/Admin/EntriesPage.php:2121
 msgid "Timestamps"
 msgstr ""
 
@@ -525,9 +570,9 @@ msgid "Could not load form context."
 msgstr ""
 
 #. translators: %s: integration page link
-
 #: src/Admin/FormPanel.php:57
-msgid "Complete ifthenpay setup on the %s before enabling payments on this form."
+msgid ""
+"Complete ifthenpay setup on the %s before enabling payments on this form."
 msgstr ""
 
 #: src/Admin/FormPanel.php:59
@@ -574,24 +619,23 @@ msgstr ""
 msgid "Settings are saved when you click \"Save\" in the form editor."
 msgstr ""
 
-#: src/Admin/Settings.php:98
+#: src/Admin/Settings.php:120
 msgid "Missing parameters."
 msgstr ""
 
-#: src/Admin/Settings.php:103
+#: src/Admin/Settings.php:125
 msgid "Request already sent in the last 24 hours."
 msgstr ""
 
-#: src/Admin/Settings.php:114
+#: src/Admin/Settings.php:136
 msgid "Activation request sent to ifthenpay support."
 msgstr ""
 
-#: src/Admin/Settings.php:116
+#: src/Admin/Settings.php:138
 msgid "Failed to send activation email. Contact ifthenpay directly."
 msgstr ""
 
 #. translators: 1: payment method entity, 2: plugin context
-
 #: src/Api/IfthenpayEmailHelper.php:28
 msgid "[ifthenpay] Activate %1$s for %2$s"
 msgstr ""
@@ -605,11 +649,13 @@ msgid "Complete ifthenpay setup on Contact Form 7 › Integration."
 msgstr ""
 
 #: src/Form/PaymentTag.php:70
-msgid "Specify a valid amount in the tag, e.g. [ifthenpay_payment amount:30.00]"
+msgid ""
+"Specify a valid amount in the tag, e.g. [ifthenpay_payment amount:30.00]"
 msgstr ""
 
 #: src/Form/PaymentTag.php:72
-msgid "Form ID not found. Make sure the tag is used within a Contact Form 7 form."
+msgid ""
+"Form ID not found. Make sure the tag is used within a Contact Form 7 form."
 msgstr ""
 
 #: src/Form/PaymentTag.php:88
@@ -625,7 +671,10 @@ msgid "ifthenpay Payment field form-tag generator"
 msgstr ""
 
 #: src/Form/TagGenerator.php:37
-msgid "Generates a form-tag for the ifthenpay payment button. Add it once in your form body where the button should appear, and remove the default Submit button."
+msgid ""
+"Generates a form-tag for the ifthenpay payment button. Add it once in your "
+"form body where the button should appear, and remove the default Submit "
+"button."
 msgstr ""
 
 #: src/Form/TagGenerator.php:46
@@ -665,7 +714,6 @@ msgid "Button text"
 msgstr ""
 
 #. translators: %s: default button label
-
 #: src/Form/TagGenerator.php:102
 msgid "(Optional) - Leave empty to use the default \"%s\"."
 msgstr ""
@@ -679,11 +727,14 @@ msgid "Insert Tag"
 msgstr ""
 
 #: src/Form/TagGenerator.php:121
-msgid "Add the following ifthenpay form-tag where you want the payment button to appear in your form template:"
+msgid ""
+"Add the following ifthenpay form-tag where you want the payment button to "
+"appear in your form template:"
 msgstr ""
 
 #: src/Form/TagGenerator.php:123
-msgid "(Note: Remove the default CF7 [submit] button and use this one instead)."
+msgid ""
+"(Note: Remove the default CF7 [submit] button and use this one instead)."
 msgstr ""
 
 #: src/Payment/Process.php:141
@@ -703,7 +754,8 @@ msgid "The payment amount is missing or invalid."
 msgstr ""
 
 #: src/Payment/Process.php:158
-msgid "ifthenpay is not configured. Complete the setup on the Integration page."
+msgid ""
+"ifthenpay is not configured. Complete the setup on the Integration page."
 msgstr ""
 
 #: src/Payment/Process.php:165
@@ -754,50 +806,56 @@ msgstr ""
 msgid "Email address must be 100 characters or fewer."
 msgstr ""
 
-#: src/Plugin.php:331 src/Service/IfthenpayService.php:426 src/Service/IfthenpayService.php:464
+#: src/Plugin.php:333 src/Service/IfthenpayService.php:426
+#: src/Service/IfthenpayService.php:464
 msgid "Activate Method"
 msgstr ""
 
-#: src/Plugin.php:351
+#: src/Plugin.php:353
 msgid "ifthenpay Payments"
 msgstr ""
 
 #. translators: %d: number of paid transactions
-
-#: src/Plugin.php:368 src/Plugin.php:391
+#: src/Plugin.php:370 src/Plugin.php:393
 msgid "from %d paid transactions"
 msgstr ""
 
-#: src/Plugin.php:373
+#: src/Plugin.php:375
 msgid "Last 24 hours"
 msgstr ""
 
-#: src/Plugin.php:375
+#: src/Plugin.php:377
 msgid "Last 15 days"
 msgstr ""
 
-#: src/Plugin.php:376
+#: src/Plugin.php:378
 msgid "Last 30 days"
 msgstr ""
 
-#: src/Plugin.php:455
+#: src/Plugin.php:457
 msgid "View all entries"
 msgstr ""
 
-#: src/Plugin.php:465
+#. Plugin Name of the plugin/theme
+#: src/Plugin.php:467
 msgid "ifthenpay | Payments for Contact Form 7"
 msgstr ""
 
-#: src/Plugin.php:466
+#: src/Plugin.php:468
 msgid "requires Contact Form 7 to be installed and active."
 msgstr ""
 
-#: src/Plugin.php:485
+#: src/Plugin.php:487
 msgid "Powered by"
 msgstr ""
 
 #: src/Service/IfthenpayService.php:226
-msgid "Streamline your checkout experience using ifthenpay's reliable payment gateway. Designed for effortless integration, it allows businesses to accept secure regional payments without complex setup processes. Their certified technology manages every transaction safely, helping brands increase conversion rates and optimize daily cash flow."
+msgid ""
+"Streamline your checkout experience using ifthenpay's reliable payment "
+"gateway. Designed for effortless integration, it allows businesses to accept "
+"secure regional payments without complex setup processes. Their certified "
+"technology manages every transaction safely, helping brands increase "
+"conversion rates and optimize daily cash flow."
 msgstr ""
 
 #: src/Service/IfthenpayService.php:228
@@ -865,7 +923,9 @@ msgid "Default Description (Optional)"
 msgstr ""
 
 #: src/Service/IfthenpayService.php:526
-msgid "Label sent to ifthenpay and displayed to the customer on the payment page. Use something recognisable, like your store or product name."
+msgid ""
+"Label sent to ifthenpay and displayed to the customer on the payment page. "
+"Use something recognisable, like your store or product name."
 msgstr ""
 
 #: src/Service/IfthenpayService.php:535
@@ -873,7 +933,10 @@ msgid "Payment expires in (days) / (Optional)"
 msgstr ""
 
 #: src/Service/IfthenpayService.php:547
-msgid "A value of 1 means a payment created today will expire tomorrow at 23:59. Pending payments older than this many days are marked Expired automatically each night."
+msgid ""
+"A value of 1 means a payment created today will expire tomorrow at 23:59. "
+"Pending payments older than this many days are marked Expired automatically "
+"each night."
 msgstr ""
 
 #: src/Service/IfthenpayService.php:555
@@ -900,10 +963,6 @@ msgstr ""
 msgid "Could not validate the Backoffice Key. Please try again."
 msgstr ""
 
-#. Plugin Name of the plugin/theme
-msgid "ifthenpay | Payments for Contact Form 7"
-msgstr ""
-
 #. Plugin URI of the plugin/theme
 msgid "https://ifthenpay.com"
 msgstr ""
@@ -919,4 +978,3 @@ msgstr ""
 #. Author URI of the plugin/theme
 msgid "https://ifthenpay.com/"
 msgstr ""
-
